@@ -1,0 +1,107 @@
+<!-- HERO -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div class="hero-text">
+      @let t = i18n.d().voter;
+      <span class="eyebrow">{{ t.eyebrow }}</span>
+      <h1>{{ t.titleA }}<br /><span class="hl-rouge">{{ t.titleB }}</span></h1>
+      <p class="lead">
+        {{ t.leadA }}
+        <span class="hl">{{ t.leadHl }}</span>{{ t.leadB }}
+      </p>
+      <div class="btn-row">
+        <a [href]="l.checkSituation" target="_blank" rel="noopener" class="btn">{{ t.checkBtn }}</a>
+        <a [href]="l.registerOnline" target="_blank" rel="noopener" class="btn btn-rouge">{{ t.registerBtn }}</a>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <app-photo class="hero-photo" name="voteAsma" sizes="(max-width: 900px) 80vw, 380px" position="50% 30%" [eager]="true" />
+    </div>
+  </div>
+</section>
+
+<!-- ÉTAPES : un bulletin avance sur le rail au fil du défilement, puis tombe dans l'urne -->
+<section class="section steps-section">
+  <div class="container">
+    <h2 class="steps-title">{{ i18n.d().voter.stepsTitle }}</h2>
+    <div class="track" #track [class.done]="done()" [style.--p]="progress()">
+      <div class="rail" aria-hidden="true"><span class="rail-fill"></span></div>
+      <span class="ballot" aria-hidden="true"></span>
+      <ol class="stations">
+        @for (s of steps(); track s.icon; let i = $index) {
+          <li class="station" [class]="'station-' + (i + 1)" [class.on]="progress() >= s.at">
+            <span class="station-icon">
+              <svg [attr.viewBox]="icons[s.icon].viewBox" aria-hidden="true" focusable="false"><path [attr.d]="icons[s.icon].d" /></svg>
+              <span class="station-num" aria-hidden="true">{{ i + 1 }}</span>
+            </span>
+            <h3>{{ s.title }}</h3>
+            <a [href]="s.url" target="_blank" rel="noopener" class="btn btn-sm">{{ s.cta }}</a>
+          </li>
+        }
+      </ol>
+      <span class="stamp" aria-hidden="true">{{ i18n.d().voter.stamp }}</span>
+    </div>
+  </div>
+</section>
+
+<!-- CALENDRIER -->
+<section class="section bg-violet">
+  <div class="container">
+    <div class="section-head center">
+      <span class="eyebrow">{{ i18n.d().voter.calEyebrow }}</span>
+      <h2>{{ i18n.d().voter.calTitle }}</h2>
+    </div>
+    <ul class="calendar">
+      @for (d of dates(); track d.color) {
+        <li class="sheet" [class]="'sheet-' + d.color">
+          <span class="sheet-rings" aria-hidden="true"></span>
+          <span class="sheet-month">{{ d.month }} {{ d.year }}</span>
+          <span class="sheet-day">{{ d.day }}</span>
+          <span class="sheet-weekday">{{ d.weekday }}</span>
+          <span class="sheet-label">{{ d.label }}</span>
+          @if (d.note) { <span class="sheet-note">{{ d.note }}</span> }
+          <span class="sheet-count">{{ d.daysLeft > 0 ? i18n.f(i18n.d().voter.inDays, { n: d.daysLeft }) : i18n.d().voter.today }}</span>
+        </li>
+      }
+    </ul>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section">
+  <div class="container container-narrow">
+    <div class="section-head">
+      <span class="eyebrow">{{ i18n.d().voter.faqEyebrow }}</span>
+      <h2>{{ i18n.d().voter.faqTitle }}</h2>
+    </div>
+    <div class="faq">
+      @for (item of i18n.d().voter.faq; track item.q) {
+        <details>
+          <summary>{{ item.q }}</summary>
+          <p>{{ item.a }}</p>
+        </details>
+      }
+    </div>
+    <p class="sources muted">
+      {{ i18n.d().voter.sources }}
+      <a [href]="l.diplomatieElections" target="_blank" rel="noopener">{{ i18n.d().voter.sourceDiplo }}</a> ·
+      <a [href]="l.servicePublicElections" target="_blank" rel="noopener">{{ i18n.d().voter.sourceSP }}</a>
+    </p>
+  </div>
+</section>
+
+<!-- AIDE -->
+<section class="section bg-lavande">
+  <div class="container help-grid">
+    <div>
+      <span class="eyebrow">{{ i18n.d().voter.helpEyebrow }}</span>
+      <h2>{{ i18n.d().voter.helpTitle }}</h2>
+      <p class="lead">{{ i18n.d().voter.helpLead }}</p>
+      <app-photo class="help-photo" name="standLfi" sizes="(max-width: 900px) 100vw, 460px" position="60% 50%" />
+    </div>
+    <div class="card">
+      <app-supporter-form [helpPreset]="true" [submitLabel]="i18n.d().voter.helpSubmit" />
+    </div>
+  </div>
+</section>

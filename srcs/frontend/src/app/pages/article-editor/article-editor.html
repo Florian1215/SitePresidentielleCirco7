@@ -1,0 +1,81 @@
+<section class="section-sm">
+  <div class="container">
+    <a routerLink="/blog" class="back">← Retour aux actualités</a>
+    <h1 class="h2">{{ slug() ? "Modifier l'article" : 'Écrire un article' }}</h1>
+
+    @if (loadError()) {
+      <div class="alert alert-err">{{ loadError() }}</div>
+    } @else {
+      @if (!auth.canPublish()) {
+        <div class="alert alert-info info">
+          Vous pouvez rédiger et enregistrer vos articles en brouillon. Un·e éditeur·ice les relira et les publiera.
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="save()" class="editor" novalidate>
+        <div class="main stack">
+          <div class="field">
+            <label for="ed-title">Titre *</label>
+            <input id="ed-title" type="text" formControlName="title" class="title-input" />
+          </div>
+          <div class="field">
+            <label for="ed-excerpt">Chapô <span class="hint">(résumé affiché dans la liste, 400 caractères max.)</span></label>
+            <textarea id="ed-excerpt" rows="2" formControlName="excerpt" class="excerpt"></textarea>
+          </div>
+
+          <div class="field">
+            <span class="label" id="ed-content-label">Contenu *</span>
+            <app-rich-editor formControlName="content" aria-labelledby="ed-content-label" />
+            <p class="hint">
+              Intertitres, gras, italique, alignement, listes, citations, liens, images (bouton ou glisser-déposer)
+              et vidéos YouTube, Vimeo ou PeerTube.
+            </p>
+          </div>
+        </div>
+
+        <aside class="side stack">
+          <div class="card-flat stack">
+            <div class="field">
+              <label for="ed-status">Statut</label>
+              <select id="ed-status" formControlName="status">
+                <option value="draft">Brouillon</option>
+                <option value="published" [disabled]="!canPublish()">Publié</option>
+              </select>
+            </div>
+            @if (error()) { <div class="alert alert-err" role="alert">{{ error() }}</div> }
+            <button type="submit" class="btn" [disabled]="saving()">{{ saving() ? 'Enregistrement…' : 'Enregistrer' }}</button>
+            @if (auth.canPublish() && form.value.status !== 'published') {
+              <button type="button" class="btn btn-rouge" [disabled]="saving()" (click)="save('published')">Publier maintenant</button>
+            }
+          </div>
+
+          <div class="card-flat stack">
+            <div class="field">
+              <label for="ed-cat">Catégorie</label>
+              <select id="ed-cat" formControlName="category">
+                <option [ngValue]="null">— Aucune —</option>
+                @for (c of categories(); track c.id) {
+                  <option [ngValue]="c.id">{{ c.name }}</option>
+                }
+              </select>
+              @if (!categories().length) {
+                <span class="hint">Les catégories se créent dans l'administration Django.</span>
+              }
+            </div>
+          </div>
+
+          <div class="card-flat stack">
+            <div class="field">
+              <label for="ed-cover">Image de couverture</label>
+              @if (coverPreview() || currentCover(); as src) {
+                <img [src]="src" alt="Aperçu de l'image de couverture" class="cover-preview" />
+                <button type="button" class="btn-link" (click)="clearCover()">Retirer l'image</button>
+              }
+              <input id="ed-cover" type="file" accept="image/*" (change)="onCover($event)" />
+            </div>
+          </div>
+        </aside>
+      </form>
+    }
+  </div>
+</section>

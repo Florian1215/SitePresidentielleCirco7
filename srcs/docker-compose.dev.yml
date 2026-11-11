@@ -1,0 +1,59 @@
+# Environnement de DÉVELOPPEMENT : rechargement à chaud du frontend et du backend.
+#   Frontend (ng serve) : http://localhost:4200
+#   Backend  (runserver): http://localhost:8001  (API et /admin aussi accessibles via :4200)
+#   Ports modifiables dans srcs/.env (DEV_FRONTEND_PORT, DEV_BACKEND_PORT, DEV_DB_PORT)
+name: presidentielle-dev
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${DEV_DB_PORT:-5433}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      target: dev
+    env_file: .env
+    environment:
+      POSTGRES_HOST: db
+      DJANGO_DEBUG: "1"
+      DJANGO_ALLOWED_HOSTS: "*"
+      DJANGO_CSRF_TRUSTED_ORIGINS: "http://localhost:${DEV_FRONTEND_PORT:-4200},http://127.0.0.1:${DEV_FRONTEND_PORT:-4200},http://localhost:${DEV_BACKEND_PORT:-8001}"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${DEV_BACKEND_PORT:-8001}:8000"
+    volumes:
+      - ./backend:/app
+      - media_data:/app/media
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    depends_on:
+      - backend
+    ports:
+      - "${DEV_FRONTEND_PORT:-4200}:4200"
+    volumes:
+      - ./frontend:/app
+      # node_modules reste celui de l'image (binaires Linux), pas celui de la machine hôte
+      - /app/node_modules
+      - /app/.angular
+
+volumes:
+  db_data:
+  media_data:

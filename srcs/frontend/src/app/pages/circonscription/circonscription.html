@@ -1,0 +1,157 @@
+<!-- HERO -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow">{{ i18n.d().common.circo }}</span>
+      @let t = i18n.d().circo;
+      <h1>{{ i18n.f(t.titleA, { n: countries.length }) }}<br /><span class="hl">{{ t.titleHl }}</span></h1>
+      <p class="lead">{{ i18n.f(t.lead, { n: i18n.number(total) }) }}</p>
+      <ul class="stats">
+        <li><strong>{{ countries.length }}</strong><span>{{ t.countries }}</span></li>
+        <li><strong>{{ i18n.number(total) }}</strong><span>{{ t.registered }}</span></li>
+        @if (groups().length) {
+          <li><strong>{{ groups().length }}</strong><span>{{ t.groups }}</span></li>
+        }
+      </ul>
+    </div>
+    <app-photo class="hero-photo" name="manifBerlin" sizes="(max-width: 900px) 100vw, 480px" [caption]="i18n.d().circo.photoCaption" position="60% 50%" [eager]="true" />
+  </div>
+</section>
+
+<!-- CARTE -->
+<section class="section map-section" id="carte">
+  <div class="container">
+    <div class="section-head map-head">
+      <span class="eyebrow">{{ i18n.d().circo.mapEyebrow }}</span>
+      <h2>{{ i18n.d().circo.mapTitle }}</h2>
+    </div>
+
+  </div>
+
+  <!-- Carte en pleine largeur, avec le panneau des groupes posé dessus -->
+  <div class="map-stage">
+      <div class="map-card">
+        <svg
+          #mapSvg
+          class="map"
+          [class.zoomed]="zoom() > 1"
+          [attr.viewBox]="viewBox()"
+          role="img"
+          aria-labelledby="map-title"
+          (wheel)="onWheel($event)"
+          (dblclick)="onDblClick($event)"
+          (pointerdown)="onPointerDown($event)"
+          (pointermove)="onPointerMove($event)"
+          (pointerup)="onPointerUp($event)"
+          (pointercancel)="onPointerUp($event)"
+          (pointerleave)="onPointerUp($event)"
+          (click)="onClick($event)"
+        >
+          <title id="map-title">{{ i18n.f(i18n.d().circo.mapAria, { n: countries.length }) }}</title>
+          @for (country of mapCountries; track $index) {
+            @if (country.code; as code) {
+              <path
+                class="country in-circo"
+                [class.hovered]="hoveredCountry() === code"
+                [attr.d]="country.d"
+                (mouseenter)="hoveredCountry.set(code)"
+                (mouseleave)="leaveCountry(code)"
+              ><title>{{ i18n.country(code) }}</title></path>
+            } @else {
+              <path class="country" [attr.d]="country.d" />
+            }
+          }
+          @for (pin of pins(); track pin.group.id) {
+            <a
+              class="pin"
+              [class.on]="activeId() === pin.group.id"
+              [attr.href]="pin.group.url"
+              target="_blank"
+              rel="noopener"
+              [attr.aria-label]="i18n.f(i18n.d().circo.openOnAP, { name: pin.group.name })"
+              (mouseenter)="enterPin(pin)"
+              (mouseleave)="leavePin(pin)"
+              (focus)="enterPin(pin)"
+              (blur)="leavePin(pin)"
+            >
+              <circle class="pin-halo" [attr.cx]="pin.x" [attr.cy]="pin.y" [attr.r]="haloR()" />
+              <circle class="pin-dot" [attr.cx]="pin.x" [attr.cy]="pin.y" [attr.r]="dotR()" />
+            </a>
+          }
+        </svg>
+
+        @if (active(); as pin) {
+          @if (tooltipPos(); as pos) {
+            <div class="tooltip" [class.below]="pos.top < 25" [style.left.%]="pos.left" [style.top.%]="pos.top" aria-hidden="true">
+              <strong>{{ pin.group.name }}</strong>
+              <span>{{ pin.group.city ? pin.group.city + ' · ' : '' }}{{ i18n.country(pin.group.country) }}</span>
+              <em>{{ i18n.d().circo.clickToJoin }}</em>
+            </div>
+          }
+        }
+
+        <div class="zoom-controls">
+          <button type="button" (click)="zoomBy(1.6)" [disabled]="zoom() >= 7.9" [attr.aria-label]="i18n.d().circo.zoomIn">+</button>
+          <button type="button" (click)="zoomBy(1 / 1.6)" [disabled]="zoom() <= 1" [attr.aria-label]="i18n.d().circo.zoomOut">−</button>
+          <button type="button" class="reset" (click)="resetView()" [disabled]="zoom() <= 1" [attr.aria-label]="i18n.d().circo.resetZoom" [title]="i18n.d().circo.resetZoom">⤢</button>
+        </div>
+
+        <div class="map-legend">
+          @if (hovered(); as h) {
+            <strong>{{ i18n.country(h.code) }}</strong>
+            <span>
+              @let n = countByCountry()[h.code] || 0;
+              @if (h.registered) { {{ i18n.f(i18n.d().circo.registeredN, { n: i18n.number(h.registered) }) }} · }
+              {{ i18n.f(n > 1 ? i18n.d().circo.groupMany : i18n.d().circo.groupOne, { n: n }) }}
+            </span>
+          } @else {
+            <span class="legend-item"><i class="swatch"></i>{{ i18n.d().circo.legendCirco }}</span>
+            <span class="legend-item"><i class="dot"></i>{{ i18n.d().circo.legendGroup }}</span>
+          }
+        </div>
+      </div>
+
+      <aside class="group-list" [attr.aria-label]="i18n.d().circo.listAria" #panel>
+        @for (entry of groupsByCountry(); track entry.country.code) {
+          @let open = expanded().has(entry.country.code);
+          <div class="group-country" [class.open]="open">
+            <h3>
+              <button
+                type="button"
+                class="country-toggle"
+                [attr.aria-expanded]="open"
+                [attr.aria-controls]="'groupes-' + entry.country.code"
+                (click)="toggleCountry(entry.country.code)"
+                (mouseenter)="hoveredCountry.set(entry.country.code)"
+                (mouseleave)="hoveredCountry.set(null)"
+              >
+                <span class="country-name">{{ i18n.country(entry.country.code) }}</span>
+                <span class="country-count">{{ entry.groups.length }}</span>
+                <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+              </button>
+            </h3>
+            <ul [id]="'groupes-' + entry.country.code" [hidden]="!open">
+              @for (g of entry.groups; track g.id) {
+                <li>
+                  <a
+                    [href]="g.url"
+                    target="_blank"
+                    rel="noopener"
+                    [class.on]="activeId() === g.id"
+                    (mouseenter)="activeId.set(g.id); hoveredCountry.set(g.country)"
+                    (mouseleave)="activeId.set(null); hoveredCountry.set(null)"
+                  >{{ g.name }}</a>
+                </li>
+              }
+            </ul>
+          </div>
+        } @empty {
+          <p class="muted">{{ i18n.d().circo.listUnavailable }}</p>
+        }
+        <div class="create">
+          <p><strong>{{ i18n.d().circo.noGroupQ }}</strong> {{ i18n.d().circo.noGroupText }}</p>
+          <a [href]="c.links.actionPopulaire" target="_blank" rel="noopener" class="btn btn-rouge btn-sm">{{ i18n.d().circo.createGroup }}</a>
+        </div>
+      </aside>
+  </div>
+</section>

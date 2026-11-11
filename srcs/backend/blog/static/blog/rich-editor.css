@@ -1,0 +1,46 @@
+/* Éditeur visuel des articles dans l'admin Django */
+.rich-editor {
+  flex: 1;
+  max-width: 900px;
+  background: #fff;
+  color: #212320;
+  border-radius: 6px;
+}
+.rich-editor .ql-toolbar.ql-snow {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f6f2ff;
+  border-color: #c9b6ef;
+  border-radius: 6px 6px 0 0;
+}
+.rich-editor .ql-container.ql-snow {
+  border-color: #c9b6ef;
+  border-radius: 0 0 6px 6px;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 17px;
+}
+.rich-editor .ql-editor {
+  min-height: 420px;
+  line-height: 1.65;
+}
+.rich-editor .ql-editor h2 { font-size: 1.6em; margin: 1em 0 0.4em; }
+.rich-editor .ql-editor h3 { font-size: 1.3em; margin: 1em 0 0.4em; }
+.rich-editor .ql-editor h4 { font-size: 1.1em; margin: 1em 0 0.4em; }
+.rich-editor .ql-editor p { margin: 0 0 0.8em; }
+.rich-editor .ql-editor img { max-width: 100%; height: auto; border-radius: 6px; }
+.rich-editor .ql-editor blockquote {
+  border-left: 5px solid #d1271c;
+  padding-left: 16px;
+  font-weight: 500;
+}
+.rich-editor .ql-editor .ql-video { width: 100%; aspect-ratio: 16 / 9; height: auto; }
+.rich-editor-status { margin: 6px 0 0; font-size: 13px; color: #4c0297; }
+.rich-editor-status.error { color: #a91e15; font-weight: 600; }
+
+/* Thème sombre de l'admin : l'éditeur reste clair, comme le rendu final */
+@media (prefers-color-scheme: dark) {
+  .rich-editor .ql-snow .ql-stroke { stroke: #444; }
+  .rich-editor .ql-snow .ql-fill { fill: #444; }
+  .rich-editor .ql-snow .ql-picker { color: #444; }
+}
