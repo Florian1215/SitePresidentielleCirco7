@@ -13,6 +13,14 @@ CMD ["npx", "ng", "serve", "--host", "0.0.0.0", "--port", "4200", "--poll", "100
 
 # ---------- Build ----------
 FROM deps AS build
+# Limite la mémoire du build pour les petits serveurs (2 Go de RAM) :
+#   - NODE_OPTIONS : plafond du tas V8 de Node (Mo)
+#   - NG_BUILD_MAX_WORKERS : nombre de workers parallèles d'Angular
+#   - GOMEMLIMIT / GOMAXPROCS : esbuild est écrit en Go, on le bride aussi
+ENV NODE_OPTIONS=--max-old-space-size=768 \
+    NG_BUILD_MAX_WORKERS=1 \
+    GOMEMLIMIT=384MiB \
+    GOMAXPROCS=2
 COPY . .
 RUN npx ng build --configuration production
 

@@ -5,8 +5,11 @@ import { fr } from '../i18n/fr';
 import type { Dict } from '../i18n/fr';
 
 /**
- * Langues du site. Par défaut : la première langue du navigateur parmi celles-ci (sinon le français) ;
- * le choix fait dans le menu des langues est ensuite mémorisé dans le navigateur.
+ * Langues du site, par ordre de priorité :
+ *   1. le paramètre d'URL ?lang=fr|en|de (ou ?lan=…), pratique pour partager un lien dans une langue ;
+ *   2. le choix fait dans le menu des langues (mémorisé dans le navigateur) ;
+ *   3. la première langue du navigateur parmi celles-ci (sinon le français).
+ * Une langue passée dans l'URL est mémorisée, puis le paramètre est retiré de l'adresse.
  *
  * Usage dans un composant :
  *   protected i18n = inject(I18n);
@@ -25,11 +28,36 @@ export const LANGS: { code: Lang; label: string; short: string }[] = [
 const DICTS: Record<Lang, Dict> = { fr, en, de };
 const LOCALES: Record<Lang, string> = { fr: 'fr-FR', en: 'en-GB', de: 'de-DE' };
 const STORAGE_KEY = 'lang';
+const URL_PARAMS = ['lang', 'lan'];
+
+function isLang(v: string | null | undefined): v is Lang {
+  return v === 'fr' || v === 'en' || v === 'de';
+}
+
+/** Retire ?lang=… / ?lan=… de la barre d'adresse une fois la langue prise en compte (sans recharger). */
+function removeUrlLang() {
+  if (typeof location === 'undefined' || typeof history === 'undefined') return;
+  const url = new URL(location.href);
+  if (!URL_PARAMS.some((n) => url.searchParams.has(n))) return;
+  URL_PARAMS.forEach((n) => url.searchParams.delete(n));
+  history.replaceState(history.state, '', url.href);
+}
+
+/** Langue demandée dans l'URL (?lang=en ou ?lan=en), s'il y en a une valide. */
+function urlLang(): Lang | null {
+  if (typeof location === 'undefined') return null;
+  const params = new URLSearchParams(location.search);
+  for (const name of URL_PARAMS) {
+    const v = params.get(name)?.trim().slice(0, 2).toLowerCase();
+    if (isLang(v)) return v;
+  }
+  return null;
+}
 
 function storedLang(): Lang | null {
   try {
     const v = localStorage.getItem(STORAGE_KEY);
-    return v === 'fr' || v === 'en' || v === 'de' ? v : null;
+    return isLang(v) ? v : null;
   } catch {
     return null;
   }
@@ -56,6 +84,9 @@ export class I18n {
   private regions = computed(() => new Intl.DisplayNames([this.locale()], { type: 'region' }));
 
   constructor() {
+    const fromUrl = urlLang();
+    if (fromUrl) this.set(fromUrl);
+    removeUrlLang();
     // Attribut lang de la page (lecteurs d'écran, césure, traduction automatique)
     effect(() => {
       if (typeof document !== 'undefined') document.documentElement.lang = this.lang();

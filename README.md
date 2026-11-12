@@ -57,6 +57,21 @@ Vous pouvez aussi attribuer les permissions une par une (`blog | article | …`)
 
 Pour qu'un compte accède aussi à l'admin Django, cochez « Statut équipe ».
 
+## Langues (français, anglais, allemand)
+
+Le site public est disponible en trois langues. Par défaut, il prend la langue du navigateur (sinon le
+français) ; le bouton des langues, en haut à droite, permet d'en changer (choix mémorisé dans le navigateur).
+On peut aussi forcer la langue par l'URL, par ex. pour partager un lien : `?lang=en` (ou `?lan=en`),
+valeurs `fr`, `en`, `de` ; le paramètre est ensuite retiré de l'adresse et le choix mémorisé.
+
+- Textes de l'interface : `srcs/frontend/src/app/i18n/fr.ts` (référence), `en.ts`, `de.ts` — mêmes clés,
+  vérifiées à la compilation.
+- Programme : `src/app/data/programme.data.ts` (référence), `programme.en.ts`, `programme.de.ts`
+  (mêmes mesures, dans le même ordre ; à défaut, le texte français s'affiche).
+- Noms de pays, dates et nombres : traduits automatiquement par le navigateur.
+- Restent en français : articles, événements Zetkin et noms des groupes (saisis par l'équipe),
+  espace rédaction et admin Django.
+
 ## Écrire un article
 
 Les articles s'écrivent avec un éditeur visuel (Quill), le même dans l'admin Django et dans l'espace

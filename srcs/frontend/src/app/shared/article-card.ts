@@ -1,5 +1,5 @@
-import { Component, input } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { Component, inject, input } from '@angular/core';
+import { I18n } from '../core/i18n';
 import { RouterLink } from '@angular/router';
 import { Article } from '../core/models';
 import { PhotoName, photoSrc } from './photo';
@@ -12,7 +12,7 @@ const FALLBACKS: PhotoName[] = [
 
 @Component({
   selector: 'app-article-card',
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink],
   template: `
     @let a = article();
     <a class="acard" [routerLink]="['/blog', a.slug]">
@@ -21,13 +21,13 @@ const FALLBACKS: PhotoName[] = [
       </div>
       <div class="acard-body">
         <div class="acard-meta">
-          @if (a.status === 'draft') { <span class="badge badge-draft">Brouillon</span> }
+          @if (a.status === 'draft') { <span class="badge badge-draft">{{ i18n.d().article.draft }}</span> }
           @if (a.category_detail) { <span class="badge">{{ a.category_detail.name }}</span> }
-          <span class="date">{{ (a.published_at || a.created_at) | date: 'd MMMM y' }}</span>
+          <span class="date">{{ i18n.date(a.published_at || a.created_at) }}</span>
         </div>
         <h3>{{ a.title }}</h3>
         @if (a.excerpt) { <p class="muted">{{ a.excerpt }}</p> }
-        <span class="more">Lire la suite →</span>
+        <span class="more">{{ i18n.d().article.readMore }}</span>
       </div>
     </a>
   `,
@@ -46,6 +46,7 @@ const FALLBACKS: PhotoName[] = [
 })
 export class ArticleCard {
   readonly article = input.required<Article>();
+  protected i18n = inject(I18n);
 
   protected fallback(id: number) {
     return photoSrc(FALLBACKS[Math.abs(id) % FALLBACKS.length], 800);

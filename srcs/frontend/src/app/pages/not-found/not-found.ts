@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { I18n } from '../../core/i18n';
 import { RouterLink } from '@angular/router';
 
 @Component({
@@ -7,12 +8,14 @@ import { RouterLink } from '@angular/router';
   template: `
     <section class="section">
       <div class="container container-narrow">
-        <span class="sticker">Erreur 404</span>
-        <h1>Cette page s'est perdue en route</h1>
-        <p class="lead">La page demandée n'existe pas ou a été déplacée.</p>
-        <a routerLink="/" class="btn">Retour à l'accueil</a>
+        <span class="sticker">{{ i18n.d().notFound.badge }}</span>
+        <h1>{{ i18n.d().notFound.title }}</h1>
+        <p class="lead">{{ i18n.d().notFound.lead }}</p>
+        <a routerLink="/" class="btn">{{ i18n.d().notFound.back }}</a>
       </div>
     </section>
   `,
 })
-export class NotFound {}
+export class NotFound {
+  protected i18n = inject(I18n);
+}

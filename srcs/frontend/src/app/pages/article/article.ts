@@ -1,13 +1,13 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { DomSanitizer, Title } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService, apiErrorMessage } from '../../core/api.service';
 import { Article } from '../../core/models';
+import { I18n } from '../../core/i18n';
 
 @Component({
   selector: 'app-article',
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink],
   template: `
     @if (article(); as a) {
       <article>
@@ -18,7 +18,7 @@ import { Article } from '../../core/models';
             </div>
           }
           <div class="container container-narrow art-head">
-            <a routerLink="/blog" class="back">← Toutes les actualités</a>
+            <a routerLink="/blog" class="back">{{ i18n.d().article.back }}</a>
             <div class="meta">
               @if (a.status === 'draft') { <span class="badge badge-draft">Brouillon — non publié</span> }
               @if (a.category_detail) {
@@ -28,8 +28,8 @@ import { Article } from '../../core/models';
             <h1 class="art-title">{{ a.title }}</h1>
             @if (a.excerpt) { <p class="lead">{{ a.excerpt }}</p> }
             <p class="muted byline">
-              Par <strong>{{ a.author_name }}</strong>
-              @if (a.published_at) { · {{ a.published_at | date: 'd MMMM y' }} }
+              {{ i18n.d().article.by }} <strong>{{ a.author_name }}</strong>
+              @if (a.published_at) { · {{ i18n.date(a.published_at) }} }
             </p>
             @if (a.can_edit || a.can_delete) {
               <div class="btn-row">
@@ -57,13 +57,13 @@ import { Article } from '../../core/models';
     } @else if (notFound()) {
       <section class="section">
         <div class="container container-narrow">
-          <h1 class="h2">Article introuvable</h1>
-          <p>Cet article n'existe pas ou n'est pas encore publié.</p>
-          <a routerLink="/blog" class="btn">Retour aux actualités</a>
+          <h1 class="h2">{{ i18n.d().article.notFoundTitle }}</h1>
+          <p>{{ i18n.d().article.notFoundText }}</p>
+          <a routerLink="/blog" class="btn">{{ i18n.d().article.backToNews }}</a>
         </div>
       </section>
     } @else {
-      <p class="loader">Chargement…</p>
+      <p class="loader">{{ i18n.d().article.loading }}</p>
     }
   `,
   styles: `
@@ -123,6 +123,7 @@ export class ArticlePage {
   private api = inject(ApiService);
   private router = inject(Router);
   private title = inject(Title);
+  protected i18n = inject(I18n);
 
   protected article = signal<Article | null>(null);
   protected notFound = signal(false);
@@ -141,7 +142,7 @@ export class ArticlePage {
       const sub = this.api.article(slug).subscribe({
         next: (a) => {
           this.article.set(a);
-          this.title.setTitle(`${a.title} — LFI 7e circonscription`);
+          this.title.setTitle(`${a.title} — ${this.i18n.d().titles.suffix}`);
         },
         error: () => this.notFound.set(true),
       });

@@ -1,11 +1,11 @@
-import { Component, ElementRef, computed, input, viewChild } from '@angular/core';
+import { Component, ElementRef, computed, inject, input, viewChild } from '@angular/core';
 import { CampaignEvent } from '../core/models';
 import { downloadIcs, googleCalendarUrl, outlookCalendarUrl } from './calendar-links';
+import { I18n } from '../core/i18n';
 
 const CAL_ICON =
   'M96 32l0 32L48 64C21.5 64 0 85.5 0 112l0 48 448 0 0-48c0-26.5-21.5-48-48-48l-48 0 0-32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 32L160 64l0-32c0-17.7-14.3-32-32-32S96 14.3 96 32zM448 192L0 192 0 464c0 26.5 21.5 48 48 48l352 0c26.5 0 48-21.5 48-48l0-272zM224 248c13.3 0 24 10.7 24 24l0 56 56 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-56 0 0 56c0 13.3-10.7 24-24 24s-24-10.7-24-24l0-56-56 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l56 0 0-56c0-13.3 10.7-24 24-24z';
 
-const fmt = (d: Date, o: Intl.DateTimeFormatOptions) => d.toLocaleString('fr-FR', o);
 
 /** Carte d'un événement de l'agenda (calendrier Zetkin). */
 @Component({
@@ -36,17 +36,17 @@ const fmt = (d: Date, o: Intl.DateTimeFormatOptions) => d.toLocaleString('fr-FR'
 
         <div class="ev-actions">
           <a [href]="e.url" target="_blank" rel="noopener" class="btn btn-rouge btn-sm">
-            Je participe<span class="visually-hidden"> : {{ e.title }}</span>
+            {{ i18n.d().event.join }}<span class="visually-hidden"> : {{ e.title }}</span>
           </a>
           <details class="add-cal" #menu>
-            <summary class="btn btn-outline btn-sm" title="Ajouter à mon agenda">
+            <summary class="btn btn-outline btn-sm" [title]="i18n.d().event.addToCalendar" [attr.aria-label]="i18n.d().event.addToCalendar">
               <svg viewBox="0 0 448 512" aria-hidden="true"><path [attr.d]="calIcon" /></svg>
-              <span class="visually-hidden">Ajouter à mon </span>Agenda
+              {{ i18n.d().event.calendar }}
             </summary>
             <ul class="add-cal-menu" (click)="menu.open = false">
               <li><a [href]="google()" target="_blank" rel="noopener">Google Agenda</a></li>
               <li><a [href]="outlook()" target="_blank" rel="noopener">Outlook</a></li>
-              <li><button type="button" (click)="ics()">Apple, Proton, autre (.ics)</button></li>
+              <li><button type="button" (click)="ics()">{{ i18n.d().event.icsOption }}</button></li>
             </ul>
           </details>
         </div>
@@ -131,23 +131,29 @@ const fmt = (d: Date, o: Intl.DateTimeFormatOptions) => d.toLocaleString('fr-FR'
 })
 export class EventCard {
   readonly event = input.required<CampaignEvent>();
+  protected i18n = inject(I18n);
+  private fmt = (d: Date, o: Intl.DateTimeFormatOptions) => d.toLocaleString(this.i18n.locale(), o);
 
   // Les heures Zetkin sont « flottantes » (heure locale du lieu) : on les lit sans conversion de fuseau.
   private start = computed(() => new Date(this.event().start));
   private end = computed(() => new Date(this.event().end));
 
   protected day = computed(() => this.start().getDate());
-  protected month = computed(() => fmt(this.start(), { month: 'short' }).replace('.', ''));
+  protected month = computed(() => this.fmt(this.start(), { month: 'short' }).replace('.', ''));
   /** « Samedi 14 novembre » (majuscule au jour seulement). */
   protected longDate = computed(() => {
-    const d = fmt(this.start(), { weekday: 'long', day: 'numeric', month: 'long' });
+    const d = this.fmt(this.start(), { weekday: 'long', day: 'numeric', month: 'long' });
     return d.charAt(0).toUpperCase() + d.slice(1);
   });
-  protected weekday = computed(() => fmt(this.start(), { weekday: 'short' }).replace('.', ''));
+  protected weekday = computed(() => this.fmt(this.start(), { weekday: 'short' }).replace('.', ''));
   protected when = computed(() => {
-    const t = (d: Date) => fmt(d, { hour: '2-digit', minute: '2-digit' }).replace(':', 'h');
+    // 15h00 en français, 15:00 en anglais et en allemand
+    const t = (d: Date) => {
+      const s = this.fmt(d, { hour: '2-digit', minute: '2-digit', hour12: false });
+      return this.i18n.lang() === 'fr' ? s.replace(':', 'h') : s;
+    };
     const sameDay = this.start().toDateString() === this.end().toDateString();
-    return sameDay ? `${t(this.start())} – ${t(this.end())}` : `${t(this.start())} → ${fmt(this.end(), { day: 'numeric', month: 'long' })}`;
+    return sameDay ? `${t(this.start())} – ${t(this.end())}` : `${t(this.start())} → ${this.fmt(this.end(), { day: 'numeric', month: 'long' })}`;
   });
   private menu = viewChild<ElementRef<HTMLDetailsElement>>('menu');
 
@@ -157,10 +163,10 @@ export class EventCard {
     if (el?.open && !el.contains(event.target as Node)) el.open = false;
   }
 
-  protected google = computed(() => googleCalendarUrl(this.event()));
-  protected outlook = computed(() => outlookCalendarUrl(this.event()));
+  protected google = computed(() => googleCalendarUrl(this.event(), this.i18n.d().event.signup));
+  protected outlook = computed(() => outlookCalendarUrl(this.event(), this.i18n.d().event.signup));
   protected ics() {
-    downloadIcs(this.event());
+    downloadIcs(this.event(), this.i18n.d().event.signup);
   }
   /** Pictogramme calendrier (Font Awesome Free, solid « calendar-plus », CC BY 4.0). */
   protected calIcon = CAL_ICON;

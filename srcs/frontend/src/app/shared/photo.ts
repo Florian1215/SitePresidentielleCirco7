@@ -1,4 +1,5 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
+import { I18n } from '../core/i18n';
 
 /**
  * Photos de campagne en WebP dans public/img/web : <fichier>-800.webp et <fichier>-1600.webp.
@@ -84,5 +85,7 @@ export class Photo {
     const [small, large] = p.widths ?? [800, 1600];
     return `${photoSrc(this.name(), 800)} ${small}w, ${photoSrc(this.name(), 1600)} ${large}w`;
   });
-  protected alt = computed(() => this.altText() ?? PHOTOS[this.name()].alt);
+  private i18n = inject(I18n);
+  /** Texte alternatif dans la langue du site (i18n `photos`), le français de PHOTOS en secours. */
+  protected alt = computed(() => this.altText() ?? (this.i18n.d().photos as Record<string, string>)[this.name()] ?? PHOTOS[this.name()].alt);
 }

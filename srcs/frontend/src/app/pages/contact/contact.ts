@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { I18n } from '../../core/i18n';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { Photo } from '../../shared/photo';
@@ -13,9 +14,10 @@ import { CAMPAIGN, COUNTRIES } from '../../core/campaign.config';
   template: `
     <section class="page-hero">
       <div class="container">
-        <span class="eyebrow">Contact</span>
-        <h1>Écrivez-nous</h1>
-        <p class="lead">Une question sur le programme, sur votre inscription électorale, envie d'agir avec nous ? L'équipe de la 7<sup>e</sup> circonscription vous répond.</p>
+        @let t = i18n.d().contact;
+        <span class="eyebrow">{{ t.eyebrow }}</span>
+        <h1>{{ t.title }}</h1>
+        <p class="lead">{{ t.lead }}</p>
       </div>
     </section>
 
@@ -23,37 +25,37 @@ import { CAMPAIGN, COUNTRIES } from '../../core/campaign.config';
       <div class="container contact-grid">
         <div class="card">
           @if (sent()) {
-            <div class="alert alert-ok" role="status">Merci, votre message a bien été envoyé. Nous vous répondrons rapidement.</div>
+            <div class="alert alert-ok" role="status">{{ i18n.d().contact.sent }}</div>
           } @else {
             <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="form-grid">
               <div class="field">
-                <label for="ct-name">Nom *</label>
+                <label for="ct-name">{{ i18n.d().contact.name }}</label>
                 <input id="ct-name" type="text" formControlName="name" autocomplete="name" />
               </div>
               <div class="field">
-                <label for="ct-email">E-mail *</label>
+                <label for="ct-email">{{ i18n.d().contact.email }}</label>
                 <input id="ct-email" type="email" formControlName="email" autocomplete="email" />
               </div>
               <div class="field">
-                <label for="ct-country">Pays</label>
+                <label for="ct-country">{{ i18n.d().contact.country }}</label>
                 <select id="ct-country" formControlName="country">
                   <option value="">—</option>
-                  @for (p of countries; track p.code) { <option [value]="p.code">{{ p.name }}</option> }
-                  <option value="XX">Autre pays</option>
+                  @for (p of countries(); track p.code) { <option [value]="p.code">{{ p.name }}</option> }
+                  <option value="XX">{{ i18n.d().common.otherCountry }}</option>
                 </select>
               </div>
               <div class="field">
-                <label for="ct-subject">Objet *</label>
+                <label for="ct-subject">{{ i18n.d().contact.subject }}</label>
                 <input id="ct-subject" type="text" formControlName="subject" />
               </div>
               <div class="field full">
-                <label for="ct-message">Message *</label>
+                <label for="ct-message">{{ i18n.d().contact.message }}</label>
                 <textarea id="ct-message" rows="7" formControlName="message"></textarea>
               </div>
-              <p class="full hint muted">Vos données ne servent qu'à vous répondre. <a routerLink="/mentions-legales">En savoir plus</a>.</p>
+              <p class="full hint muted">{{ i18n.d().contact.privacy }} <a routerLink="/mentions-legales">{{ i18n.d().contact.more }}</a>.</p>
               @if (error()) { <div class="full alert alert-err" role="alert">{{ error() }}</div> }
               <div class="full">
-                <button class="btn btn-rouge" type="submit" [disabled]="sending()">{{ sending() ? 'Envoi…' : 'Envoyer' }}</button>
+                <button class="btn btn-rouge" type="submit" [disabled]="sending()">{{ sending() ? i18n.d().common.sending : i18n.d().common.send }}</button>
               </div>
             </form>
           }
@@ -62,12 +64,12 @@ import { CAMPAIGN, COUNTRIES } from '../../core/campaign.config';
         <aside class="stack">
           <app-photo class="contact-photo" name="equipeBerlin" sizes="(max-width: 900px) 100vw, 400px" position="55% 30%" />
           <div class="card-flat">
-            <h3>Par e-mail</h3>
+            <h3>{{ i18n.d().contact.byEmail }}</h3>
             <p><a [href]="'mailto:' + c.contactEmail">{{ c.contactEmail }}</a></p>
           </div>
           @if (socials().length) {
             <div class="card-flat">
-              <h3>Suivez-nous</h3>
+              <h3>{{ i18n.d().contact.follow }}</h3>
               <div class="btn-row">
                 @for (s of socials(); track s.id) {
                   <a [href]="s.url" target="_blank" rel="noopener" class="btn btn-outline btn-sm">{{ s.label }}</a>
@@ -90,7 +92,11 @@ import { CAMPAIGN, COUNTRIES } from '../../core/campaign.config';
 export class Contact {
   private api = inject(ApiService);
   protected c = CAMPAIGN;
-  protected countries = COUNTRIES;
+  protected i18n = inject(I18n);
+  /** Pays de la circonscription, nommés et triés dans la langue du site. */
+  protected countries = computed(() =>
+    COUNTRIES.map((c) => ({ code: c.code, name: this.i18n.country(c.code) })).sort((a, b) => this.i18n.compare(a.name, b.name)),
+  );
   protected socials = toSignal(this.api.footerLinks().pipe(map((l) => l.socials)), { initialValue: [] });
   protected sending = signal(false);
   protected sent = signal(false);
@@ -108,7 +114,7 @@ export class Contact {
     this.error.set('');
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.error.set('Merci de remplir tous les champs obligatoires (*) — le message doit faire au moins 10 caractères.');
+      this.error.set(this.i18n.d().contact.errorRequired);
       return;
     }
     this.sending.set(true);
@@ -118,7 +124,7 @@ export class Contact {
         this.sending.set(false);
       },
       error: (err) => {
-        this.error.set(apiErrorMessage(err));
+        this.error.set(apiErrorMessage(err, this.i18n.d().errors));
         this.sending.set(false);
       },
     });

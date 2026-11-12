@@ -9,29 +9,30 @@ import { CampaignEvent } from '../core/models';
 /** 2026-11-14T15:00:00 → 20261114T150000 */
 const compact = (iso: string) => iso.replace(/[-:]/g, '').slice(0, 15);
 
-function details(e: CampaignEvent) {
-  return [e.description, `Inscription : ${e.url}`].filter(Boolean).join('\n\n');
+/** `signup` : libellé du lien d'inscription, dans la langue du site. */
+function details(e: CampaignEvent, signup: string) {
+  return [e.description, `${signup} ${e.url}`].filter(Boolean).join('\n\n');
 }
 
-export function googleCalendarUrl(e: CampaignEvent) {
+export function googleCalendarUrl(e: CampaignEvent, signup = 'Inscription :') {
   const params = new URLSearchParams({
     action: 'TEMPLATE',
     text: e.title,
     dates: `${compact(e.start)}/${compact(e.end)}`,
-    details: details(e),
+    details: details(e, signup),
     location: e.location,
   });
   return `https://calendar.google.com/calendar/render?${params}`;
 }
 
-export function outlookCalendarUrl(e: CampaignEvent) {
+export function outlookCalendarUrl(e: CampaignEvent, signup = 'Inscription :') {
   const params = new URLSearchParams({
     path: '/calendar/action/compose',
     rru: 'addevent',
     subject: e.title,
     startdt: e.start,
     enddt: e.end,
-    body: details(e),
+    body: details(e, signup),
     location: e.location,
   });
   return `https://outlook.live.com/calendar/0/action/compose?${params}`;
@@ -49,7 +50,7 @@ function fold(line: string) {
 }
 
 /** Contenu .ics d'un seul événement (Apple Calendrier, Thunderbird, Proton…). */
-export function icsContent(e: CampaignEvent) {
+export function icsContent(e: CampaignEvent, signup = 'Inscription :') {
   const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
   const lines = [
     'BEGIN:VCALENDAR',
@@ -63,7 +64,7 @@ export function icsContent(e: CampaignEvent) {
     `DTEND:${compact(e.end)}`,
     `SUMMARY:${escapeIcs(e.title)}`,
     e.location ? `LOCATION:${escapeIcs(e.location)}` : '',
-    `DESCRIPTION:${escapeIcs(details(e))}`,
+    `DESCRIPTION:${escapeIcs(details(e, signup))}`,
     `URL:${e.url}`,
     'END:VEVENT',
     'END:VCALENDAR',
@@ -72,8 +73,8 @@ export function icsContent(e: CampaignEvent) {
 }
 
 /** Télécharge le fichier .ics de l'événement (ouvert directement par le calendrier sur mobile). */
-export function downloadIcs(e: CampaignEvent) {
-  const url = URL.createObjectURL(new Blob([icsContent(e)], { type: 'text/calendar;charset=utf-8' }));
+export function downloadIcs(e: CampaignEvent, signup = 'Inscription :') {
+  const url = URL.createObjectURL(new Blob([icsContent(e, signup)], { type: 'text/calendar;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url;
   a.download = icsFileName(e);

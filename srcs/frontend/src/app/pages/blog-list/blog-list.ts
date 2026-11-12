@@ -7,6 +7,7 @@ import { ArticleCard } from '../../shared/article-card';
 import { EventCard } from '../../shared/event-card';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Photo } from '../../shared/photo';
+import { I18n } from '../../core/i18n';
 
 @Component({
   selector: 'app-blog-list',
@@ -15,23 +16,21 @@ import { Photo } from '../../shared/photo';
     <section class="page-hero">
       <div class="container head">
         <div>
-          <span class="eyebrow">Actualités et agenda</span>
-          <h1>{{ mine() ? 'Mes articles' : 'Actualités' }}</h1>
-          <p class="lead">
-            Les prochains rendez-vous près de chez vous, les nouvelles de la campagne et nos décryptages
-            dans la 7<sup>e</sup> circonscription.
-          </p>
+          @let t = i18n.d().blog;
+          <span class="eyebrow">{{ t.eyebrow }}</span>
+          <h1>{{ mine() ? t.mine : t.title }}</h1>
+          <p class="lead">{{ t.lead }}</p>
           @if (!mine()) {
             <div class="btn-row hero-links">
-              <a routerLink="." fragment="agenda" class="btn">Voir l'agenda</a>
-              <a routerLink="." fragment="articles" class="btn btn-outline">Lire les articles</a>
+              <a routerLink="." fragment="agenda" class="btn">{{ t.seeAgenda }}</a>
+              <a routerLink="." fragment="articles" class="btn btn-outline">{{ t.readArticles }}</a>
             </div>
           }
           @if (auth.canWrite()) {
-            <a routerLink="/blog/ecrire" class="btn btn-rouge write">+ Écrire un article</a>
+            <a routerLink="/blog/ecrire" class="btn btn-rouge write">{{ t.write }}</a>
           }
         </div>
-        <app-photo class="head-photo" name="reunionPublique" sizes="(max-width: 900px) 100vw, 460px" caption="Réunion publique à Berlin" position="50% 40%" [eager]="true" />
+        <app-photo class="head-photo" name="reunionPublique" sizes="(max-width: 900px) 100vw, 460px" [caption]="i18n.d().blog.photoCaption" position="50% 40%" [eager]="true" />
       </div>
     </section>
 
@@ -41,22 +40,22 @@ import { Photo } from '../../shared/photo';
         <div class="container">
           <!-- Titre à gauche, tags des villes à droite -->
           <div class="agenda-head">
-            <h2>Les prochains rendez-vous</h2>
+            <h2>{{ i18n.d().blog.agendaTitle }}</h2>
           @if (cities().length > 1) {
-            <div class="cats city-filter" role="group" aria-label="Filtrer par ville">
-              <button type="button" class="chip" [class.on]="!city()" [attr.aria-pressed]="!city()" (click)="city.set(null)">Toutes les villes</button>
+            <div class="cats city-filter" role="group" [attr.aria-label]="i18n.d().blog.cityFilterAria">
+              <button type="button" class="chip" [class.on]="!city()" [attr.aria-pressed]="!city()" (click)="city.set(null)">{{ i18n.d().blog.allCities }}</button>
               @for (c of cities(); track c.name) {
                 <button type="button" class="chip" [class.on]="city() === c.name" [attr.aria-pressed]="city() === c.name" (click)="city.set(c.name)">
-                  {{ c.name }} <span class="chip-count">{{ c.count }}</span>
+                  {{ i18n.city(c.name) }} <span class="chip-count">{{ c.count }}</span>
                 </button>
               }
             </div>
           }
           </div>
           @if (events() === undefined) {
-            <p class="loader">Chargement de l'agenda…</p>
+            <p class="loader">{{ i18n.d().blog.loadingAgenda }}</p>
           } @else if (!events()!.length) {
-            <p class="muted">Aucun événement prévu pour le moment. Revenez bientôt !</p>
+            <p class="muted">{{ i18n.d().blog.noEvents }}</p>
           } @else {
             <ul class="events grid grid-3">
               @for (e of visibleEvents(); track e.id) {
@@ -66,7 +65,7 @@ import { Photo } from '../../shared/photo';
             @if (filteredEvents().length > eventsShown) {
               <div class="more-events">
                 <button type="button" class="btn btn-outline" (click)="allEvents.set(!allEvents())">
-                  {{ allEvents() ? 'Afficher moins' : 'Voir les ' + (filteredEvents().length - eventsShown) + ' autres rendez-vous' }}
+                  {{ allEvents() ? i18n.d().blog.showLess : i18n.f(i18n.d().blog.showMore, { n: filteredEvents().length - eventsShown }) }}
                 </button>
               </div>
             }
@@ -80,35 +79,35 @@ import { Photo } from '../../shared/photo';
       <div class="container">
         @if (!mine()) {
           <div class="section-head">
-            <span class="eyebrow">Le blog de campagne</span>
-            <h2>Les articles</h2>
+            <span class="eyebrow">{{ i18n.d().blog.blogEyebrow }}</span>
+            <h2>{{ i18n.d().blog.articlesTitle }}</h2>
           </div>
         }
         <div class="filters">
           <form class="search" (submit)="$event.preventDefault(); go({ search: searchBox.value || null, page: null })" role="search">
-            <label for="blog-search" class="visually-hidden">Rechercher</label>
-            <input #searchBox id="blog-search" type="search" placeholder="Rechercher un article…" [value]="search() ?? ''" />
-            <button class="btn btn-sm" type="submit">Rechercher</button>
+            <label for="blog-search" class="visually-hidden">{{ i18n.d().blog.search }}</label>
+            <input #searchBox id="blog-search" type="search" [placeholder]="i18n.d().blog.searchPlaceholder" [value]="search() ?? ''" />
+            <button class="btn btn-sm" type="submit">{{ i18n.d().blog.search }}</button>
           </form>
           <div class="cats">
             @if (shownCategories().length) {
-              <button type="button" class="chip" [class.on]="!selectedCategory()" [attr.aria-pressed]="!selectedCategory()" (click)="selectedCategory.set(null)">Toutes</button>
+              <button type="button" class="chip" [class.on]="!selectedCategory()" [attr.aria-pressed]="!selectedCategory()" (click)="selectedCategory.set(null)">{{ i18n.d().blog.allCategories }}</button>
               @for (c of shownCategories(); track c.id) {
                 <button type="button" class="chip" [class.on]="selectedCategory() === c.slug" [attr.aria-pressed]="selectedCategory() === c.slug" (click)="selectedCategory.set(c.slug)">{{ c.name }}</button>
               }
             }
             @if (auth.canWrite()) {
-              <button type="button" class="chip chip-alt" [class.on]="!!mine()" (click)="go({ mine: mine() ? null : 1, page: null })">Mes articles</button>
+              <button type="button" class="chip chip-alt" [class.on]="!!mine()" (click)="go({ mine: mine() ? null : 1, page: null })">{{ i18n.d().blog.mine }}</button>
             }
           </div>
         </div>
 
         @if (loading()) {
-          <p class="loader">Chargement…</p>
+          <p class="loader">{{ i18n.d().blog.loading }}</p>
         } @else if (error()) {
-          <div class="alert alert-err">Impossible de charger les articles pour le moment.</div>
+          <div class="alert alert-err">{{ i18n.d().blog.loadError }}</div>
         } @else if (!articles().length) {
-          <p class="loader">Aucun article pour l'instant.</p>
+          <p class="loader">{{ i18n.d().blog.noArticles }}</p>
         } @else {
           <div class="grid grid-3">
             @for (a of shownArticles(); track a.id) {
@@ -116,10 +115,10 @@ import { Photo } from '../../shared/photo';
             }
           </div>
           @if (pages() > 1) {
-            <nav class="pager" aria-label="Pagination">
-              <button type="button" class="btn btn-outline btn-sm" [disabled]="pageNum() <= 1" (click)="go({ page: pageNum() - 1 })">← Précédent</button>
-              <span>Page {{ pageNum() }} / {{ pages() }}</span>
-              <button type="button" class="btn btn-outline btn-sm" [disabled]="pageNum() >= pages()" (click)="go({ page: pageNum() + 1 })">Suivant →</button>
+            <nav class="pager" [attr.aria-label]="i18n.d().blog.pagination">
+              <button type="button" class="btn btn-outline btn-sm" [disabled]="pageNum() <= 1" (click)="go({ page: pageNum() - 1 })">{{ i18n.d().blog.prev }}</button>
+              <span>{{ i18n.f(i18n.d().blog.page, { n: pageNum(), total: pages() }) }}</span>
+              <button type="button" class="btn btn-outline btn-sm" [disabled]="pageNum() >= pages()" (click)="go({ page: pageNum() + 1 })">{{ i18n.d().blog.next }}</button>
             </nav>
           }
         }
@@ -168,6 +167,7 @@ export class BlogList {
   readonly mine = input<string>();
 
   protected auth = inject(AuthService);
+  protected i18n = inject(I18n);
   private api = inject(ApiService);
   private router = inject(Router);
 
@@ -184,7 +184,7 @@ export class BlogList {
     for (const e of this.events() ?? []) if (e.city) counts.set(e.city, (counts.get(e.city) ?? 0) + 1);
     return [...counts]
       .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => Number(a.name === 'En ligne') - Number(b.name === 'En ligne') || b.count - a.count || a.name.localeCompare(b.name, 'fr'));
+      .sort((a, b) => Number(a.name === 'En ligne') - Number(b.name === 'En ligne') || b.count - a.count || this.i18n.compare(a.name, b.name));
   });
   protected filteredEvents = computed(() => {
     const list = this.events() ?? [];

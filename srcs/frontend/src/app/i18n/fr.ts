@@ -245,7 +245,7 @@ export const fr = {
     addToCalendar: 'Ajouter à mon agenda',
     calendar: 'Agenda',
     icsOption: 'Apple, Proton, autre (.ics)',
-    signup: 'Inscription',
+    signup: 'Inscription :',
   },
 
   contact: {

@@ -242,7 +242,7 @@ export const de: Dict = {
     addToCalendar: 'Zu meinem Kalender hinzufügen',
     calendar: 'Kalender',
     icsOption: 'Apple, Proton, andere (.ics)',
-    signup: 'Anmeldung',
+    signup: 'Anmeldung:',
   },
 
   contact: {

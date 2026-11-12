@@ -126,3 +126,16 @@
   }
   .nav-cta { justify-content: space-between; }
 }
+
+// Petits écrans : logo, bouton des langues et bouton du menu doivent tenir sur une ligne
+@media (max-width: 520px) {
+  .header-inner { gap: 10px; }
+  .logo { gap: 8px; min-width: 0; flex: 1 1 auto; }
+  .logo-mark { width: 44px; height: 44px; }
+  .logo-text { min-width: 0; }
+  .logo-top { font-size: 18px; }
+  .logo-bottom { white-space: normal; font-size: 11px; line-height: 1.2; } // peut passer à la ligne
+  .burger { margin-left: 0; flex-shrink: 0; }
+  .lang { flex-shrink: 0; }
+}
+
