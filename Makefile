@@ -1,5 +1,5 @@
 DEV  = docker compose -f srcs/docker-compose.dev.yml --env-file srcs/.env
-PROD = docker compose -f srcs/docker-compose.prod.yml --env-file srcs/.env
+PROD = docker-compose -f srcs/docker-compose.prod.yml --env-file srcs/.env
 ENV  = srcs/.env
 
 # Les commandes utilitaires (migrate, shell, logs…) ciblent le dev par défaut :
@@ -28,8 +28,12 @@ dev-down:
 	$(DEV) down
 
 # ---------- Production ----------
+# Builds lancés l'un après l'autre (et non en parallèle) pour ne pas saturer la RAM
+# des petits serveurs : le build Angular est le plus gourmand.
 prod: $(ENV)
-	$(PROD) up -d --build
+	$(PROD) build backend
+	$(PROD) build frontend
+	$(PROD) up -d
 	@echo ">> Site  : http://localhost:$$(grep ^HTTP_PORT $(ENV) | cut -d= -f2)"
 	@echo ">> Admin : http://localhost:$$(grep ^HTTP_PORT $(ENV) | cut -d= -f2)/admin/"
 
