@@ -7,6 +7,12 @@ export const routes: Routes = [
   { path: 'programme', loadComponent: () => import('./pages/programme/programme').then((m) => m.Programme), title: 'programme' },
   { path: 'circonscription', loadComponent: () => import('./pages/circonscription/circonscription').then((m) => m.Circonscription), title: 'circonscription' },
   { path: 'inscription-listes-electorales', loadComponent: () => import('./pages/voter/voter').then((m) => m.Voter), title: 'voter' },
+  // Simulateur de l'impôt universel : pas encore lié depuis le site (ni menu, ni pied de page)
+  {
+    path: 'impot-universel',
+    loadComponent: () => import('./pages/impot-universel/impot-universel').then((m) => m.ImpotUniversel),
+    title: "Impôt universel : suis-je concerné·e ? — LFI 7e circonscription",
+  },
   { path: 'agenda', redirectTo: 'blog' },
   { path: 'blog', loadComponent: () => import('./pages/blog-list/blog-list').then((m) => m.BlogList), title: 'blog' },
   {

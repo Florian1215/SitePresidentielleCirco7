@@ -1,0 +1,477 @@
+<!-- HERO -->
+<section class="page-hero iu-hero">
+  <div class="container">
+    <span class="eyebrow">Impôt universel ciblé · Français de l'étranger</span>
+    <h1>Seriez-vous <span class="hl-rouge">concerné·e&nbsp;?</span></h1>
+    <p class="lead">
+      Ce n'est pas un impôt sur la nationalité française. C'est un <span class="hl">« impôt différentiel ciblé »</span>
+      contre l'évasion fiscale : il vise certains départs vers des États à fiscalité largement privilégiée, et non à
+      soumettre indistinctement tous les Français de l'étranger à l'impôt français.
+    </p>
+    <ul class="hero-facts">
+      <li><strong>5</strong><span>questions</span></li>
+      <li><strong>1</strong><span>minute</span></li>
+      <li><strong>{{ rows().length || 198 }}</strong><span>pays analysés</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- QUESTIONNAIRE -->
+<section class="section-sm iu-quiz">
+  <div class="container container-narrow">
+    <div class="quiz card" #card aria-live="polite">
+      <div class="quiz-progress" aria-hidden="true"><span [style.width.%]="progress()"></span></div>
+
+      @switch (screen().kind) {
+        @case ('start') {
+          <div class="quiz-screen">
+            <span class="eyebrow">Questionnaire</span>
+            <h2 tabindex="-1">Remplissez-vous les cinq conditions&nbsp;?</h2>
+            <p class="quiz-lead">
+              Cinq questions, une minute. Vous saurez si vous remplissez les conditions prévues par le texte proposé.
+              <strong>Il faut les remplir toutes à la fois.</strong>
+            </p>
+            <ol class="cond-list">
+              @for (s of steps; track s.id; let i = $index) {
+                <li><span class="num-badge">{{ i + 1 }}</span>{{ s.label }}</li>
+              }
+            </ol>
+            <div class="btn-row">
+              <button type="button" class="btn btn-rouge" (click)="start()">
+                Commencer <span class="kbd" aria-hidden="true">Entrée ↵</span>
+              </button>
+            </div>
+            <p class="quiz-hint">Vos réponses restent dans votre navigateur. Rien n'est envoyé ni enregistré.</p>
+          </div>
+        }
+
+        @case ('step') {
+          @let i = $any(screen()).i;
+          @let step = steps[i];
+          <div class="quiz-screen" [attr.data-step]="i">
+            <p class="quiz-num">Question {{ i + 1 }} sur {{ steps.length }}</p>
+            <h2 tabindex="-1">{{ step.q }}</h2>
+            @if (step.help) {
+              <p class="quiz-help">{{ step.help }}</p>
+            }
+
+            @if (step.type === 'country') {
+              <div class="picker">
+                <input
+                  type="text"
+                  id="country-input"
+                  class="picker-input"
+                  placeholder="Tapez le nom d'un pays"
+                  autocomplete="off"
+                  role="combobox"
+                  aria-expanded="true"
+                  aria-controls="country-list"
+                  aria-label="Pays de résidence fiscale"
+                  [attr.aria-activedescendant]="active() >= 0 ? 'country-' + shown()[active()].code : null"
+                  [value]="query()"
+                  (input)="onQuery($any($event.target).value)"
+                  (keydown)="onPickerKey($event, i)"
+                />
+                <ul class="picker-list" id="country-list" role="listbox" aria-label="Pays">
+                  @for (c of shown(); track c.code; let k = $index) {
+                    <li
+                      role="option"
+                      class="picker-item"
+                      [id]="'country-' + c.code"
+                      [class.active]="k === active()"
+                      [attr.aria-selected]="k === active()"
+                      (mousedown)="$event.preventDefault(); pick(c.code, i)"
+                    >
+                      {{ c.name }}
+                    </li>
+                  } @empty {
+                    <li class="picker-empty">Aucun pays trouvé. Utilisez « Je ne sais pas » ci-dessous.</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <div class="options" role="group" aria-label="Réponses">
+              @for (o of step.options; track o[1]; let k = $index) {
+                <button type="button" class="opt" (click)="choose(i, o[1])">
+                  <span class="key" aria-hidden="true">{{ keys[k] }}</span>
+                  <span>{{ o[0] }}</span>
+                </button>
+              }
+            </div>
+
+            <div class="quiz-foot">
+              @if (i > 0) {
+                <button type="button" class="btn-link" (click)="back(i)">← Question précédente</button>
+              }
+              <p class="quiz-hint">
+                @if (step.type === 'country') {
+                  Tapez le nom du pays, puis choisissez-le dans la liste (flèches et Entrée).
+                } @else {
+                  Astuce : appuyez sur {{ keys.slice(0, step.options.length).join(' ou ') }} pour répondre.
+                }
+              </p>
+            </div>
+          </div>
+        }
+
+        @case ('result') {
+          @let v = verdict();
+          <div class="quiz-screen">
+            <span class="verdict" [class]="'verdict verdict-' + v.cls">{{ v.badge }}</span>
+            <h2 tabindex="-1">{{ v.title }}</h2>
+            <p class="quiz-lead">{{ v.body }}</p>
+
+            <ul class="recap" aria-label="Récapitulatif des conditions">
+              @for (row of result().rows; track row.label; let k = $index) {
+                <li [class.skipped]="row.state === 'skipped'">
+                  <span>
+                    {{ row.label }}
+                    @if (k === 4 && country() && row.state !== 'skipped') { ({{ countryName(country()!) }}) }
+                  </span>
+                  <span class="state" [class]="'state state-' + row.state">{{ stateLabels[row.state] }}</span>
+                </li>
+              }
+            </ul>
+
+            @if (countryBox(); as cb) {
+              <div class="countrybox" [class]="'countrybox lvl-' + (cb.unavailable ? 'debatable' : cb.level)">
+                @if (cb.unavailable) {
+                  <p class="cb-title">{{ cb.name }} : données indisponibles</p>
+                  <p>Les données n'ont pas pu être chargées (connexion). Le résultat pour ce pays reste indéterminé.</p>
+                } @else {
+                  <p class="cb-title">{{ cb.name }} (critère fiscal) : {{ LEVEL_LABEL[cb.level] }}</p>
+                  <p>{{ cb.comment }}</p>
+                  @if (cb.d; as d) {
+                    <ng-container *ngTemplateOutlet="gauge; context: { $implicit: d, name: cb.name }" />
+                    <p class="cb-detail">
+                      Taux effectif estimé : <strong>{{ fmtRateD(d) }}</strong> (France : {{ fmtRate(FR_RATE) }}, seuil :
+                      {{ fmtRate(THRESHOLD) }}).
+                    </p>
+                    <ng-container *ngTemplateOutlet="detail; context: { $implicit: d }" />
+                  }
+                }
+              </div>
+            }
+
+            <div class="btn-row">
+              <button type="button" class="btn btn-outline" (click)="restart()">
+                Recommencer <span class="kbd" aria-hidden="true">Entrée ↵</span>
+              </button>
+              <a href="#iu-pays" class="btn-link">Voir tous les pays ↓</a>
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+    <p class="iu-legal muted">
+      Ce questionnaire est informatif. Il ne constitue pas un avis fiscal ou juridique. Il s'appuie sur le dispositif
+      de l'amendement n° I-2564 au projet de loi de finances pour 2027.
+    </p>
+  </div>
+</section>
+
+<!-- CE QUE PRÉVOIT LA MESURE -->
+<section class="section bg-violet">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Ce que prévoit le texte</span>
+      <h2>Un impôt différentiel, pas une double imposition</h2>
+      <p class="lead">
+        Si vous remplissez toutes les conditions, vous acquittez en France l'impôt français
+        <strong>moins l'impôt déjà payé dans votre pays de résidence</strong> (crédit d'impôt), sous réserve des
+        conventions fiscales signées par la France.
+      </p>
+    </div>
+    <ol class="rules">
+      @for (s of steps; track s.id; let i = $index) {
+        <li>
+          <span class="rule-num">{{ i + 1 }}</span>
+          <h3>{{ s.label }}</h3>
+        </li>
+      }
+    </ol>
+  </div>
+</section>
+
+<!-- DONNÉES PAR PAYS -->
+<section class="section bg-blanc" id="iu-pays">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Fiscalité par pays</span>
+      <h2>Impôt sur le revenu, pays par pays</h2>
+      <p class="lead">
+        Taux effectif estimé pour une personne seule à {{ num(REF_INCOME) }} € de revenu imposable. Seuil :
+        {{ fmtRate(THRESHOLD) }}, soit 40 % sous la France ({{ fmtRate(FR_RATE) }}). Cliquez sur un pays pour voir le
+        calcul détaillé et les sources.
+      </p>
+    </div>
+
+    @if (dataError()) {
+      <p class="alert alert-err">Les données par pays n'ont pas pu être chargées. Réessayez plus tard.</p>
+    } @else if (!data()) {
+      <p class="loader">Chargement des données pays…</p>
+    } @else {
+      <div class="filters">
+        <input
+          type="search"
+          class="filter-search"
+          placeholder="Rechercher un pays, un continent…"
+          aria-label="Rechercher dans le tableau"
+          [value]="search()"
+          (input)="search.set($any($event.target).value)"
+        />
+        <div class="chips" role="group" aria-label="Filtrer par niveau">
+          <button type="button" class="chip" [class.on]="levelFilter() === ''" (click)="levelFilter.set('')">
+            Tous <span>{{ rows().length }}</span>
+          </button>
+          @for (l of ['below', 'debatable', 'above']; track l) {
+            <button
+              type="button"
+              class="chip"
+              [class]="'chip chip-' + l"
+              [class.on]="levelFilter() === l"
+              [attr.aria-pressed]="levelFilter() === l"
+              (click)="levelFilter.set($any(l))"
+            >
+              {{ $any(LEVEL_LABEL)[l] }} <span>{{ $any(counts())[l] }}</span>
+            </button>
+          }
+        </div>
+        <select aria-label="Filtrer par continent" class="filter-select" (change)="continentFilter.set($any($event.target).value)">
+          <option value="">Tous les continents</option>
+          @for (c of continents; track c[0]) {
+            <option [value]="c[0]">{{ c[1] }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="ctable" role="table" aria-label="Taux estimé par pays">
+        <div class="ctable-head" role="row">
+          <span role="columnheader" [attr.aria-sort]="ariaSort('pays')">
+            <button type="button" class="sort" (click)="sortBy('pays')">
+              Pays {{ sortKey() === 'pays' ? (sortAsc() ? '↑' : '↓') : '' }}
+            </button>
+          </span>
+          <span role="columnheader" class="col-cont">Continent</span>
+          <span role="columnheader" [attr.aria-sort]="ariaSort('rate')">
+            <button type="button" class="sort" (click)="sortBy('rate')">
+              Taux estimé {{ sortKey() === 'rate' ? (sortAsc() ? '↑' : '↓') : '' }}
+            </button>
+          </span>
+          <span role="columnheader">Niveau</span>
+        </div>
+        @for (r of filteredRows(); track r.code) {
+          <details class="crow" role="row">
+            <summary>
+              <span class="c-name" role="cell">{{ r.name }}</span>
+              <span class="col-cont" role="cell">{{ r.continent }}</span>
+              <span class="c-rate" role="cell">
+                <span class="minibar" aria-hidden="true"><span [class]="'lvl-' + r.level" [style.width.%]="pos(r.d.rate)"></span></span>
+                {{ r.d.range ? fmtRate(r.d.range[0]).replace(' %', '') + '–' + fmtRate(r.d.range[1]) : fmtRate(r.d.rate) }}
+              </span>
+              <span role="cell"><span [class]="'lvlchip lvl-' + r.level">{{ LEVEL_LABEL[r.level] }}</span></span>
+            </summary>
+            <div class="crow-body">
+              <ng-container *ngTemplateOutlet="gauge; context: { $implicit: r.d, name: r.name }" />
+              <ng-container *ngTemplateOutlet="detail; context: { $implicit: r.d }" />
+            </div>
+          </details>
+        } @empty {
+          <p class="ctable-empty">Aucun pays ne correspond à ces filtres.</p>
+        }
+      </div>
+      <p class="muted small">
+        {{ filteredRows().length }} pays affichés. Les pays absents de la liste n'ont pas encore été analysés et sont
+        classés « cas limite ».
+      </p>
+    }
+  </div>
+</section>
+
+<!-- MÉTHODOLOGIE -->
+<section class="section bg-lavande" id="iu-methodologie">
+  <div class="container container-narrow">
+    <div class="section-head">
+      <span class="eyebrow">Méthodologie</span>
+      <h2>Comment est évaluée la condition de fiscalité</h2>
+      <p class="lead">
+        L'amendement n° I-2564 vise les résidents d'un État dont la fiscalité des revenus du travail, du capital ou du
+        patrimoine est inférieure de plus de 40 % à celle de la France. Le texte ne dit pas comment mesurer cet écart.
+        Il s'agit ici d'une estimation indépendante, qui ne remplace ni un avis fiscal ni l'avis de l'administration.
+      </p>
+    </div>
+
+    <div class="meth">
+      <div class="card">
+        <h3>Hypothèses</h3>
+        <ul>
+          <li>
+            Indicateur : taux effectif d'impôt sur le revenu d'une personne seule, sans enfant, percevant un salaire
+            imposable de 240 300 € (5 fois le plafond de la Sécurité sociale 2026, fixé à 48 060 €).
+          </li>
+          <li>
+            Référence France : {{ fmtRate(FR_RATE) }} (84 658,84 € d'impôt), d'après le barème progressif de l'impôt sur
+            le revenu. Le seuil est donc de 60 % de ce taux, soit {{ fmtRate(THRESHOLD) }}.
+          </li>
+          <li>
+            Pour chaque pays : barème national progressif, auquel s'ajoute l'impôt local ou la surtaxe nationale quand
+            ils ont pu être sourcés. Les cotisations sociales, la TVA, les taxes foncières, l'impôt sur la fortune et
+            l'imposition du capital ne sont pas comptés.
+          </li>
+          <li>
+            Taux de change : cours Yahoo Finance (paires directes contre l'euro) vérifiés le 13 novembre 2026, appliqués
+            à tous les pays sauf mention contraire (Mongolie, Myanmar, Samoa, Sao Tomé-et-Principe, Érythrée : cours
+            indisponible, hypothèse signalée dans la fiche du pays). Le niveau de réponse n'est sensible au change que
+            pour les pays proches des bornes de 18 % et 26 %.
+          </li>
+          <li>
+            Les exceptions prévues par des conventions fiscales (par exemple pour les Français résidant à Monaco) ne
+            sont pas modélisées.
+          </li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Les trois niveaux de réponse</h3>
+        <div class="levels">
+          <div class="level lvl-below">
+            <span class="lvlchip lvl-below">{{ LEVEL_LABEL.below }}</span>
+            <p>Taux estimé inférieur ou égal à {{ fmtRate(LEVEL_LOW) }}. La condition est considérée comme remplie.</p>
+          </div>
+          <div class="level lvl-debatable">
+            <span class="lvlchip lvl-debatable">{{ LEVEL_LABEL.debatable }}</span>
+            <p>
+              Taux estimé entre {{ fmtRate(LEVEL_LOW) }} et {{ fmtRate(LEVEL_HIGH) }}, ou pays pas encore analysé. La
+              condition reste à vérifier. Ces bornes laissent une marge de prudence autour du seuil de
+              {{ fmtRate(THRESHOLD) }} pour tenir compte des incertitudes de calcul.
+            </p>
+          </div>
+          <div class="level lvl-above">
+            <span class="lvlchip lvl-above">{{ LEVEL_LABEL.above }}</span>
+            <p>Taux estimé supérieur à {{ fmtRate(LEVEL_HIGH) }}. La condition est considérée comme non remplie.</p>
+          </div>
+        </div>
+        <p class="small muted">
+          Les sources « officielle » émanent d'une administration fiscale ou d'un ministère. Les sources « non
+          officielle » sont des médias ou des sites juridiques privés : à confirmer auprès des autorités du pays.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>Limites</h3>
+        <ul>
+          <li>Les pays qui n'ont pas encore été analysés sont classés « cas limite ».</li>
+          <li>Les barèmes changent chaque année. Les chiffres reflètent les textes consultés en 2026.</li>
+          <li>
+            Un taux effectif calculé à un seul niveau de revenu ne dit rien des régimes spéciaux (expatriés,
+            non-domiciliés, zones franches).
+          </li>
+          <li>
+            Japon : l'impôt local (10 %) n'est pas inclus faute de source. Hongrie : la contribution sociale de 13 %
+            n'est pas comptée. Vietnam : ordre de grandeur uniquement. Émirats : source officielle encore à ajouter.
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="iu-sources">
+      <h3>Sources</h3>
+      <ul>
+        <li>
+          <a href="https://www.assemblee-nationale.fr/dyn/17/amendements/3210A/AN/2564" target="_blank" rel="noopener"
+            >Texte de l'amendement n° I-2564 (Assemblée nationale)</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://www.urssaf.fr/accueil/outils-documentation/taux-baremes/plafonds-securite-sociale.html"
+            target="_blank"
+            rel="noopener"
+            >Plafond annuel de la Sécurité sociale 2026 : 48 060 € (Urssaf)</a
+          >
+        </li>
+        <li>
+          <a href="https://melenchon2027.fr/programme/livre/" target="_blank" rel="noopener"
+            >Programme L'Avenir en commun</a
+          >
+        </li>
+        <li>
+          Questionnaire, méthode et données par pays reprises de
+          <a [href]="SOURCE_SITE" target="_blank" rel="noopener">impotuniversel.fr</a>
+          (<a [href]="SOURCE_REPO" target="_blank" rel="noopener">calculs détaillés sur GitHub</a>).
+        </li>
+      </ul>
+      <p class="small muted">Questionnaire informatif, sans valeur d'avis fiscal ou juridique.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Jauge : seuil, bornes de prudence, France et pays -->
+<ng-template #gauge let-d let-name="name">
+  <div class="gauge" role="img" [attr.aria-label]="name + ' : ' + fmtRate(d.rate) + ', seuil ' + fmtRate(THRESHOLD) + ', France ' + fmtRate(FR_RATE)">
+    <div class="gauge-track">
+      <span class="z z-below" [style.width.%]="pos(LEVEL_LOW)"></span>
+      <span class="z z-debatable" [style.left.%]="pos(LEVEL_LOW)" [style.width.%]="pos(LEVEL_HIGH) - pos(LEVEL_LOW)"></span>
+      <span class="z z-above" [style.left.%]="pos(LEVEL_HIGH)" [style.right.%]="0"></span>
+      @if (d.range) {
+        <span class="g-range" [style.left.%]="pos(d.range[0])" [style.width.%]="pos(d.range[1]) - pos(d.range[0])"></span>
+      }
+      <span class="g-mark g-seuil" [style.left.%]="pos(THRESHOLD)"><em>Seuil {{ fmtRate(THRESHOLD) }}</em></span>
+      <span class="g-mark g-fr" [style.left.%]="pos(FR_RATE)"><em>France {{ fmtRate(FR_RATE) }}</em></span>
+      <span class="g-pin" [class.edge-l]="pos(d.rate) < 15" [class.edge-r]="pos(d.rate) > 85" [style.left.%]="pos(d.rate)"><em>{{ name }} {{ fmtRate(d.rate) }}</em></span>
+    </div>
+    <div class="gauge-scale" aria-hidden="true"><span>0 %</span><span>25 %</span><span>50 %</span></div>
+  </div>
+</ng-template>
+
+<!-- Détail d'un pays : note, calcul, sources -->
+<ng-template #detail let-d>
+  <p class="cb-note">{{ d.note }}</p>
+
+  <details class="calc">
+    <summary>Voir le barème et les hypothèses du calcul</summary>
+    <table class="brackets">
+      <caption>
+        Barème appliqué ({{ d.calc.devise }}) — revenu de référence : {{ num(REF_INCOME * d.calc.fx) }} {{ d.calc.devise }}
+      </caption>
+      <thead>
+        <tr><th scope="col">De</th><th scope="col">À</th><th scope="col">Taux</th></tr>
+      </thead>
+      <tbody>
+        @for (b of d.calc.tranches; track $index) {
+          <tr>
+            <td>{{ num(b[0]) }}</td>
+            <td>{{ b[1] === null ? 'au-delà' : num(b[1]) }}</td>
+            <td>{{ fmtRate(b[2]) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    @for (adj of adjustments(d); track adj.label) {
+      <p class="calc-adj">
+        <strong>{{ adj.label }} :</strong>
+        @for (x of adj.items; track $index) { {{ x[0] }} ({{ num(x[1]) }}){{ $last ? '' : ' ; ' }} }
+      </p>
+    }
+    <ul class="calc-hyp">
+      @for (h of d.calc.hypotheses; track $index) {
+        <li>{{ h }}</li>
+      }
+    </ul>
+    @if (d.calc.devise !== 'EUR') {
+      <p class="small muted">Taux de change utilisé : 1 € = {{ d.calc.fx }} {{ d.calc.devise }} ({{ d.calc.fx_source }}).</p>
+    }
+  </details>
+
+  <p class="cb-srcs-title">Sources utilisées ({{ d.sources.length }})</p>
+  <ul class="cb-srcs">
+    @for (s of d.sources; track s[1]) {
+      <li>
+        <a [href]="s[1]" target="_blank" rel="noopener">{{ s[0] }}</a>
+        <span class="tag" [class.tag-off]="s[2]">{{ s[2] ? 'officielle' : 'non officielle' }}</span>
+      </li>
+    }
+  </ul>
+</ng-template>
