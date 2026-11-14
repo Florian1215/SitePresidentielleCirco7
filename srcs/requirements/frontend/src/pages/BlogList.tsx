@@ -129,7 +129,7 @@ export default function BlogList() {
   return (
     <div>
       <section className="page-hero">
-        <div className="container grid grid-cols-[1.3fr_1fr] items-center gap-10 max-[900px]:grid-cols-1">
+        <div className="site-container grid grid-cols-[1.3fr_1fr] items-center gap-10 max-[900px]:grid-cols-1">
           <div>
             <span className="eyebrow">{t.eyebrow}</span>
             <h1>{mine ? t.mine : t.title}</h1>
@@ -164,7 +164,7 @@ export default function BlogList() {
       {/* AGENDA (calendrier Zetkin) */}
       {!mine && (
         <section className="section bg-lavande scroll-mt-20" id="agenda">
-          <div className="container">
+          <div className="site-container">
             {/* Titre à gauche, tags des villes à droite */}
             <div className="mb-[clamp(28px,4vw,44px)] flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
               <h2 className="m-0">{t.agendaTitle}</h2>
@@ -216,7 +216,7 @@ export default function BlogList() {
 
       {/* ARTICLES */}
       <section className="section scroll-mt-20" id="articles">
-        <div className="container">
+        <div className="site-container">
           {!mine && (
             <div className="section-head">
               <span className="eyebrow">{t.blogEyebrow}</span>

@@ -54,13 +54,13 @@ export default function ArticlePage() {
           {cover && (
             // Légère ombre en haut (bouton retour) et fondu vers le fond crème en bas
             <div
-              className="absolute inset-x-0 top-0 h-(--cover-h) overflow-hidden after:absolute after:inset-0 after:bg-[linear-gradient(180deg,rgba(33,35,32,.3)_0,rgba(33,35,32,0)_120px),linear-gradient(180deg,rgba(255,252,244,0)_70%,rgba(255,252,244,.85)_90%,var(--creme)_100%)] after:content-['']"
+              className="absolute inset-x-0 top-0 h-(--cover-h) overflow-hidden after:absolute after:inset-0 after:bg-[linear-gradient(180deg,rgba(33,35,32,.3)_0,rgba(33,35,32,0)_120px),linear-gradient(180deg,rgba(255,252,244,0)_70%,rgba(255,252,244,.85)_90%,var(--color-creme)_100%)] after:content-['']"
               aria-hidden="true"
             >
               <img className="block h-full w-full object-cover object-center" src={a.cover_image!} alt="" fetchPriority="high" />
             </div>
           )}
-          <div className="container container-narrow relative z-1">
+          <div className="site-container max-w-[820px] relative z-1">
             <Link
               to="/blog"
               className={`mb-5 inline-block font-bold no-underline ${cover ? 'absolute top-[calc(-1*var(--cover-h)+110px+28px)] rounded-full bg-[rgba(255,252,244,.92)] px-3 py-1.5' : ''}`}
@@ -113,7 +113,7 @@ export default function ArticlePage() {
         </header>
         {/* Le texte passe au-dessus du reflet, qui peut descendre plus bas que l'en-tête */}
         <div className="section-sm relative z-1 pt-2!">
-          <div className="container container-narrow">
+          <div className="site-container max-w-[820px]">
             {/*
               Le contenu est nettoyé par le serveur à chaque enregistrement (backend : blog/sanitize.py, liste blanche
               de balises). On l'affiche tel quel pour garder l'alignement (classes) et les vidéos intégrées (iframes).
@@ -128,7 +128,7 @@ export default function ArticlePage() {
   if (notFound) {
     return (
       <section className="section">
-        <div className="container container-narrow">
+        <div className="site-container max-w-[820px]">
           <h1 className="h2">{i18n.d.article.notFoundTitle}</h1>
           <p>{i18n.d.article.notFoundText}</p>
           <Link to="/blog" className="btn">

@@ -19,7 +19,7 @@ Hors Docker, indiquez l'adresse du backend : `API_PROXY_TARGET=http://localhost:
 ## Organisation
 
 - `src/main.tsx`, `src/App.tsx` : démarrage, routes (pages chargées à la demande).
-- `src/pages/` : une page par fichier (+ sa feuille `.scss` pour les pages les plus riches).
+- `src/pages/` : une page par fichier.
 - `src/components/` : en-tête, pied de page, cartes, photo, formulaire de soutien, éditeur Quill.
 - `src/lib/` : API, connexion, langues (`useI18n`), titres, formulaires, configuration de campagne.
 - `src/i18n/` : textes en français (référence), anglais, allemand.
@@ -27,8 +27,20 @@ Hors Docker, indiquez l'adresse du backend : `API_PROXY_TARGET=http://localhost:
 
 ## Styles
 
-- `src/index.css` : Tailwind (thème aux couleurs de la charte : `bg-violet`, `text-rouge`, `font-titre`…),
-  sans la réinitialisation « preflight » pour garder la typographie du site.
-- `src/styles/global.scss` : charte graphique (boutons, cartes, formulaires, grilles…).
-- Composants simples : classes utilitaires Tailwind. Pages riches : `.scss` limité à la racine de la page.
-- Ordre des couches CSS : thème < global < pages < utilitaires Tailwind.
+Tout le style s'écrit en **Tailwind CSS 4**, en classes utilitaires dans le JSX (pas de SCSS).
+
+- `src/index.css`, la feuille principale :
+  - thème aux couleurs de la charte : `bg-violet`, `text-rouge`, `font-titre`, `rounded-site`, `shadow-site`,
+    `px-gutter`, `ease-bounce`, animations `animate-station-hop` et `animate-iu-in` ;
+  - styles de base des éléments HTML (titres, liens, champs) ;
+  - briques de la charte réutilisées partout, dans la couche `components` : `site-container`, `section`,
+    `section-violet`, `btn` (+ `btn-rouge`, `btn-outline`, `btn-sm`…), `card`, `field`, `alert`, `badge`,
+    `cat-*` (couleurs des parties du programme)… et `prose` pour le contenu des articles.
+- Sans la réinitialisation « preflight » : la base définit elle-même la typographie du site. Conséquence : une
+  bordure sur un seul côté se style avec `[border-top-style:dashed]` plutôt que `border-dashed` (qui toucherait
+  les quatre côtés).
+- Ordre des couches CSS : thème < base < components < utilitaires. Une classe utilitaire ajoutée dans le JSX
+  l'emporte donc toujours sur les briques de la charte (`btn w-full`, `section pb-0`…).
+- Classes longues ou dépendant d'un état : constantes en haut du fichier (`POSTER_STYLES`, `BALLOT`, `LVL`…),
+  toujours écrites en entier pour que Tailwind les détecte (jamais de `` `left-[${x}]` ``).
+- `src/components/RichEditor.css` : surcharges de la feuille de Quill (éditeur d'articles), chargées avec l'éditeur.

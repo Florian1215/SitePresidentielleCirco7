@@ -56,7 +56,7 @@ export function EventCard({ event: e }: { event: CampaignEvent }) {
       <article className="flex h-full flex-col rounded-site bg-white shadow-site transition-[translate,box-shadow] duration-200 ease-[ease] hover:-translate-y-[3px] hover:shadow-[0_16px_36px_rgba(33,35,32,.14)] motion-reduce:hover:translate-y-0">
         {/* Visuel : l'affiche entière, sur un fond flouté de la même image */}
         <div
-          className={`relative aspect-[16/10] overflow-hidden rounded-t-site ${e.image ? 'bg-violet' : 'bg-[linear-gradient(135deg,var(--violet),var(--violet-vif))]'}`}
+          className={`relative aspect-[16/10] overflow-hidden rounded-t-site ${e.image ? 'bg-violet' : 'bg-[linear-gradient(135deg,var(--color-violet),var(--color-violet-vif))]'}`}
         >
           {e.image && (
             <>

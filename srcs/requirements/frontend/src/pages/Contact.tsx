@@ -59,7 +59,7 @@ export default function Contact() {
   return (
     <div>
       <section className="page-hero">
-        <div className="container">
+        <div className="site-container">
           <span className="eyebrow">{t.eyebrow}</span>
           <h1>{t.title}</h1>
           <p className="lead">{t.lead}</p>
@@ -67,7 +67,7 @@ export default function Contact() {
       </section>
 
       <section className="section">
-        <div className="container grid grid-cols-[1.6fr_1fr] items-start gap-8 max-[900px]:grid-cols-1">
+        <div className="site-container grid grid-cols-[1.6fr_1fr] items-start gap-8 max-[900px]:grid-cols-1">
           <div className="card">
             {sent ? (
               <div className="alert alert-ok" role="status">
@@ -99,19 +99,19 @@ export default function Contact() {
                   <label htmlFor="ct-subject">{t.subject}</label>
                   <input id="ct-subject" type="text" {...form.text('subject')} />
                 </div>
-                <div className="field full">
+                <div className="field col-span-full">
                   <label htmlFor="ct-message">{t.message}</label>
                   <textarea id="ct-message" rows={7} {...form.text('message')}></textarea>
                 </div>
-                <p className="full hint muted m-0 text-[13px]">
+                <p className="hint muted col-span-full m-0 text-[13px]">
                   {t.privacy} <Link to="/mentions-legales">{t.more}</Link>.
                 </p>
                 {error && (
-                  <div className="full alert alert-err" role="alert">
+                  <div className="alert alert-err col-span-full" role="alert">
                     {error}
                   </div>
                 )}
-                <div className="full">
+                <div className="col-span-full">
                   <button className="btn btn-rouge" type="submit" disabled={sending}>
                     {sending ? i18n.d.common.sending : i18n.d.common.send}
                   </button>

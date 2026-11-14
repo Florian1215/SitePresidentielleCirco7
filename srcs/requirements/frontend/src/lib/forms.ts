@@ -14,7 +14,7 @@ type Validator = (v: unknown) => boolean;
 
 /**
  * Petit gestionnaire de formulaire : valeurs, champs « touchés » (quittés au moins une fois)
- * et validité. Un champ invalide et touché reçoit aria-invalid (bordure rouge, cf. global.scss).
+ * et validité. Un champ invalide et touché reçoit aria-invalid (bordure rouge, cf. index.css).
  */
 export function useForm<T extends Record<string, unknown>>(initial: T, rules: { [K in keyof T]?: Validator[] } = {}) {
   const [values, setValues] = useState<T>(initial);

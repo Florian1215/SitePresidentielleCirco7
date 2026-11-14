@@ -109,7 +109,7 @@ export function SupporterForm({ helpPreset = false, submitLabel = 'Je soutiens' 
         <label htmlFor="sf-city">{t.city}</label>
         <input id="sf-city" type="text" autoComplete="address-level2" {...form.text('city')} />
       </div>
-      <div className="full stack">
+      <div className="col-span-full stack">
         <label className="check">
           <input type="checkbox" {...form.check('wants_registration_help')} />
           <span>{t.wantsHelp}</span>
@@ -130,11 +130,11 @@ export function SupporterForm({ helpPreset = false, submitLabel = 'Je soutiens' 
         </label>
       </div>
       {error && (
-        <div className="full alert alert-err" role="alert">
+        <div className="col-span-full alert alert-err" role="alert">
           {error}
         </div>
       )}
-      <div className="full">
+      <div className="col-span-full">
         <button className="btn btn-rouge" type="submit" disabled={sending}>
           {sending ? i18n.d.common.sending : submitLabel}
         </button>

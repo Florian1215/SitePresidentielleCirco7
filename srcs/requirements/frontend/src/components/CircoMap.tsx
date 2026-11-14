@@ -3,7 +3,6 @@ import type { MouseEvent, PointerEvent, ReactNode } from 'react';
 import { MAP_COUNTRIES, MAP_EXTENT, MAP_VIEWBOX, project } from '../data/europe-map';
 import { COUNTRIES } from '../lib/campaign';
 import { useI18n } from '../lib/i18n';
-import './CircoMap.scss';
 
 /** Point affiché sur la carte (groupe d'action, bureau de vote…). */
 export interface MapPoint {
@@ -84,6 +83,20 @@ function spread<T>(pins: Pin<T>[], minDist: number, offset: number): Pin<T>[] {
         }),
   );
 }
+
+/** Bords de la zone de contenu (1200 px centrés), pour aligner boutons, légende et panneau posés sur la carte. */
+const EDGE_LEFT = 'left-[max(24px,calc((100vw_-_var(--container-site))_/_2_+_var(--spacing-gutter)))]';
+const EDGE_RIGHT = 'right-[max(24px,calc((100vw_-_var(--container-site))_/_2_+_var(--spacing-gutter)))]';
+
+/** Pays : frontières toujours fines, quel que soit le zoom. */
+const COUNTRY = 'stroke-1 [vector-effect:non-scaling-stroke]';
+
+const ZOOM_BTN =
+  'h-10 w-10 cursor-pointer border-0 bg-white font-texte leading-none font-bold text-violet not-first:border-t not-first:border-gris enabled:hover:bg-lavande disabled:cursor-default disabled:text-gris-moyen focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-jaune';
+
+/** Bulle d'information d'un point : purement informative, c'est le point qui est cliquable. */
+const TOOLTIP =
+  "pointer-events-none absolute z-2 flex max-w-[260px] min-w-[180px] -translate-x-1/2 flex-col gap-0.5 rounded-[10px] bg-noir px-3.5 py-2.5 text-creme no-underline shadow-[0_10px_24px_rgba(0,0,0,0.25)] after:absolute after:left-1/2 after:h-3.5 after:w-3.5 after:-translate-x-1/2 after:rotate-45 after:bg-noir after:content-[''] max-[600px]:min-w-[150px] [&_em]:mt-1 [&_em]:text-[13px] [&_em]:font-bold [&_em]:text-jaune [&_em]:not-italic [&_span]:text-[13px] [&_span]:whitespace-pre-line [&_span]:opacity-80 [&_strong]:text-[15px] [&_strong]:leading-[1.25]";
 
 /**
  * Carte des 16 pays de la circonscription avec des points cliquables, zoomable (boutons, Ctrl/⌘ + molette,
@@ -340,11 +353,11 @@ export function CircoMap<T extends MapPoint>({ points, labels: t, renderTooltip,
   })();
 
   return (
-    <div className="circo-map">
-      <div className="map-card">
+    <div className="relative max-[960px]:pb-8">
+      <div className="relative h-[clamp(520px,78vh,820px)] overflow-hidden bg-[#e6eef8] max-[960px]:h-[400px]">
         <svg
           ref={svgRef}
-          className={`map${zoom > 1 ? ' zoomed' : ''}`}
+          className={`block h-full w-full select-none ${zoom > 1 ? 'cursor-grab touch-none active:cursor-grabbing' : 'touch-pan-y'}`}
           viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
           role="img"
           aria-labelledby={`${idPrefix}-map-title`}
@@ -362,7 +375,7 @@ export function CircoMap<T extends MapPoint>({ points, labels: t, renderTooltip,
             return code ? (
               <path
                 key={idx}
-                className={`country in-circo${hoveredCountry === code ? ' hovered' : ''}`}
+                className={`${COUNTRY} stroke-[rgba(255,252,244,0.7)] transition-[fill] duration-150 ${hoveredCountry === code ? 'fill-violet-vif' : 'fill-violet'}`}
                 d={country.d}
                 onMouseEnter={() => setHoveredCountry(code)}
                 onMouseLeave={() => leaveCountry(code)}
@@ -370,13 +383,13 @@ export function CircoMap<T extends MapPoint>({ points, labels: t, renderTooltip,
                 <title>{i18n.country(code)}</title>
               </path>
             ) : (
-              <path key={idx} className="country" d={country.d} />
+              <path key={idx} className={`${COUNTRY} fill-[#f1ece0] stroke-white`} d={country.d} />
             );
           })}
           {pins.map((pin) => (
             <a
               key={pin.point.id}
-              className={`pin${activeId === pin.point.id ? ' on' : ''}`}
+              className="group cursor-pointer outline-none"
               href={pin.point.href}
               target="_blank"
               rel="noopener"
@@ -386,15 +399,26 @@ export function CircoMap<T extends MapPoint>({ points, labels: t, renderTooltip,
               onFocus={() => enterPin(pin)}
               onBlur={() => leavePin(pin)}
             >
-              <circle className="pin-halo" cx={pin.x} cy={pin.y} r={haloR} />
-              <circle className="pin-dot" cx={pin.x} cy={pin.y} r={dotR} />
+              {/* Le halo ne doit pas masquer un point voisin */}
+              <circle
+                className={`pointer-events-none fill-jaune transition-opacity duration-150 group-hover:opacity-55 group-focus-visible:opacity-55 ${activeId === pin.point.id ? 'opacity-55' : 'opacity-0'}`}
+                cx={pin.x}
+                cy={pin.y}
+                r={haloR}
+              />
+              <circle
+                className={`stroke-[2.5] transition-[fill] duration-150 [vector-effect:non-scaling-stroke] group-hover:fill-jaune group-hover:stroke-noir group-focus-visible:fill-jaune group-focus-visible:stroke-noir ${activeId === pin.point.id ? 'fill-jaune stroke-noir' : 'fill-rouge stroke-white'}`}
+                cx={pin.x}
+                cy={pin.y}
+                r={dotR}
+              />
             </a>
           ))}
         </svg>
 
         {active && tooltipPos && (
           <div
-            className={`tooltip${tooltipPos.top < 25 ? ' below' : ''}`}
+            className={`${TOOLTIP} ${tooltipPos.top < 25 ? 'translate-y-4 after:-top-[7px]' : '-translate-y-[calc(100%+16px)] after:-bottom-[7px]'}`}
             style={{ left: `${tooltipPos.left}%`, top: `${tooltipPos.top}%` }}
             aria-hidden="true"
           >
@@ -402,16 +426,30 @@ export function CircoMap<T extends MapPoint>({ points, labels: t, renderTooltip,
           </div>
         )}
 
-        <div className="zoom-controls">
-          <button type="button" onClick={() => zoomBy(1.6)} disabled={zoom >= 7.9} aria-label={t.zoomIn}>
+        <div
+          className={`absolute top-6 flex flex-col overflow-hidden rounded-[10px] shadow-[0_4px_14px_rgba(0,0,0,0.15)] max-[960px]:top-4 max-[960px]:left-4 ${EDGE_LEFT}`}
+        >
+          <button
+            type="button"
+            className={`${ZOOM_BTN} text-[22px]`}
+            onClick={() => zoomBy(1.6)}
+            disabled={zoom >= 7.9}
+            aria-label={t.zoomIn}
+          >
             +
           </button>
-          <button type="button" onClick={() => zoomBy(1 / 1.6)} disabled={zoom <= 1} aria-label={t.zoomOut}>
+          <button
+            type="button"
+            className={`${ZOOM_BTN} text-[22px]`}
+            onClick={() => zoomBy(1 / 1.6)}
+            disabled={zoom <= 1}
+            aria-label={t.zoomOut}
+          >
             −
           </button>
           <button
             type="button"
-            className="reset"
+            className={`${ZOOM_BTN} text-[18px]`}
             onClick={() => setCustom(null)}
             disabled={zoom <= 1}
             aria-label={t.resetZoom}
@@ -421,7 +459,9 @@ export function CircoMap<T extends MapPoint>({ points, labels: t, renderTooltip,
           </button>
         </div>
 
-        <div className="map-legend">
+        <div
+          className={`absolute bottom-6 flex flex-wrap items-center gap-x-3.5 gap-y-1 rounded-lg bg-[rgba(255,252,244,0.95)] px-3 py-2 text-[13px] max-[600px]:right-0 max-[600px]:bottom-0 max-[600px]:left-0 max-[600px]:rounded-none [&_strong]:font-titre [&_strong]:text-[18px] [&_strong]:text-violet [&_strong]:uppercase ${EDGE_LEFT}`}
+        >
           {hovered ? (
             <>
               <strong>{i18n.country(hovered.code)}</strong>
@@ -435,12 +475,12 @@ export function CircoMap<T extends MapPoint>({ points, labels: t, renderTooltip,
             </>
           ) : (
             <>
-              <span className="legend-item">
-                <i className="swatch"></i>
+              <span className="inline-flex items-center gap-1.5 font-bold">
+                <i className="h-3.5 w-3.5 rounded-[3px] bg-violet"></i>
                 {t.legendCirco}
               </span>
-              <span className="legend-item">
-                <i className="dot"></i>
+              <span className="inline-flex items-center gap-1.5 font-bold">
+                <i className="h-3 w-3 rounded-full border-2 border-white bg-rouge shadow-[0_0_0_1px_var(--color-gris-moyen)]"></i>
                 {t.legendPoint}
               </span>
             </>
@@ -448,39 +488,50 @@ export function CircoMap<T extends MapPoint>({ points, labels: t, renderTooltip,
         </div>
       </div>
 
-      <aside className="group-list" aria-label={t.listAria} ref={panelRef}>
+      {/* Panneau de la liste : posé sur la carte à droite ; sous la carte sur petit écran */}
+      <aside
+        className={`absolute top-6 z-3 max-h-[calc(100%-48px)] w-[340px] overflow-y-auto rounded-2xl bg-white px-[22px] py-5 shadow-[0_16px_40px_rgba(33,35,32,0.18)] max-[960px]:static max-[960px]:mx-gutter max-[960px]:mt-4 max-[960px]:max-h-none max-[960px]:w-auto ${EDGE_RIGHT}`}
+        aria-label={t.listAria}
+        ref={panelRef}
+      >
         {byCountry.length ? (
           byCountry.map((entry) => {
             const code = entry.country.code;
             const open = expanded.has(code);
             const listId = `${idPrefix}-${code}`;
             return (
-              <div key={code} className={`group-country${open ? ' open' : ''}`}>
-                <h3>
+              <div key={code} className="not-first:mt-1">
+                <h3 className="m-0 text-[22px]">
                   <button
                     type="button"
-                    className="country-toggle"
+                    className="-mx-2 flex w-[calc(100%+16px)] cursor-pointer items-center gap-2.5 rounded-t-lg border-0 border-b-2 border-gris bg-transparent px-2 py-2.5 text-left [font:inherit] text-violet hover:bg-lavande focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-jaune"
                     aria-expanded={open}
                     aria-controls={listId}
                     onClick={() => toggleCountry(code)}
                     onMouseEnter={() => setHoveredCountry(code)}
                     onMouseLeave={() => setHoveredCountry(null)}
                   >
-                    <span className="country-name">{i18n.country(code)}</span>
-                    <span className="country-count">{entry.points.length}</span>
-                    <svg className="chevron" viewBox="0 0 24 24" aria-hidden="true">
+                    <span className="flex-1">{i18n.country(code)}</span>
+                    <span className="min-w-[26px] rounded-full bg-rose px-2 py-0.5 text-center font-texte text-[13px] font-bold text-rouge">
+                      {entry.points.length}
+                    </span>
+                    <svg
+                      className={`h-[18px] w-[18px] fill-none stroke-current stroke-[2.5] transition-transform duration-200 [stroke-linecap:round] [stroke-linejoin:round] ${open ? 'rotate-180' : ''}`}
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
                       <path d="M6 9l6 6 6-6" />
                     </svg>
                   </button>
                 </h3>
-                <ul id={listId} hidden={!open}>
+                <ul id={listId} hidden={!open} className={`m-0 list-none gap-0.5 px-0 pt-1.5 pb-2.5 ${open ? 'grid' : 'hidden'}`}>
                   {entry.points.map((g) => (
                     <li key={g.id}>
                       <a
                         href={g.href}
                         target="_blank"
                         rel="noopener"
-                        className={activeId === g.id ? 'on' : undefined}
+                        className={`-mx-2 block rounded-md px-2 py-[5px] text-[15px] no-underline hover:bg-lavande hover:text-violet ${activeId === g.id ? 'bg-lavande text-violet' : 'text-noir'}`}
                         onMouseEnter={() => {
                           setActiveId(g.id);
                           setHoveredCountry(g.country);
@@ -501,7 +552,7 @@ export function CircoMap<T extends MapPoint>({ points, labels: t, renderTooltip,
         ) : (
           <p className="muted">{t.listEmpty}</p>
         )}
-        {panelFooter && <div className="create">{panelFooter}</div>}
+        {panelFooter && <div className="mt-5 rounded-site bg-rose p-4 [&_p]:mb-2.5 [&_p]:text-[14px]">{panelFooter}</div>}
       </aside>
     </div>
   );

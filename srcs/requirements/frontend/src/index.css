@@ -1,44 +1,751 @@
-/*
- * Tailwind CSS v4, sans la feuille de réinitialisation « preflight » : la charte du site (styles/global.scss)
- * définit elle-même la typographie, les listes, les boutons… et doit rester identique.
- * Ordre des couches : thème < styles globaux < composants < styles de page < utilitaires Tailwind.
- */
-@layer theme, base, components, pages, utilities;
+/* ==========================================================================
+   Charte 2027 — Tailwind CSS v4
+   Couleurs principales : Violet #4C0297 · Rouge #D1271C · Crème #FFFCF4 · Charbon #212320
+   Couleurs secondaires : Violet #7B13D6 · Rouge #F91616 · Bleu #3885F4 · Rose #ED5FB1 · Jaune #F9C900 · Vert #2E9959
+   Typographie : Config (variable) — texte en largeur normale, titres en Condensed Extra Bold
+
+   Le style des pages s'écrit en classes utilitaires dans le JSX. Ce fichier ne contient que :
+     - le thème (couleurs, polices, rayons, ombres) → bg-violet, text-rouge, font-titre, rounded-site…
+     - les styles de base des éléments HTML (titres, liens, champs) et du contenu des articles (.prose) ;
+     - les briques de la charte réutilisées partout (btn, card, field, alert…), dans la couche « components » :
+       toute classe utilitaire ajoutée dans le JSX passe devant elles.
+
+   Sans la feuille de réinitialisation « preflight » : la base ci-dessous définit elle-même typographie,
+   listes, boutons… et le rendu du site doit rester identique.
+   ========================================================================== */
+@layer theme, base, components, utilities;
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
 
-/*
- * Classes de la charte homonymes d'utilitaires Tailwind : on garde celles de la charte.
- * (`container` : largeur 1200 px + gouttières ; `bg-gris` : fond gris clair des sections.)
- */
-@source not inline('container bg-gris');
+/* Le site n'utilise pas l'utilitaire `container` de Tailwind (largeurs par paliers) mais `site-container`. */
+@source not inline('container');
 
-/* Polices de la charte : utilitaires font-titre / font-texte, et variables --font-titre / --font-texte. */
 @theme {
   --font-titre: 'Config Titre', 'Arial Narrow', Impact, sans-serif;
   --font-texte: 'Config', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-violet: #4c0297;
+  --color-violet-dark: #34016a;
+  --color-rouge: #d1271c;
+  --color-rouge-dark: #a91e15;
+  --color-noir: #212320;
+  --color-creme: #fffcf4;
+  --color-texte: #4a4a4a;
+  --color-rose: #ffd2cf;
+  --color-lavande: #e5cbff;
+  --color-jaune: #f9c900;
+  --color-gris-clair: #f2f5f6;
+  --color-gris: #eaeaea;
+  --color-gris-moyen: #a8a8a8;
+  --color-vert: #2e9959;
+  /* Couleurs secondaires de la charte */
+  --color-violet-vif: #7b13d6;
+  --color-rouge-vif: #f91616;
+  --color-bleu: #3885f4;
+  --color-rose-vif: #ed5fb1;
+
+  --radius-site: 10px;
+  --shadow-site: 0 10px 30px rgba(33, 35, 32, 0.08);
+  /* Marges latérales des pages : px-gutter, -mx-gutter… */
+  --spacing-gutter: clamp(16px, 4vw, 32px);
+  --container-site: 1200px;
+
+  /* Rebond des cartes et affiches au survol : ease-bounce */
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Page « Voter » : l'étape atteinte par le bulletin « saute » (animate-station-hop) */
+  --animate-station-hop: station-hop 0.5s var(--ease-bounce);
+  @keyframes station-hop {
+    40% {
+      translate: 0 -12px;
+    }
+  }
+
+  /* Simulateur de l'impôt universel : apparition de chaque écran du questionnaire (animate-iu-in) */
+  --animate-iu-in: iu-in 0.25s ease;
+  @keyframes iu-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }
 
-/* Couleurs de la charte (variables de styles/global.scss) : bg-violet, text-creme, border-rouge… */
-@theme inline {
-  --color-violet: var(--violet);
-  --color-violet-dark: var(--violet-dark);
-  --color-rouge: var(--rouge);
-  --color-rouge-dark: var(--rouge-dark);
-  --color-noir: var(--noir);
-  --color-creme: var(--creme);
-  --color-texte: var(--texte);
-  --color-rose: var(--rose);
-  --color-lavande: var(--lavande);
-  --color-jaune: var(--jaune);
-  --color-gris-clair: var(--gris-clair);
-  --color-gris: var(--gris);
-  --color-gris-moyen: var(--gris-moyen);
-  --color-vert: var(--vert);
-  --color-violet-vif: var(--violet-vif);
-  --color-rouge-vif: var(--rouge-vif);
-  --color-bleu: var(--bleu);
-  --color-rose-vif: var(--rose-vif);
-  --radius-site: var(--radius);
-  --shadow-site: var(--shadow);
+/* ---------- Polices ---------- */
+
+/* Config Variable : axes graisse (100–900), largeur (50–100 %) et inclinaison (0–9). */
+@font-face {
+  font-family: 'Config';
+  src: url('/fonts/config-variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-stretch: 50% 100%;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Instance figée Condensed Extra Bold pour les titres : même rendu quelle que soit la graisse demandée. */
+@font-face {
+  font-family: 'Config Titre';
+  src: url('/fonts/config-condensed-extrabold.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------- Base : éléments HTML ---------- */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-creme);
+    color: var(--color-noir);
+    font-family: var(--font-texte);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  img {
+    max-width: 100%;
+    display: block;
+  }
+
+  a {
+    color: var(--color-violet);
+  }
+
+  main:focus {
+    outline: none;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-titre);
+    font-weight: 400;
+    color: var(--color-violet);
+    letter-spacing: -0.2px;
+    margin: 0 0 0.5em;
+  }
+
+  h1 {
+    font-size: clamp(40px, 7vw, 76px);
+    line-height: 1.12;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    font-size: clamp(32px, 4.5vw, 52px);
+    line-height: 1.1;
+    text-transform: uppercase;
+  }
+
+  h3 {
+    font-size: clamp(22px, 2.4vw, 28px);
+    line-height: 1.2;
+  }
+
+  h4 {
+    font-family: var(--font-texte);
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 0.4em;
+  }
+
+  p {
+    margin: 0 0 1em;
+  }
+
+  /* L'italique de Config passe par son axe d'inclinaison plutôt que par un faux italique. */
+  em,
+  i,
+  cite {
+    font-style: normal;
+    font-variation-settings: 'slnt' 9;
+  }
+
+  input[type='text'],
+  input[type='email'],
+  input[type='tel'],
+  input[type='password'],
+  input[type='search'],
+  select,
+  textarea {
+    width: 100%;
+    font: inherit;
+    font-size: 16px;
+    color: var(--color-noir);
+    background: #fff;
+    border: 1px solid var(--color-noir);
+    border-radius: var(--radius-site);
+    padding: 14px 16px;
+    accent-color: var(--color-rouge);
+    &:focus {
+      outline: 3px solid var(--color-lavande);
+      border-color: var(--color-violet);
+    }
+    &[aria-invalid='true'] {
+      border-color: var(--color-rouge);
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 140px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    * {
+      transition: none !important;
+    }
+  }
+}
+
+@layer components {
+  /* ==========================================================================
+     Briques de la charte (classes de composants)
+     ========================================================================== */
+
+  /* ---------- Typographie ---------- */
+
+  /* Taille d'un titre sur un autre élément : <h1 class="h2"> */
+  .h1 {
+    font-size: clamp(40px, 7vw, 76px);
+    line-height: 1.12;
+    text-transform: uppercase;
+  }
+  .h2 {
+    font-size: clamp(32px, 4.5vw, 52px);
+    line-height: 1.1;
+    text-transform: uppercase;
+  }
+  .h3 {
+    font-size: clamp(22px, 2.4vw, 28px);
+    line-height: 1.2;
+  }
+
+  .eyebrow {
+    display: inline-block;
+    font-family: var(--font-texte);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-rouge);
+    margin-bottom: 12px;
+  }
+
+  .lead {
+    font-size: clamp(18px, 2vw, 22px);
+    line-height: 1.45;
+    font-weight: 500;
+    color: var(--color-noir);
+  }
+
+  .muted {
+    color: var(--color-texte);
+  }
+
+  /* Surlignage façon marqueur */
+  .hl {
+    background: linear-gradient(transparent 55%, var(--color-jaune) 55%);
+    padding: 0 0.08em;
+  }
+  .hl-rouge {
+    color: var(--color-creme);
+    padding: 0 0.12em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    background: var(--color-rouge);
+  }
+  .hl-violet {
+    color: var(--color-creme);
+    padding: 0 0.12em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    background: var(--color-violet);
+  }
+
+  /* ---------- Mise en page ---------- */
+
+  .site-container {
+    width: 100%;
+    max-width: var(--container-site);
+    margin: 0 auto;
+    padding: 0 var(--spacing-gutter);
+  }
+
+  .section {
+    padding: clamp(56px, 8vw, 104px) 0;
+  }
+
+  .section-sm {
+    padding: clamp(32px, 5vw, 56px) 0;
+  }
+
+  /* Section sur fond violet : titres, sur-titres, textes et liens passent en clair */
+  .section-violet {
+    background: var(--color-violet);
+    color: var(--color-creme);
+    & :is(h1, h2, h3) {
+      color: var(--color-creme);
+    }
+    & :is(.eyebrow) {
+      color: var(--color-jaune);
+    }
+    & :is(.lead, .muted) {
+      color: var(--color-creme);
+    }
+    & a:not(.btn) {
+      color: var(--color-jaune);
+    }
+    & .btn-outline {
+      color: var(--color-creme);
+      border-color: var(--color-creme);
+      &:hover {
+        background: var(--color-creme);
+        color: var(--color-violet);
+      }
+    }
+  }
+
+  .section-head {
+    max-width: 760px;
+    margin-bottom: clamp(32px, 5vw, 56px);
+  }
+
+  .grid-2 {
+    display: grid;
+    gap: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  }
+  .grid-3 {
+    display: grid;
+    gap: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  }
+  .grid-4 {
+    display: grid;
+    gap: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+  }
+
+  .stack {
+    & > * + * {
+      margin-top: 16px;
+    }
+  }
+
+  .page-hero {
+    padding: clamp(48px, 7vw, 88px) 0 clamp(40px, 6vw, 72px);
+    border-bottom: 1px solid var(--color-gris);
+    & .lead {
+      max-width: 760px;
+    }
+  }
+
+  /* ---------- Boutons ---------- */
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+    font-family: var(--font-texte);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    padding: 16px 24px;
+    border-radius: var(--radius-site);
+    border: 2px solid transparent;
+    background: var(--color-violet);
+    color: var(--color-creme);
+    cursor: pointer;
+    transition:
+      background 0.15s,
+      color 0.15s,
+      transform 0.15s,
+      border-color 0.15s;
+    &:hover {
+      background: var(--color-violet-dark);
+      transform: translateY(-1px);
+    }
+    &:focus-visible {
+      outline: 3px solid var(--color-jaune);
+      outline-offset: 2px;
+    }
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+  }
+
+  .btn-rouge {
+    background: var(--color-rouge);
+    &:hover {
+      background: var(--color-rouge-dark);
+    }
+  }
+
+  .btn-creme {
+    background: var(--color-creme);
+    color: var(--color-violet);
+    &:hover {
+      background: #fff;
+    }
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--color-violet);
+    border-color: var(--color-violet);
+    &:hover {
+      background: var(--color-violet);
+      color: var(--color-creme);
+    }
+  }
+
+  .btn-sm {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+
+  .btn-link {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--color-violet);
+    font: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  /* ---------- Cartes, étiquettes ---------- */
+
+  .card {
+    background: #fff;
+    border-radius: var(--radius-site);
+    padding: 28px;
+    box-shadow: var(--shadow-site);
+  }
+
+  .card-flat {
+    background: #fff;
+    border-radius: var(--radius-site);
+    padding: 24px;
+    border: 1px solid var(--color-gris);
+  }
+
+  .sticker {
+    display: inline-block;
+    font-family: var(--font-titre);
+    text-transform: uppercase;
+    background: var(--color-jaune);
+    color: var(--color-noir);
+    padding: 6px 14px;
+    border-radius: 6px;
+    transform: rotate(-3deg);
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--color-lavande);
+    color: var(--color-violet);
+  }
+  .badge-draft {
+    background: var(--color-rose);
+    color: var(--color-rouge-dark);
+  }
+
+  .num-badge {
+    display: inline-grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--color-rouge);
+    color: var(--color-creme);
+    font-family: var(--font-titre);
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  .loader {
+    padding: 48px 0;
+    text-align: center;
+    color: var(--color-texte);
+  }
+
+  /* ---------- Formulaires ---------- */
+
+  .form-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  }
+
+  /* Champ : libellé, contrôle, aide (.hint) et message d'erreur (.error) */
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    & label {
+      font-weight: 700;
+      font-size: 14px;
+    }
+    & .hint {
+      font-size: 13px;
+      color: var(--color-texte);
+    }
+    & .error {
+      font-size: 13px;
+      color: var(--color-rouge);
+      font-weight: 500;
+    }
+  }
+
+  /* Case à cocher et son libellé */
+  .check {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 14px;
+    line-height: 1.4;
+    cursor: pointer;
+    & input {
+      width: 20px;
+      height: 20px;
+      margin: 0;
+      flex-shrink: 0;
+      accent-color: var(--color-rouge);
+    }
+  }
+
+  .alert {
+    border-radius: var(--radius-site);
+    padding: 14px 18px;
+    font-weight: 500;
+  }
+  .alert-ok {
+    background: #edfbf3;
+    color: #186842;
+    border: 1px solid #b5e6c8;
+  }
+  .alert-err {
+    background: var(--color-rose);
+    color: var(--color-rouge-dark);
+    border: 1px solid #f3a9a3;
+  }
+  .alert-info {
+    background: var(--color-lavande);
+    color: var(--color-violet-dark);
+  }
+
+  /* ---------- Divers ---------- */
+
+  .visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 8px;
+    z-index: 100;
+    background: var(--color-violet);
+    color: var(--color-creme);
+    padding: 8px 16px;
+    border-radius: var(--radius-site);
+    &:focus {
+      left: 8px;
+    }
+  }
+
+  /* Couleurs des six parties du programme (nuances du livre-programme de melenchon2027.fr) :
+     écologie vert · économie jaune · sécurité sociale rouge · futur orange · 6e République violet · monde ordonné bleu.
+     Elles définissent --titre (texte), --fond (bandeau) et --bordure (filets, pictos), à utiliser avec
+     text-(--titre), bg-(--fond), border-(--bordure)… */
+  .cat-bleu {
+    --titre: #004880;
+    --fond: #e8f6ff;
+    --bordure: #0078c2;
+  }
+  .cat-orange {
+    --titre: #b04e00;
+    --fond: #fff1e6;
+    --bordure: #f06b00;
+  }
+  .cat-vert {
+    --titre: #186842;
+    --fond: #edfbf3;
+    --bordure: #2b9a65;
+  }
+  .cat-jaune {
+    --titre: #6b5100;
+    --fond: #fffbe6;
+    --bordure: #b88e00;
+  }
+  .cat-rouge {
+    --titre: #8f120a;
+    --fond: #fdecea;
+    --bordure: #8f120a;
+  }
+  .cat-violet {
+    --titre: #330068;
+    --fond: #ede5ff;
+    --bordure: #1d003c;
+  }
+
+  /* ---------- Contenu riche (articles écrits avec l'éditeur, HTML venant de l'API) ---------- */
+
+  .prose {
+    font-size: 18px;
+    line-height: 1.7;
+    color: var(--color-noir);
+    & h2 {
+      font-size: 34px;
+      margin-top: 1.4em;
+    }
+    & h3 {
+      font-size: 26px;
+      margin-top: 1.3em;
+    }
+    & h4 {
+      font-size: 21px;
+      margin-top: 1.3em;
+    }
+    & img {
+      border-radius: var(--radius-site);
+      margin: 1.5em 0;
+      display: inline-block;
+      max-width: 100%;
+      height: auto;
+    }
+    & blockquote {
+      margin: 1.5em 0;
+      padding: 8px 0 8px 24px;
+      border-left: 6px solid var(--color-rouge);
+      font-weight: 500;
+      font-size: 20px;
+    }
+    & blockquote p:last-child {
+      margin-bottom: 0;
+    }
+    & :is(ul, ol) {
+      padding-left: 1.3em;
+    }
+    & li {
+      margin-bottom: 0.4em;
+    }
+    & a {
+      font-weight: 700;
+    }
+    & code {
+      background: var(--color-gris-clair);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+    & hr {
+      border: 0;
+      border-top: 2px solid var(--color-gris);
+      margin: 2em 0;
+    }
+    & u {
+      text-decoration-thickness: 2px;
+      text-underline-offset: 3px;
+    }
+
+    /* Mise en forme produite par l'éditeur d'articles (Quill) */
+    & .ql-align-center {
+      text-align: center;
+    }
+    & .ql-align-right {
+      text-align: right;
+    }
+    & .ql-align-justify {
+      text-align: justify;
+    }
+    & .ql-indent-1 {
+      padding-left: 1.5em;
+    }
+    & .ql-indent-2 {
+      padding-left: 3em;
+    }
+    & .ql-indent-3 {
+      padding-left: 4.5em;
+    }
+    & .ql-indent-4 {
+      padding-left: 6em;
+    }
+    & .ql-indent-5 {
+      padding-left: 7.5em;
+    }
+    & .ql-indent-6 {
+      padding-left: 9em;
+    }
+    & .ql-indent-7 {
+      padding-left: 10.5em;
+    }
+    & .ql-indent-8 {
+      padding-left: 12em;
+    }
+    & li:is(.ql-indent-1, .ql-indent-2, .ql-indent-3) {
+      margin-left: 0;
+    }
+    & .ql-align-center img {
+      margin-left: auto;
+      margin-right: auto;
+    }
+    & iframe.ql-video {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+      border: 0;
+      border-radius: var(--radius-site);
+      margin: 1.5em 0;
+    }
+  }
 }

@@ -1,26 +1,26 @@
 /* Éditeur d'articles (Quill) : hors couche, comme la feuille de Quill qu'il surcharge. */
 .rich-editor-host { display: block; }
-.rich-editor-host .rich-editor { background: #fff; border-radius: var(--radius); }
+.rich-editor-host .rich-editor { background: #fff; border-radius: var(--radius-site); }
 .rich-editor-host .ql-toolbar.ql-snow {
   position: sticky; top: 76px; z-index: 3;
-  background: var(--gris-clair); border: 1px solid var(--noir);
-  border-radius: var(--radius) var(--radius) 0 0; font-family: var(--font-texte);
+  background: var(--color-gris-clair); border: 1px solid var(--color-noir);
+  border-radius: var(--radius-site) var(--radius-site) 0 0; font-family: var(--font-texte);
 }
 .rich-editor-host .ql-container.ql-snow {
-  border: 1px solid var(--noir); border-top: 0; border-radius: 0 0 var(--radius) var(--radius);
+  border: 1px solid var(--color-noir); border-top: 0; border-radius: 0 0 var(--radius-site) var(--radius-site);
   font-family: var(--font-texte); font-size: 18px;
 }
-.rich-editor-host .ql-editor { min-height: 460px; padding: 24px 28px; line-height: 1.7; color: var(--noir); }
-.rich-editor-host .ql-editor.ql-blank::before { font-style: normal; color: var(--gris-moyen); left: 28px; }
-.rich-editor-host .ql-editor h2 { font-family: var(--font-titre); font-size: 34px; color: var(--violet); text-transform: uppercase; margin: 1.2em 0 .4em; }
-.rich-editor-host .ql-editor h3 { font-family: var(--font-titre); font-size: 26px; color: var(--violet); margin: 1.1em 0 .4em; }
+.rich-editor-host .ql-editor { min-height: 460px; padding: 24px 28px; line-height: 1.7; color: var(--color-noir); }
+.rich-editor-host .ql-editor.ql-blank::before { font-style: normal; color: var(--color-gris-moyen); left: 28px; }
+.rich-editor-host .ql-editor h2 { font-family: var(--font-titre); font-size: 34px; color: var(--color-violet); text-transform: uppercase; margin: 1.2em 0 .4em; }
+.rich-editor-host .ql-editor h3 { font-family: var(--font-titre); font-size: 26px; color: var(--color-violet); margin: 1.1em 0 .4em; }
 .rich-editor-host .ql-editor h4 { font-size: 20px; margin: 1em 0 .4em; }
 .rich-editor-host .ql-editor p { margin-bottom: .8em; }
-.rich-editor-host .ql-editor blockquote { border-left: 6px solid var(--rouge); padding-left: 20px; font-weight: 500; font-size: 20px; }
+.rich-editor-host .ql-editor blockquote { border-left: 6px solid var(--color-rouge); padding-left: 20px; font-weight: 500; font-size: 20px; }
 .rich-editor-host .ql-editor img { border-radius: 8px; max-width: 100%; }
 .rich-editor-host .ql-editor .ql-video { width: 100%; height: auto; aspect-ratio: 16 / 9; }
 .rich-editor-host .ql-snow .ql-tooltip { z-index: 4; }
-.rich-editor-host .rich-editor-loading { padding: 24px; color: var(--texte); }
-.rich-editor-host .rich-editor-status { margin: 8px 0 0; font-size: 14px; color: var(--violet); }
-.rich-editor-host .rich-editor-status.error { color: var(--rouge); font-weight: 700; }
+.rich-editor-host .rich-editor-loading { padding: 24px; color: var(--color-texte); }
+.rich-editor-host .rich-editor-status { margin: 8px 0 0; font-size: 14px; color: var(--color-violet); }
+.rich-editor-host .rich-editor-status.error { color: var(--color-rouge); font-weight: 700; }
 .rich-editor-host .disabled { opacity: .6; pointer-events: none; }

@@ -39,7 +39,7 @@ export function Footer() {
 
   return (
     <footer className="bg-violet pt-12 pb-6 text-creme [&_a]:text-creme [&_a]:no-underline [&_a:hover]:text-jaune [&_a:hover]:underline [&_ul]:m-0 [&_ul]:list-none [&_ul]:p-0">
-      <div className="container flex flex-wrap gap-10">
+      <div className="site-container flex flex-wrap gap-10">
         <div className="flex flex-[1.4_1_260px] flex-col items-start gap-5 max-[700px]:basis-full">
           <Link to="/" className="flex items-center gap-3 hover:text-creme! hover:no-underline!" aria-label={t.home}>
             <img className="h-24 w-24 rounded-md" src="/brand/circo7-square-192.webp" width="96" height="96" alt="" loading="lazy" />
@@ -124,7 +124,7 @@ export function Footer() {
         )}
       </div>
 
-      <div className="container">
+      <div className="site-container">
         <p className="mt-12 mb-0 border-t border-[rgba(255,252,244,.25)] pt-5 text-[13px] opacity-85">
           {i18n.f(t.copyright, { year: new Date().getFullYear(), circo: i18n.d.common.circo })}
         </p>

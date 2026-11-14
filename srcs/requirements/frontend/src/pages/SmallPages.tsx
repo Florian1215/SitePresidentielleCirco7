@@ -14,7 +14,7 @@ export function Legal() {
   const t = i18n.d.legal;
   return (
     <section className="section">
-      <div className="container container-narrow prose">
+      <div className="site-container max-w-[820px] prose">
         <span className="eyebrow">{t.eyebrow}</span>
         <h1 className="h2">{t.title}</h1>
 
@@ -43,7 +43,7 @@ export function NotFound() {
   const { d } = useI18n();
   return (
     <section className="section">
-      <div className="container container-narrow">
+      <div className="site-container max-w-[820px]">
         <span className="sticker">{d.notFound.badge}</span>
         <h1>{d.notFound.title}</h1>
         <p className="lead">{d.notFound.lead}</p>
@@ -84,7 +84,7 @@ export function Login() {
 
   return (
     <section className="section">
-      <div className="container max-w-[480px]">
+      <div className="site-container max-w-[480px]">
         <div className="card">
           <span className="eyebrow">Espace rédaction</span>
           <h1 className="h2">Connexion</h1>

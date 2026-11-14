@@ -7,7 +7,6 @@ import { useAuth } from '../lib/auth';
 import { maxLength, required, useForm } from '../lib/forms';
 import type { Category } from '../lib/models';
 import { usePageTitle } from '../lib/title';
-import './ArticleEditor.scss';
 
 export default function ArticleEditor() {
   /** Présent uniquement en modification (route blog/:slug/modifier). */
@@ -95,9 +94,9 @@ export default function ArticleEditor() {
   const coverSrc = coverPreview || currentCover;
 
   return (
-    <section className="section-sm page-editor">
-      <div className="container">
-        <Link to="/blog" className="back">
+    <section className="section-sm">
+      <div className="site-container">
+        <Link to="/blog" className="mb-4 inline-block font-bold no-underline">
           ← Retour aux actualités
         </Link>
         <h1 className="h2">{slug ? "Modifier l'article" : 'Écrire un article'}</h1>
@@ -107,26 +106,26 @@ export default function ArticleEditor() {
         ) : (
           <>
             {!auth.canPublish && (
-              <div className="alert alert-info info">
+              <div className="alert alert-info mb-6">
                 Vous pouvez rédiger et enregistrer vos articles en brouillon. Un·e éditeur·ice les relira et les publiera.
               </div>
             )}
 
-            <form onSubmit={onSubmit} className="editor" noValidate>
-              <div className="main stack">
+            <form onSubmit={onSubmit} className="grid grid-cols-[1fr_300px] items-start gap-8 max-[900px]:grid-cols-1" noValidate>
+              <div className="stack">
                 <div className="field">
                   <label htmlFor="ed-title">Titre *</label>
-                  <input id="ed-title" type="text" className="title-input" {...form.text('title')} />
+                  <input id="ed-title" type="text" className="font-titre text-[28px] text-violet" {...form.text('title')} />
                 </div>
                 <div className="field">
                   <label htmlFor="ed-excerpt">
                     Chapô <span className="hint">(résumé affiché dans la liste, 400 caractères max.)</span>
                   </label>
-                  <textarea id="ed-excerpt" rows={2} className="excerpt" {...form.text('excerpt')}></textarea>
+                  <textarea id="ed-excerpt" rows={2} className="min-h-[70px]" {...form.text('excerpt')}></textarea>
                 </div>
 
                 <div className="field">
-                  <span className="label" id="ed-content-label">
+                  <span className="text-[14px] font-bold" id="ed-content-label">
                     Contenu *
                   </span>
                   <RichEditor
@@ -136,13 +135,13 @@ export default function ArticleEditor() {
                     aria-labelledby="ed-content-label"
                   />
                   <p className="hint">
-                    Intertitres, gras, italique, alignement, listes, citations, liens, images (bouton ou glisser-déposer) et vidéos
-                    YouTube, Vimeo ou PeerTube.
+                    Intertitres, gras, italique, alignement, listes, citations, liens, images (bouton ou glisser-déposer) et
+                    vidéos YouTube, Vimeo ou PeerTube.
                   </p>
                 </div>
               </div>
 
-              <aside className="side stack">
+              <aside className="stack sticky top-[100px] max-[900px]:static">
                 <div className="card-flat stack">
                   <div className="field">
                     <label htmlFor="ed-status">Statut</label>
@@ -158,11 +157,11 @@ export default function ArticleEditor() {
                       {error}
                     </div>
                   )}
-                  <button type="submit" className="btn" disabled={saving}>
+                  <button type="submit" className="btn w-full" disabled={saving}>
                     {saving ? 'Enregistrement…' : 'Enregistrer'}
                   </button>
                   {auth.canPublish && form.values.status !== 'published' && (
-                    <button type="button" className="btn btn-rouge" disabled={saving} onClick={() => save('published')}>
+                    <button type="button" className="btn btn-rouge w-full" disabled={saving} onClick={() => save('published')}>
                       Publier maintenant
                     </button>
                   )}
@@ -192,7 +191,11 @@ export default function ArticleEditor() {
                     <label htmlFor="ed-cover">Image de couverture</label>
                     {coverSrc && (
                       <>
-                        <img src={coverSrc} alt="Aperçu de l'image de couverture" className="cover-preview" />
+                        <img
+                          src={coverSrc}
+                          alt="Aperçu de l'image de couverture"
+                          className="aspect-video w-full rounded-lg object-cover"
+                        />
                         <button type="button" className="btn-link" onClick={clearCover}>
                           Retirer l'image
                         </button>
