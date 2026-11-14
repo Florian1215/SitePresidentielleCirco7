@@ -1,6 +1,0 @@
-{
-  "/api": { "target": "http://backend:8000", "secure": false },
-  "/admin": { "target": "http://backend:8000", "secure": false },
-  "/django-static": { "target": "http://backend:8000", "secure": false },
-  "/media": { "target": "http://backend:8000", "secure": false }
-}

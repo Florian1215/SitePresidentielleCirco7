@@ -1,28 +1,34 @@
 # Site de campagne LFI — 7e circonscription des Français·es de l'étranger
 
-Frontend **Angular 22** (`srcs/frontend`) · Backend **Django 5.2 + Django REST Framework** (`srcs/backend`) · PostgreSQL · nginx.
+Frontend **React 19 + TypeScript + Tailwind CSS 4** (Vite, Node.js) (`srcs/requirements/frontend`) · Backend **Django 5.2 + Django REST Framework** (`srcs/requirements/backend`) · PostgreSQL · nginx.
 
 ## Lancer
 
 Au premier lancement, `make` crée `srcs/.env` à partir de `srcs/.env.example` (identifiants admin et mots de passe à changer).
 
-### Développement — `make dev` (ou simplement `make`)
+### Développement — `make dev`
 
 `srcs/docker-compose.dev.yml` : le code est monté en volume, tout se recharge à chaud.
 
-| Service | URL | Détail |
-|---|---|---|
-| Frontend | http://localhost:4200 | `ng serve` ; proxifie `/api`, `/admin`, `/media` vers Django |
-| Admin Django | http://localhost:4200/admin/ | |
-| Backend | http://localhost:8001 | `manage.py runserver`, `DEBUG=1` |
-| PostgreSQL | localhost:5433 | base séparée de la prod |
+Tout le site passe par une seule URL, servie par le service **nginx** (`srcs/requirements/nginx`) :
 
-Ports modifiables dans `srcs/.env` (`DEV_FRONTEND_PORT`, `DEV_BACKEND_PORT`, `DEV_DB_PORT`).
+| Adresse | Destination |
+|---|---|
+| http://localhost:4200/api/ | API Django REST (`manage.py runserver`, `DEBUG=1`) |
+| http://localhost:4200/admin/ | administration Django |
+| http://localhost:4200/ (tout le reste) | frontend React (`vite`, rechargement à chaud) |
+| localhost:5433 | PostgreSQL (base séparée de la prod) |
 
-### Production — `make prod`
+Ports modifiables dans `srcs/.env` (`DEV_FRONTEND_PORT`, `DEV_DB_PORT`).
 
-`srcs/docker-compose.prod.yml` : gunicorn (utilisateur non-root) + build Angular optimisé servi par nginx,
-`DEBUG=0`, redémarrage automatique. Site sur http://localhost:8080 (`HTTP_PORT`).
+### Production — `make` (ou `make prod`)
+
+`srcs/docker-compose.prod.yml` : nginx devant gunicorn (utilisateur non-root) et le build React,
+`DEBUG=0`, redémarrage automatique. Site sur http://localhost:8080 (`HTTP_PORT`) : `/api/` et `/admin/`
+vont à Django, `/django-static/` et `/media/` sont servis directement par nginx, le reste va au frontend.
+Seul le service nginx est exposé.
+
+Organisation des services : `srcs/requirements/{backend,frontend,nginx}`.
 
 Les deux environnements ont des noms de projet, des bases et des volumes distincts : ils peuvent tourner en même temps.
 Chaque Dockerfile a deux cibles (`dev` et `prod`).
@@ -31,13 +37,18 @@ Chaque Dockerfile a deux cibles (`dev` et `prod`).
 
 | Commande | Effet |
 |---|---|
-| `make dev` / `make prod` | lance l'environnement (build inclus) |
-| `make dev-down` / `make prod-down` / `make down` | arrête dev / prod / les deux |
-| `make logs`, `make ps`, `make shell`, `make dbshell`, `make migrate`, `make superuser`, `make import-groups` | sur le dev ; ajouter `MODE=prod` pour la prod |
-| `make makemigrations` | génère les migrations (dev, écrit dans le code source) |
-| `make clean` | arrête tout |
-| `make fclean` | ⚠️ arrête tout **et supprime les bases et images uploadées** (dev et prod) |
-| `make re` | `clean` puis `dev` |
+| `make` / `make prod` | lance la prod au premier plan (build inclus) |
+| `make dev` | lance le dev au premier plan (build inclus) |
+| `make detach` | lance en arrière-plan (prod ; `MODE=dev` pour le dev) |
+| `make down`, `make stop`, `make ps`, `make logs`, `make build` | sur la prod par défaut ; ajouter `MODE=dev` pour le dev |
+| `make shell`, `make dbshell`, `make migrate`, `make superuser`, `make import-groups` | idem (`MODE=dev` pour le dev) |
+| `make exec SERVICE=backend` | ouvre un shell dans un conteneur |
+| `make makemigrations` | génère les migrations (toujours sur le dev, écrit dans le code source) |
+| `make clean` | arrête et supprime les images locales |
+| `make fclean` | ⚠️ arrête **et supprime les bases et images uploadées** de l'environnement visé |
+| `make re` / `make vre` | `clean` (ou `fclean`) puis relance |
+
+`SERVICE=<nom>` limite `up`, `logs`, `build`… à un seul service ; `TAIL=<n>` règle le nombre de lignes de `make logs`.
 
 ## Gérer les droits des rédacteur·ices
 
@@ -64,9 +75,9 @@ français) ; le bouton des langues, en haut à droite, permet d'en changer (choi
 On peut aussi forcer la langue par l'URL, par ex. pour partager un lien : `?lang=en` (ou `?lan=en`),
 valeurs `fr`, `en`, `de` ; le paramètre est ensuite retiré de l'adresse et le choix mémorisé.
 
-- Textes de l'interface : `srcs/frontend/src/app/i18n/fr.ts` (référence), `en.ts`, `de.ts` — mêmes clés,
+- Textes de l'interface : `srcs/requirements/frontend/src/i18n/fr.ts` (référence), `en.ts`, `de.ts` — mêmes clés,
   vérifiées à la compilation.
-- Programme : `src/app/data/programme.data.ts` (référence), `programme.en.ts`, `programme.de.ts`
+- Programme : `src/data/programme.data.ts` (référence), `programme.en.ts`, `programme.de.ts`
   (mêmes mesures, dans le même ordre ; à défaut, le texte français s'affiche).
 - Noms de pays, dates et nombres : traduits automatiquement par le navigateur.
 - Restent en français : articles, événements Zetkin et noms des groupes (saisis par l'équipe),
@@ -104,6 +115,18 @@ un clic sur un point ouvre le groupe sur Action populaire.
   ou sa position, ou ajouter un groupe à la main (nom, pays, lien, latitude/longitude).
 - Le fond de carte (`europe-map.ts`) est généré à partir de Natural Earth (domaine public).
 
+## Carte des bureaux de vote
+
+La page *Voter* (section « Où voter ? ») affiche la même carte avec les bureaux de vote ; un clic sur un
+point ouvre la page du consulat si elle est renseignée, sinon le plan OpenStreetMap.
+
+- Les bureaux de vote de l'étranger sont fixés par arrêté quelques mois avant le scrutin (liste publiée sur
+  diplomatie.gouv.fr). Tant qu'aucun bureau n'est affiché, la carte indique que les adresses arrivent bientôt.
+- **Dans l'admin → Bureaux de vote** : un brouillon masqué existe pour chaque poste consulaire de la
+  circonscription (« Bureau de vote de … (à compléter) », position = centre de la ville). Complétez le nom,
+  l'adresse, la position exacte et, si besoin, les informations pratiques et le lien, puis cochez
+  « affiché sur la carte ». On peut aussi ajouter d'autres bureaux.
+
 ## Données collectées
 
 Les formulaires *Je soutiens* / *aide à l'inscription* et *Contact* sont consultables dans l'admin
@@ -111,8 +134,8 @@ Les formulaires *Je soutiens* / *aide à l'inscription* et *Contact* sont consul
 
 ## À personnaliser
 
-- `srcs/frontend/src/app/core/campaign.config.ts` : dates de l'élection et date limite d'inscription
+- `srcs/requirements/frontend/src/lib/campaign.ts` : dates de l'élection et date limite d'inscription
   (indicatives, passez `datesConfirmed: true` une fois le décret publié), e-mail de contact, réseaux sociaux.
-- `srcs/frontend/src/app/data/programme.data.ts` : contenu du programme.
-- `srcs/frontend/src/app/pages/legal/legal.ts` : mentions légales (responsable de publication, hébergeur).
+- `srcs/requirements/frontend/src/data/programme.data.ts` : contenu du programme.
+- `srcs/requirements/frontend/src/i18n/fr.ts` (section `legal`) et `srcs/requirements/frontend/src/pages/SmallPages.tsx` : mentions légales (responsable de publication, hébergeur).
 # SitePresidentielleCirco7

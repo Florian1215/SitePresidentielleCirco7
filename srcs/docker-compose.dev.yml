@@ -1,7 +1,7 @@
 # Environnement de DÉVELOPPEMENT : rechargement à chaud du frontend et du backend.
-#   Frontend (ng serve) : http://localhost:4200
-#   Backend  (runserver): http://localhost:8001  (API et /admin aussi accessibles via :4200)
-#   Ports modifiables dans srcs/.env (DEV_FRONTEND_PORT, DEV_BACKEND_PORT, DEV_DB_PORT)
+#   Tout le site sur une seule URL : http://localhost:${DEV_FRONTEND_PORT:-4200}
+#     /api/, /admin/  → Django (runserver)      · le reste → Vite (React)
+#   Ports modifiables dans srcs/.env (DEV_FRONTEND_PORT, DEV_DB_PORT)
 name: presidentielle-dev
 
 services:
@@ -23,36 +23,40 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ./requirements/backend
       target: dev
     env_file: .env
     environment:
       POSTGRES_HOST: db
       DJANGO_DEBUG: "1"
       DJANGO_ALLOWED_HOSTS: "*"
-      DJANGO_CSRF_TRUSTED_ORIGINS: "http://localhost:${DEV_FRONTEND_PORT:-4200},http://127.0.0.1:${DEV_FRONTEND_PORT:-4200},http://localhost:${DEV_BACKEND_PORT:-8001}"
+      DJANGO_CSRF_TRUSTED_ORIGINS: "http://localhost:${DEV_FRONTEND_PORT:-4200},http://127.0.0.1:${DEV_FRONTEND_PORT:-4200}"
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "${DEV_BACKEND_PORT:-8001}:8000"
     volumes:
-      - ./backend:/app
+      - ./requirements/backend:/app
       - media_data:/app/media
 
   frontend:
     build:
-      context: ./frontend
+      context: ./requirements/frontend
+      target: dev
+    volumes:
+      - ./requirements/frontend:/app
+      # node_modules reste celui de l'image (binaires Linux), pas celui de la machine hôte
+      - /app/node_modules
+
+  # Seul service exposé : répartit les requêtes entre Django et le frontend
+  nginx:
+    build:
+      context: ./requirements/nginx
       target: dev
     depends_on:
       - backend
+      - frontend
     ports:
-      - "${DEV_FRONTEND_PORT:-4200}:4200"
-    volumes:
-      - ./frontend:/app
-      # node_modules reste celui de l'image (binaires Linux), pas celui de la machine hôte
-      - /app/node_modules
-      - /app/.angular
+      - "${DEV_FRONTEND_PORT:-4200}:80"
 
 volumes:
   db_data:

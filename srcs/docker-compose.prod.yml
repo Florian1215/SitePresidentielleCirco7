@@ -1,5 +1,6 @@
-# Environnement de PRODUCTION : gunicorn + build Angular optimisé servi par nginx.
-#   Site : http://localhost:${HTTP_PORT:-8080}
+# Environnement de PRODUCTION : gunicorn + build Vite (React), derrière nginx.
+#   Tout le site sur une seule URL : http://localhost:${HTTP_PORT:-8080}
+#     /api/, /admin/  → Django (gunicorn)       · le reste → frontend (build React)
 name: presidentielle
 
 services:
@@ -20,7 +21,7 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ./requirements/backend
       target: prod
     restart: unless-stopped
     env_file: .env
@@ -36,11 +37,19 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./requirements/frontend
+      target: prod
+    restart: unless-stopped
+
+  # Seul service exposé : répartit les requêtes entre Django et le frontend
+  nginx:
+    build:
+      context: ./requirements/nginx
       target: prod
     restart: unless-stopped
     depends_on:
       - backend
+      - frontend
     ports:
       - "${HTTP_PORT:-8080}:80"
     volumes:

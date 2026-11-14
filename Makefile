@@ -1,83 +1,106 @@
-DEV  = docker compose -f srcs/docker-compose.dev.yml --env-file srcs/.env
-PROD = docker-compose -f srcs/docker-compose.prod.yml --env-file srcs/.env
-ENV  = srcs/.env
+####################################################### VARIABLE #######################################################
+NAME		:=	presidentielle
+SRCS_D		:=	srcs
+ENV_FILE	:=	$(SRCS_D)/.env
+MODE		?=	prod
+COMPOSE_F	?=	$(SRCS_D)/docker-compose.$(MODE).yml
+SERVICE		?=	#Leave blank
+TAIL		?=	100
 
-# Les commandes utilitaires (migrate, shell, logs…) ciblent le dev par défaut :
-#   make shell            -> environnement de dev
-#   make shell MODE=prod  -> environnement de prod
-MODE    ?= dev
-COMPOSE  = $(if $(filter prod,$(MODE)),$(PROD),$(DEV))
+######################################################## FLAGS #########################################################
+FLAGS		=	-f $(COMPOSE_F) --env-file $(ENV_FILE)
+COMPOSE		=	docker-compose
+DSHELL		=	/bin/sh
+MANAGE		=	$(COMPOSE) $(FLAGS) exec backend python manage.py
 
-.PHONY: all dev prod down dev-down prod-down stop logs ps migrate makemigrations \
-        superuser shell dbshell import-groups clean fclean re
+######################################################## RULES #########################################################
+.DEFAULT_GOAL = all
 
-all: dev
+.PHONY: all $(NAME)
+all			:	$(NAME)
 
-$(ENV):
-	@cp srcs/.env.example $(ENV)
-	@sed -i.bak "s|^DJANGO_SECRET_KEY=.*|DJANGO_SECRET_KEY=$$(LC_ALL=C tr -dc 'a-zA-Z0-9' </dev/urandom | head -c 50)|" $(ENV) && rm -f $(ENV).bak
-	@echo ">> $(ENV) créé à partir de .env.example (pensez à changer les mots de passe)"
+# Production: gunicorn + React build behind nginx on http://localhost:$(HTTP_PORT) (HTTP_PORT in srcs/.env)
+# Backend and frontend images are built one after the other to spare the RAM of small servers.
+$(NAME)		:	$(ENV_FILE)
+			$(COMPOSE) $(FLAGS) build backend
+			$(COMPOSE) $(FLAGS) build frontend
+			$(COMPOSE) $(FLAGS) up --build $(SERVICE)
 
-# ---------- Développement (rechargement à chaud) ----------
-dev: $(ENV)
-	$(DEV) up -d --build --renew-anon-volumes
-	@echo ">> Frontend (ng serve) : http://localhost:$$(grep ^DEV_FRONTEND_PORT $(ENV) | cut -d= -f2)  (admin : /admin/)"
-	@echo ">> Backend (runserver) : http://localhost:$$(grep ^DEV_BACKEND_PORT $(ENV) | cut -d= -f2)"
+.PHONY: prod
+prod		:	all
 
-dev-down:
-	$(DEV) down
+# Development mode: hot reload (Vite + Django runserver) on http://localhost:$(DEV_FRONTEND_PORT) (in srcs/.env)
+.PHONY: dev
+dev			:	$(ENV_FILE)
+			$(MAKE) all MODE=dev
 
-# ---------- Production ----------
-# Builds lancés l'un après l'autre (et non en parallèle) pour ne pas saturer la RAM
-# des petits serveurs : le build Angular est le plus gourmand.
-prod: $(ENV)
-	$(PROD) build backend
-	$(PROD) build frontend
-	$(PROD) up -d
-	@echo ">> Site  : http://localhost:$$(grep ^HTTP_PORT $(ENV) | cut -d= -f2)"
-	@echo ">> Admin : http://localhost:$$(grep ^HTTP_PORT $(ENV) | cut -d= -f2)/admin/"
+$(ENV_FILE)	:
+			cp $(SRCS_D)/.env.example $(ENV_FILE)
+			@sed -i.bak "s|^DJANGO_SECRET_KEY=.*|DJANGO_SECRET_KEY=$$(LC_ALL=C tr -dc 'a-zA-Z0-9' </dev/urandom | head -c 50)|" $(ENV_FILE) && rm -f $(ENV_FILE).bak
+			@echo "$(ENV_FILE) created from .env.example: change the passwords before going to production."
 
-prod-down:
-	$(PROD) down
+.PHONY: env
+env			:	$(ENV_FILE)
 
-# ---------- Utilitaires ----------
-down: dev-down prod-down
+CMDS		:=	up build down stop ps ls images top
+.PHONY: $(CMDS)
+$(CMDS)		:	$(ENV_FILE)
+			$(COMPOSE) $(FLAGS) $@ $(SERVICE)
 
-stop:
-	$(COMPOSE) stop
+.PHONY: detach
+detach		:	$(ENV_FILE)
+			$(COMPOSE) $(FLAGS) up --build --$@ $(SERVICE)
 
-logs:
-	$(COMPOSE) logs -f
+.PHONY: logs
+logs		:
+			$(COMPOSE) $(FLAGS) $@ -f --tail=$(TAIL) $(SERVICE)
 
-ps:
-	$(COMPOSE) ps
+# make exec SERVICE=backend
+.PHONY: exec
+exec		:
+			$(COMPOSE) $(FLAGS) $@ $(SERVICE) $(DSHELL)
 
-migrate:
-	$(COMPOSE) exec backend python manage.py migrate
-
+################################################### DJANGO HELPERS #####################################################
+.PHONY: migrate makemigrations superuser shell dbshell import-groups
+migrate		:
+			$(MANAGE) migrate
+# Always on dev: migrations must be written into the source code (mounted volume)
 makemigrations:
-	$(DEV) exec backend python manage.py makemigrations
-
-superuser:
-	$(COMPOSE) exec backend python manage.py createsuperuser
-
-shell:
-	$(COMPOSE) exec backend python manage.py shell
-
-# Met à jour les groupes d'action de la carte depuis Action populaire
+			$(MAKE) --no-print-directory _makemigrations MODE=dev
+.PHONY: _makemigrations
+_makemigrations:
+			$(MANAGE) makemigrations
+superuser	:
+			$(MANAGE) createsuperuser
+shell		:
+			$(MANAGE) shell
+dbshell		:
+			$(COMPOSE) $(FLAGS) exec db sh -c 'psql -U $$POSTGRES_USER -d $$POSTGRES_DB'
+# Update the map's action groups from Action populaire
 import-groups:
-	$(COMPOSE) exec backend python manage.py import_action_groups
+			$(MANAGE) import_action_groups
 
-dbshell:
-	$(COMPOSE) exec db sh -c 'psql -U $$POSTGRES_USER -d $$POSTGRES_DB'
+####################################################### CLEANING #######################################################
+.PHONY: clean
+clean		:
+			$(COMPOSE) $(FLAGS) down --rmi local --remove-orphans
 
-clean:
-	$(DEV) down --remove-orphans
-	$(PROD) down --remove-orphans
+# Warning: also deletes the databases and uploaded images
+.PHONY: fclean
+fclean		:	dusting
+			$(COMPOSE) $(FLAGS) down -v --rmi all --remove-orphans
 
-# Attention : supprime aussi les bases de données et les images uploadées (dev ET prod).
-fclean:
-	$(DEV) down --volumes --rmi local --remove-orphans
-	$(PROD) down --volumes --rmi local --remove-orphans
+.PHONY: dusting
+dusting		:
+			find . -path "*/__pycache__/*" -delete
+			find . -path "*/__pycache__" -delete
 
-re: clean all
+.PHONY: prune
+prune		:
+			docker system prune -af
+
+.PHONY: re
+re			:	clean all
+
+.PHONY: vre
+vre			:	fclean all

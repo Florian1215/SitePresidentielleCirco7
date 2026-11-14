@@ -1,0 +1,14 @@
+# Dépendances et build
+/node_modules
+/dist
+npm-debug.log
+
+# Éditeurs
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Système
+.DS_Store
+Thumbs.db

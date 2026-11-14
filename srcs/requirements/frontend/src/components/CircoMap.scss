@@ -1,0 +1,232 @@
+/* Carte de la circonscription (pages « La circonscription » et « Voter ») : styles limités à .circo-map. */
+@layer pages {
+  // Carte en pleine largeur ; sur grand écran, le panneau de la liste est posé dessus, à droite
+  .circo-map {
+    position: relative;
+
+    .map-card {
+      position: relative;
+      height: clamp(520px, 78vh, 820px);
+      background: #e6eef8;
+      overflow: hidden;
+    }
+    .map {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: pan-y; // le pincement à deux doigts est géré par la carte
+      user-select: none;
+      &.zoomed { cursor: grab; touch-action: none; }
+      &.zoomed:active { cursor: grabbing; }
+    }
+
+    .country {
+      fill: #f1ece0;
+      stroke: #fff;
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke; // frontières toujours fines, quel que soit le zoom
+    }
+    .in-circo {
+      fill: var(--violet);
+      stroke: rgba(255, 252, 244, 0.7);
+      transition: fill 0.15s;
+      &.hovered { fill: var(--violet-vif); }
+    }
+
+    .pin { cursor: pointer; outline: none; }
+    .pin-halo {
+      fill: var(--jaune);
+      opacity: 0;
+      pointer-events: none; // le halo ne doit pas masquer un point voisin
+      transition: opacity 0.15s;
+    }
+    .pin-dot {
+      fill: var(--rouge);
+      stroke: #fff;
+      stroke-width: 2.5;
+      vector-effect: non-scaling-stroke;
+      transition: fill 0.15s;
+    }
+    .pin:hover, .pin:focus-visible, .pin.on {
+      .pin-halo { opacity: 0.55; }
+      .pin-dot { fill: var(--jaune); stroke: var(--noir); }
+    }
+
+    /* Boutons de zoom */
+    .zoom-controls {
+      position: absolute;
+      top: 24px;
+      left: max(24px, calc((100vw - var(--container)) / 2 + var(--gutter)));
+      display: flex;
+      flex-direction: column;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+      button {
+        width: 40px;
+        height: 40px;
+        border: 0;
+        background: #fff;
+        color: var(--violet);
+        font: 700 22px/1 var(--font-texte);
+        cursor: pointer;
+        & + button { border-top: 1px solid var(--gris); }
+        &:hover:not(:disabled) { background: var(--lavande); }
+        &:disabled { color: var(--gris-moyen); cursor: default; }
+        &:focus-visible { outline: 3px solid var(--jaune); outline-offset: -3px; }
+      }
+      .reset { font-size: 18px; }
+    }
+
+    /* Bulle d'information d'un point */
+    .tooltip {
+      position: absolute;
+      z-index: 2;
+      transform: translate(-50%, calc(-100% - 16px));
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 180px;
+      max-width: 260px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--noir);
+      color: var(--creme);
+      text-decoration: none;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+      pointer-events: none; // purement informative : c'est le point qui est cliquable
+      strong { font-size: 15px; line-height: 1.25; }
+      span { font-size: 13px; opacity: 0.8; white-space: pre-line; }
+      em { font-style: normal; font-size: 13px; font-weight: 700; color: var(--jaune); margin-top: 4px; }
+      &::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        bottom: -7px;
+        width: 14px;
+        height: 14px;
+        background: var(--noir);
+        transform: translateX(-50%) rotate(45deg);
+      }
+      // Près du haut de la carte, la bulle passe sous le point
+      &.below {
+        transform: translate(-50%, 16px);
+        &::after { bottom: auto; top: -7px; }
+      }
+    }
+
+    /* Légende / pays survolé */
+    .map-legend {
+      position: absolute;
+      left: max(24px, calc((100vw - var(--container)) / 2 + var(--gutter)));
+      bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 14px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(255, 252, 244, 0.95);
+      font-size: 13px;
+      strong { font-family: var(--font-titre); font-size: 18px; color: var(--violet); text-transform: uppercase; }
+    }
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+    .swatch { width: 14px; height: 14px; border-radius: 3px; background: var(--violet); }
+    .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--rouge); border: 2px solid #fff; box-shadow: 0 0 0 1px var(--gris-moyen); }
+
+    /* Panneau de la liste, posé sur la carte */
+    .group-list {
+      position: absolute;
+      z-index: 3;
+      top: 24px;
+      max-height: calc(100% - 48px); // hauteur selon le contenu, défilement si la liste dépasse la carte
+      right: max(24px, calc((100vw - var(--container)) / 2 + var(--gutter)));
+      width: 340px;
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px 22px;
+      box-shadow: 0 16px 40px rgba(33, 35, 32, 0.18);
+      overflow-y: auto;
+    }
+    .group-country + .group-country { margin-top: 4px; }
+    .group-country h3 { margin: 0; font-size: 22px; }
+    // En-tête de pays : bouton qui déplie / replie la liste de ses points
+    .country-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 8px;
+      margin: 0 -8px;
+      width: calc(100% + 16px);
+      border: 0;
+      border-bottom: 2px solid var(--gris);
+      border-radius: 8px 8px 0 0;
+      background: none;
+      color: var(--violet);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      &:hover { background: var(--lavande); }
+      &:focus-visible { outline: 3px solid var(--jaune); outline-offset: -3px; }
+    }
+    .country-name { flex: 1; }
+    .country-count {
+      min-width: 26px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--rose);
+      color: var(--rouge);
+      font-family: var(--font-texte);
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .chevron {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 0.2s;
+    }
+    .group-country.open .chevron { transform: rotate(180deg); }
+    .group-country ul { list-style: none; margin: 0; padding: 6px 0 10px; display: grid; gap: 2px; }
+    .group-country ul[hidden] { display: none; } // sinon « display: grid » l'emporterait sur l'attribut hidden
+    .group-country a.on { background: var(--lavande); color: var(--violet); }
+    .group-country a {
+      display: block;
+      padding: 5px 8px;
+      margin: 0 -8px;
+      border-radius: 6px;
+      color: var(--noir);
+      text-decoration: none;
+      font-size: 15px;
+      &:hover { background: var(--lavande); color: var(--violet); }
+    }
+    // Encadré en bas du panneau (créer un groupe, vérifier son bureau…)
+    .create {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: var(--radius);
+      background: var(--rose);
+      p { font-size: 14px; margin-bottom: 10px; }
+    }
+    // Ligne secondaire d'un élément de la liste (adresse d'un bureau de vote…)
+    .point-sub { display: block; font-size: 13px; color: var(--texte); white-space: pre-line; }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 960px) {
+      .map-card { height: 400px; }
+      // Le panneau passe sous la carte
+      & { padding-bottom: 32px; }
+      .group-list { position: static; width: auto; margin: 16px var(--gutter) 0; max-height: none; }
+      .zoom-controls { left: 16px; top: 16px; }
+    }
+    @media (max-width: 600px) {
+      .map-legend { left: 0; right: 0; bottom: 0; border-radius: 0; }
+      .tooltip { min-width: 150px; }
+    }
+  }
+}

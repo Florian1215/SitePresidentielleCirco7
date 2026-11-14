@@ -1,8 +1,8 @@
 srcs/.env
 srcs/frontend/node_modules/
 srcs/frontend/dist/
-srcs/frontend/.angular/
 __pycache__/
 srcs/backend/media/
 srcs/backend/staticfiles/
 .DS_Store
+.idea

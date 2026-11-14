@@ -1,0 +1,44 @@
+/*
+ * Tailwind CSS v4, sans la feuille de réinitialisation « preflight » : la charte du site (styles/global.scss)
+ * définit elle-même la typographie, les listes, les boutons… et doit rester identique.
+ * Ordre des couches : thème < styles globaux < composants < styles de page < utilitaires Tailwind.
+ */
+@layer theme, base, components, pages, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/*
+ * Classes de la charte homonymes d'utilitaires Tailwind : on garde celles de la charte.
+ * (`container` : largeur 1200 px + gouttières ; `bg-gris` : fond gris clair des sections.)
+ */
+@source not inline('container bg-gris');
+
+/* Polices de la charte : utilitaires font-titre / font-texte, et variables --font-titre / --font-texte. */
+@theme {
+  --font-titre: 'Config Titre', 'Arial Narrow', Impact, sans-serif;
+  --font-texte: 'Config', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* Couleurs de la charte (variables de styles/global.scss) : bg-violet, text-creme, border-rouge… */
+@theme inline {
+  --color-violet: var(--violet);
+  --color-violet-dark: var(--violet-dark);
+  --color-rouge: var(--rouge);
+  --color-rouge-dark: var(--rouge-dark);
+  --color-noir: var(--noir);
+  --color-creme: var(--creme);
+  --color-texte: var(--texte);
+  --color-rose: var(--rose);
+  --color-lavande: var(--lavande);
+  --color-jaune: var(--jaune);
+  --color-gris-clair: var(--gris-clair);
+  --color-gris: var(--gris);
+  --color-gris-moyen: var(--gris-moyen);
+  --color-vert: var(--vert);
+  --color-violet-vif: var(--violet-vif);
+  --color-rouge-vif: var(--rouge-vif);
+  --color-bleu: var(--bleu);
+  --color-rose-vif: var(--rose-vif);
+  --radius-site: var(--radius);
+  --shadow-site: var(--shadow);
+}
