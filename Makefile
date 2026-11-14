@@ -19,8 +19,6 @@ MANAGE		=	$(COMPOSE) $(FLAGS) exec backend python manage.py
 .PHONY: all $(NAME)
 all			:	$(NAME)
 
-# Production: gunicorn + React build behind nginx on http://localhost:$(HTTP_PORT) (HTTP_PORT in srcs/.env)
-# Backend and frontend images are built one after the other to spare the RAM of small servers.
 $(NAME)		:	$(ENV_FILE)
 			$(COMPOSE) $(FLAGS) build backend
 			$(COMPOSE) $(FLAGS) build frontend
@@ -29,7 +27,6 @@ $(NAME)		:	$(ENV_FILE)
 .PHONY: prod
 prod		:	all
 
-# Development mode: hot reload (Vite + Django runserver) on http://localhost:$(DEV_FRONTEND_PORT) (in srcs/.env)
 .PHONY: dev
 dev			:	$(ENV_FILE)
 			$(MAKE) all MODE=dev
@@ -76,7 +73,7 @@ shell		:
 			$(MANAGE) shell
 dbshell		:
 			$(COMPOSE) $(FLAGS) exec db sh -c 'psql -U $$POSTGRES_USER -d $$POSTGRES_DB'
-# Update the map's action groups from Action populaire
+
 import-groups:
 			$(MANAGE) import_action_groups
 
@@ -85,7 +82,6 @@ import-groups:
 clean		:
 			$(COMPOSE) $(FLAGS) down --rmi local --remove-orphans
 
-# Warning: also deletes the databases and uploaded images
 .PHONY: fclean
 fclean		:	dusting
 			$(COMPOSE) $(FLAGS) down -v --rmi all --remove-orphans
