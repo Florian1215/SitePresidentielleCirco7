@@ -2,14 +2,14 @@
 NAME		:=	presidentielle
 SRCS_D		:=	srcs
 ENV_FILE	:=	$(SRCS_D)/.env
-MODE		?=	dev
+MODE		?=	prod
 COMPOSE_F	?=	$(SRCS_D)/docker-compose.$(MODE).yml
 SERVICE		?=	#Leave blank
 TAIL		?=	100
 
 ######################################################## FLAGS #########################################################
 FLAGS		=	-f $(COMPOSE_F) --env-file $(ENV_FILE)
-COMPOSE		=	docker compose
+COMPOSE		=	docker-compose
 DSHELL		=	/bin/sh
 MANAGE		=	$(COMPOSE) $(FLAGS) exec backend python manage.py
 
