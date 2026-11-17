@@ -180,11 +180,6 @@ export const en: Dict = {
     sources: 'Official sources:',
     sourceDiplo: 'France Diplomatie — Elections abroad (in French)',
     sourceSP: 'Service-public.gouv.fr — Elections (in French)',
-    helpEyebrow: 'We’re here to help',
-    helpTitle: 'Need a hand?',
-    helpLead:
-      'Our volunteers in the 7th constituency help you check and complete your registration, and send you a reminder before the deadline and on voting days.',
-    helpSubmit: 'I’d like some help',
   },
 
   circo: {
@@ -306,10 +301,6 @@ export const en: Dict = {
   },
 
   supporterForm: {
-    thanks: 'Thank you!',
-    saved: 'Your details have been saved.',
-    willHelp: 'We will contact you to help you register on the consular electoral roll.',
-    willRemind: 'We will contact you before the key dates.',
     firstName: 'First name *',
     lastName: 'Last name *',
     email: 'Email *',
@@ -318,9 +309,6 @@ export const en: Dict = {
     country: 'Country of residence *',
     choose: 'Choose…',
     city: 'City',
-    wantsHelp: 'I would like help registering on the consular electoral roll',
-    wantsReminders: 'I would like to receive reminders (registration deadline, voting days)',
-    wantsVolunteer: 'I want to take part in the campaign near me',
     consent:
       'I agree that my data may be used by the campaign team to contact me in connection with the 2027 presidential election',
     consentMore: 'learn more',

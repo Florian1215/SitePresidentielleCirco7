@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { CircoMap } from '../components/CircoMap';
 import type { MapLabels, MapPoint } from '../components/CircoMap';
 import { Photo } from '../components/Photo';
-import { SupporterForm } from '../components/SupporterForm';
 import { STEP_ICONS } from '../data/step-icons';
 import { api } from '../lib/api';
 import { CAMPAIGN, daysUntil } from '../lib/campaign';
@@ -266,26 +265,6 @@ export default function Voter() {
               {t.sourceSP}
             </a>
           </p>
-        </div>
-      </section>
-
-      {/* AIDE */}
-      <section className="section bg-lavande">
-        <div className="site-container grid grid-cols-[1fr_1.3fr] items-start gap-10 max-[900px]:grid-cols-1">
-          <div>
-            <span className="eyebrow">{t.helpEyebrow}</span>
-            <h2>{t.helpTitle}</h2>
-            <p className="lead">{t.helpLead}</p>
-            <Photo
-              className="mt-8 aspect-[4/3] overflow-hidden rounded-site max-[900px]:hidden"
-              name="standLfi"
-              sizes="(max-width: 900px) 100vw, 460px"
-              position="60% 50%"
-            />
-          </div>
-          <div className="card">
-            <SupporterForm helpPreset submitLabel={t.helpSubmit} />
-          </div>
         </div>
       </section>
     </div>

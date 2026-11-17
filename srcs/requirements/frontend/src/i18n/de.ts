@@ -180,11 +180,6 @@ export const de: Dict = {
     sources: 'Offizielle Quellen:',
     sourceDiplo: 'France Diplomatie — Wahlen im Ausland (auf Französisch)',
     sourceSP: 'Service-public.gouv.fr — Wahlen (auf Französisch)',
-    helpEyebrow: 'Wir begleiten Sie',
-    helpTitle: 'Brauchen Sie Hilfe?',
-    helpLead:
-      'Unsere Aktiven im 7. Wahlkreis helfen Ihnen, Ihre Eintragung zu prüfen und vorzunehmen, und erinnern Sie vor dem Anmeldeschluss und an den Wahltagen.',
-    helpSubmit: 'Ich möchte Hilfe',
   },
 
   circo: {
@@ -306,10 +301,6 @@ export const de: Dict = {
   },
 
   supporterForm: {
-    thanks: 'Danke!',
-    saved: 'Ihre Angaben wurden gespeichert.',
-    willHelp: 'Wir melden uns, um Ihnen bei der Eintragung in die konsularische Wählerliste zu helfen.',
-    willRemind: 'Wir melden uns vor den wichtigen Terminen.',
     firstName: 'Vorname *',
     lastName: 'Nachname *',
     email: 'E-Mail *',
@@ -318,9 +309,6 @@ export const de: Dict = {
     country: 'Wohnsitzland *',
     choose: 'Bitte wählen…',
     city: 'Stadt',
-    wantsHelp: 'Ich möchte Hilfe bei der Eintragung in die konsularische Wählerliste',
-    wantsReminders: 'Ich möchte Erinnerungen erhalten (Anmeldeschluss, Wahltage)',
-    wantsVolunteer: 'Ich möchte mich in meiner Nähe an der Kampagne beteiligen',
     consent:
       'Ich bin damit einverstanden, dass das Kampagnenteam meine Daten verwendet, um mich im Rahmen der Präsidentschaftswahl 2027 zu kontaktieren',
     consentMore: 'mehr erfahren',

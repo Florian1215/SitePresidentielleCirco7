@@ -187,11 +187,6 @@ export const fr = {
     sources: 'Sources officielles :',
     sourceDiplo: "France Diplomatie — Élections à l'étranger",
     sourceSP: 'Service-public.gouv.fr — Élections',
-    helpEyebrow: 'On vous accompagne',
-    helpTitle: "Besoin d'un coup de main ?",
-    helpLead:
-      'Nos militant·es de la 7e circonscription vous aident à vérifier et faire votre inscription, et vous envoient un rappel avant la date limite et les jours de vote.',
-    helpSubmit: 'Je veux être aidé·e',
   },
 
   circo: {
@@ -313,10 +308,6 @@ export const fr = {
   },
 
   supporterForm: {
-    thanks: 'Merci !',
-    saved: 'Votre inscription est bien enregistrée.',
-    willHelp: 'Nous vous recontacterons pour vous aider à vous inscrire sur la liste électorale consulaire.',
-    willRemind: 'Nous vous recontacterons avant les échéances importantes.',
     firstName: 'Prénom *',
     lastName: 'Nom *',
     email: 'E-mail *',
@@ -325,9 +316,6 @@ export const fr = {
     country: 'Pays de résidence *',
     choose: 'Choisir…',
     city: 'Ville',
-    wantsHelp: "Je souhaite être aidé·e pour m'inscrire sur la liste électorale consulaire",
-    wantsReminders: "Je souhaite recevoir les rappels (date limite d'inscription, jours de vote)",
-    wantsVolunteer: 'Je veux participer à la campagne près de chez moi',
     consent:
       "J'accepte que mes données soient utilisées par l'équipe de campagne pour me recontacter dans le cadre de l'élection présidentielle 2027",
     consentMore: 'en savoir plus',
