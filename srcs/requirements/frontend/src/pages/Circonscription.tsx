@@ -133,6 +133,7 @@ export default function Circonscription() {
         {/* Carte en pleine largeur, avec le panneau des groupes posé dessus */}
         <CircoMap
           idPrefix="groupes"
+          hideLegend
           title={
             <>
               <span className="eyebrow">{t.mapEyebrow}</span>
