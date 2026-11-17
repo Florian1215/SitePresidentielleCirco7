@@ -20,7 +20,11 @@ export function Legal() {
 
         <h2>{t.publisherTitle}</h2>
         <p>
-          {i18n.f(t.publisher, { circo: i18n.d.common.circo })} <em>{t.publisherTodo}</em>
+          {i18n.f(t.publisher, { circo: i18n.d.common.circo })}
+          <br />
+          <strong>{t.directorLabel}</strong> {t.director}
+          <br />
+          <strong>{t.hostLabel}</strong> {t.host}
         </p>
 
         <h2>{t.dataTitle}</h2>

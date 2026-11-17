@@ -310,10 +310,13 @@ export const fr = {
     title: 'Mentions légales & données personnelles',
     publisherTitle: 'Éditeur',
     publisher: "Ce site est édité par l'équipe de campagne de La France insoumise de la {circo}.",
-    publisherTodo: '[À compléter : nom de la ou du responsable de la publication, adresse, hébergeur.]',
+    directorLabel: 'Responsable de la publication :',
+    director: 'Florian Guiramand, 270 route des Reynauds, 38960 Saint-Étienne-de-Crossey, France — +33 6 23 79 19 33',
+    hostLabel: 'Hébergement :',
+    host: 'OVH SAS, 2 rue Kellermann, 59100 Roubaix, France (ovhcloud.com)',
     dataTitle: 'Données personnelles',
     data1:
-      "Les informations recueillies via les formulaires « Besoin d'un coup de main ? » (aide à l'inscription sur les listes) et « Contact » sont enregistrées par l'équipe de campagne, sur la base de votre consentement, dans le seul but de vous recontacter dans le cadre de l'élection présidentielle 2027 (rappels électoraux, aide à l'inscription, participation à la campagne, réponse à vos messages).",
+      "Les informations saisies dans le formulaire « Je m'engage » (page « Je soutiens ») sont destinées à l'équipe de campagne, sur la base de votre consentement, dans le seul but de vous recontacter dans le cadre de l'élection présidentielle 2027 (participation à la campagne, rendez-vous, rappels électoraux). Les prénom, nom et mot de passe (jamais enregistré en clair) saisis lors de la création d'un compte rédacteur·ice servent uniquement à gérer l'accès à l'espace de rédaction.",
     data2:
       "Elles ne sont ni vendues ni cédées à des tiers et sont conservées au plus tard jusqu'à la fin de la campagne présidentielle 2027. Ces données peuvent révéler une opinion politique : elles bénéficient à ce titre d'une protection renforcée au sens du RGPD.",
     data3:
