@@ -230,9 +230,6 @@ export const en: Dict = {
     actionText:
       'Asma Rharmaoui-Claquin and Maxime Gautier held their first social drop-in session with fellow French citizens. Our councillors lent their support and network to demands over cuts to after-school care in Hamburg, and worked with one participant on solutions for the employment of French citizens in Germany.',
     actionContact: 'To join an upcoming online drop-in session, write to them:',
-    elusArticlesEyebrow: 'On the ground',
-    elusArticlesTitle: 'What our elected representatives are doing',
-    elusArticlesAll: 'See all articles →',
   },
 
   blog: {

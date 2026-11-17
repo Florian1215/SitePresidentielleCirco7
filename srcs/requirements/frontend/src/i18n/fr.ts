@@ -237,9 +237,6 @@ export const fr = {
     actionText:
       "Asma Rharmaoui-Claquin et Maxime Gautier ont tenu leur première permanence sociale avec des concitoyen·nes français·es. Nos conseiller·ères ont apporté leur soutien et leur réseau à des revendications liées à la baisse de moyens dans le périscolaire à Hambourg, et ont réfléchi avec l'un·e des inscrit·es à des solutions sur l'emploi des Français·es en Allemagne.",
     actionContact: 'Pour participer à une prochaine permanence sociale en ligne, écrivez-leur :',
-    elusArticlesEyebrow: 'Sur le terrain',
-    elusArticlesTitle: 'Les actions de nos élu·es',
-    elusArticlesAll: 'Voir tous les articles →',
   },
 
   blog: {

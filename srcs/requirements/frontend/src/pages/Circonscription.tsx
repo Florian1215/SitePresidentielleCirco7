@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router';
 import { ArticleCard } from '../components/ArticleCard';
 import { CircoMap } from '../components/CircoMap';
 import type { MapLabels, MapPoint } from '../components/CircoMap';
@@ -210,7 +209,7 @@ export default function Circonscription() {
       </section>
 
       {/* NOS ÉLU·ES */}
-      <section className="section" id="elus">
+      <section className="section-sm" id="elus">
         <div className="site-container">
           <div className="section-head">
             <span className="eyebrow">{t.elusEyebrow}</span>
@@ -260,7 +259,7 @@ export default function Circonscription() {
           </p>
 
           {/* Leur action */}
-          <div className="mt-[clamp(48px,7vw,88px)] grid grid-cols-[1fr_1.3fr] items-center gap-12 max-[900px]:grid-cols-1">
+          <div className="mt-[clamp(32px,5vw,56px)] grid grid-cols-[1fr_1.3fr] items-center gap-12 max-[900px]:grid-cols-1">
             <Photo
               className="aspect-[3/4] overflow-hidden rounded-site max-[900px]:aspect-[4/3]"
               name="elusAfe"
@@ -291,17 +290,8 @@ export default function Circonscription() {
 
       {/* ARTICLES « ACTIONS DES ÉLUS » */}
       {elusArticles.length > 0 && (
-        <section className="section bg-gris-clair" id="actions-des-elus">
+        <section className="section-sm bg-gris-clair" id="actions-des-elus">
           <div className="site-container">
-            <div className="section-head flex max-w-none flex-wrap items-end justify-between gap-4">
-              <div>
-                <span className="eyebrow">{t.elusArticlesEyebrow}</span>
-                <h2 className="m-0">{t.elusArticlesTitle}</h2>
-              </div>
-              <Link to={`/blog?category=${ELUS_CATEGORY}#articles`} className="font-bold">
-                {t.elusArticlesAll}
-              </Link>
-            </div>
             <div className="grid grid-3">
               {elusArticles.map((a) => (
                 <ArticleCard key={a.id} article={a} />

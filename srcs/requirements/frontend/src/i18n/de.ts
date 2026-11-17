@@ -230,9 +230,6 @@ export const de: Dict = {
     actionText:
       'Asma Rharmaoui-Claquin und Maxime Gautier haben ihre erste Sozialsprechstunde mit französischen Mitbürger·innen abgehalten. Unsere Konsularräte haben Forderungen gegen Kürzungen bei der Nachmittagsbetreuung in Hamburg mit ihrer Unterstützung und ihrem Netzwerk begleitet und mit einer Teilnehmerin bzw. einem Teilnehmer über Lösungen für die Beschäftigung von Franzosen in Deutschland nachgedacht.',
     actionContact: 'Um an einer der nächsten Online-Sprechstunden teilzunehmen, schreiben Sie ihnen:',
-    elusArticlesEyebrow: 'Vor Ort',
-    elusArticlesTitle: 'Die Arbeit unserer Gewählten',
-    elusArticlesAll: 'Alle Artikel ansehen →',
   },
 
   blog: {
