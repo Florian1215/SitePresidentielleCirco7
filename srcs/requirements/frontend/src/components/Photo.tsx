@@ -27,6 +27,9 @@ export const PHOTOS = {
   berlinFernsehturm: { file: 'berlin_fernsehturm', alt: 'Manifestation à Berlin au pied de la tour de télévision' },
   rassemblementPalestine: { file: 'rassemblement_palestine', alt: 'Rassemblement de solidarité avec la Palestine à Berlin' },
   voteAsma: { file: 'vote_asma', alt: "Asma glisse son bulletin dans l'urne, tout sourire", widths: [640, 960] },
+  // Élu·es consulaires
+  elusAfe: { file: 'elus_afe', alt: "Maxime Gautier et Asma Rharmaoui-Claquin, le poing levé, à la session de l'Assemblée des Français de l'étranger" },
+  permanenceSociale: { file: 'permanence_sociale', alt: 'Asma Rharmaoui-Claquin et Maxime Gautier en visioconférence pendant la permanence sociale' },
 } as const satisfies Record<string, PhotoDef>;
 
 export type PhotoName = keyof typeof PHOTOS;

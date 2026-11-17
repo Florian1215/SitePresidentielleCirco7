@@ -20,10 +20,7 @@ export function useForm<T extends Record<string, unknown>>(initial: T, rules: { 
   const [values, setValues] = useState<T>(initial);
   const [touched, setTouched] = useState<Partial<Record<keyof T, boolean>>>({});
 
-  const isInvalid = useCallback(
-    (name: keyof T, v: T = values) => (rules[name] ?? []).some((rule) => !rule(v[name])),
-    [values],
-  );
+  const isInvalid = useCallback((name: keyof T, v: T = values) => (rules[name] ?? []).some((rule) => !rule(v[name])), [values]);
   const invalid = useMemo(() => Object.keys(values).some((k) => isInvalid(k as keyof T)), [values, isInvalid]);
 
   const set = useCallback(<K extends keyof T>(name: K, value: T[K]) => setValues((v) => ({ ...v, [name]: value })), []);
@@ -37,7 +34,8 @@ export function useForm<T extends Record<string, unknown>>(initial: T, rules: { 
   const text = (name: keyof T) => ({
     name: String(name),
     value: String(values[name] ?? ''),
-    onChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => set(name, e.target.value as T[keyof T]),
+    onChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+      set(name, e.target.value as T[keyof T]),
     onBlur: () => touch(name),
     'aria-invalid': touched[name] && isInvalid(name) ? (true as const) : undefined,
   });

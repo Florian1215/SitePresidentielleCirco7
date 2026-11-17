@@ -38,8 +38,12 @@ interface Props<T extends MapPoint> {
   labels: MapLabels;
   /** Contenu de la bulle d'information d'un point. */
   renderTooltip: (point: T) => ReactNode;
+  /** Bulle cliquable (liens à l'intérieur) : elle reste ouverte le temps d'y amener la souris. */
+  interactiveTooltip?: boolean;
   /** Contenu d'un élément de la liste (par défaut, le nom). */
   renderItem?: (point: T) => ReactNode;
+  /** Liens affichés à droite d'un élément de la liste (ex. réseaux sociaux), hors du lien principal. */
+  renderItemExtra?: (point: T) => ReactNode;
   /** Encadré en bas du panneau. */
   panelFooter?: ReactNode;
   /** Préfixe des identifiants HTML (titre de la carte, listes par pays) : « groupes », « bureaux »… */
@@ -95,14 +99,24 @@ const ZOOM_BTN =
   'h-10 w-10 cursor-pointer border-0 bg-white font-texte leading-none font-bold text-violet not-first:border-t not-first:border-gris enabled:hover:bg-lavande disabled:cursor-default disabled:text-gris-moyen focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-jaune';
 
 /** Bulle d'information d'un point : purement informative, c'est le point qui est cliquable. */
+/** Bulle d'un point. « before » : zone invisible qui comble l'écart avec le point (bulle cliquable). */
 const TOOLTIP =
-  "pointer-events-none absolute z-2 flex max-w-[260px] min-w-[180px] -translate-x-1/2 flex-col gap-0.5 rounded-[10px] bg-noir px-3.5 py-2.5 text-creme no-underline shadow-[0_10px_24px_rgba(0,0,0,0.25)] after:absolute after:left-1/2 after:h-3.5 after:w-3.5 after:-translate-x-1/2 after:rotate-45 after:bg-noir after:content-[''] max-[600px]:min-w-[150px] [&_em]:mt-1 [&_em]:text-[13px] [&_em]:font-bold [&_em]:text-jaune [&_em]:not-italic [&_span]:text-[13px] [&_span]:whitespace-pre-line [&_span]:opacity-80 [&_strong]:text-[15px] [&_strong]:leading-[1.25]";
+  "before:absolute before:inset-x-0 before:h-4 before:content-[''] absolute z-2 flex max-w-[260px] min-w-[180px] -translate-x-1/2 flex-col gap-0.5 rounded-[10px] bg-noir px-3.5 py-2.5 text-creme no-underline shadow-[0_10px_24px_rgba(0,0,0,0.25)] after:absolute after:left-1/2 after:h-3.5 after:w-3.5 after:-translate-x-1/2 after:rotate-45 after:bg-noir after:content-[''] max-[600px]:min-w-[150px] [&_em]:mt-1 [&_em]:text-[13px] [&_em]:font-bold [&_em]:text-jaune [&_em]:not-italic [&_span]:text-[13px] [&_span]:whitespace-pre-line [&_span]:opacity-80 [&_strong]:text-[15px] [&_strong]:leading-[1.25]";
 
 /**
  * Carte des 16 pays de la circonscription avec des points cliquables, zoomable (boutons, Ctrl/⌘ + molette,
  * double-clic, pincement) et déplaçable, et une liste des points par pays posée dessus (dessous sur mobile).
  */
-export function CircoMap<T extends MapPoint>({ points, labels: t, renderTooltip, renderItem, panelFooter, idPrefix }: Props<T>) {
+export function CircoMap<T extends MapPoint>({
+  points,
+  labels: t,
+  renderTooltip,
+  interactiveTooltip = false,
+  renderItem,
+  renderItemExtra,
+  panelFooter,
+  idPrefix,
+}: Props<T>) {
   const i18n = useI18n();
 
   // ---------- Zoom et déplacement ----------
@@ -307,13 +321,24 @@ export function CircoMap<T extends MapPoint>({ points, labels: t, renderTooltip,
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
   const active = pins.find((p) => p.point.id === activeId) ?? null;
 
+  /** Fermeture différée de la bulle cliquable (le temps d'y amener la souris). */
+  const closeTimer = useRef(0);
+  const keepOpen = () => clearTimeout(closeTimer.current);
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
+
   const enterPin = (pin: Pin<T>) => {
+    keepOpen();
     setActiveId(pin.point.id);
     setHoveredCountry(pin.point.country);
   };
   const leavePin = (pin: Pin<T>) => {
-    setActiveId((id) => (id === pin.point.id ? null : id));
-    setHoveredCountry((c) => (c === pin.point.country ? null : c));
+    const close = () => {
+      setActiveId((id) => (id === pin.point.id ? null : id));
+      setHoveredCountry((c) => (c === pin.point.country ? null : c));
+    };
+    keepOpen();
+    if (interactiveTooltip) closeTimer.current = window.setTimeout(close, 300);
+    else close();
   };
   const leaveCountry = (code: string) => setHoveredCountry((c) => (c === code ? null : c));
 
@@ -418,9 +443,11 @@ export function CircoMap<T extends MapPoint>({ points, labels: t, renderTooltip,
 
         {active && tooltipPos && (
           <div
-            className={`${TOOLTIP} ${tooltipPos.top < 25 ? 'translate-y-4 after:-top-[7px]' : '-translate-y-[calc(100%+16px)] after:-bottom-[7px]'}`}
+            className={`${TOOLTIP} ${interactiveTooltip ? `pointer-events-auto ${tooltipPos.top < 25 ? 'before:-top-4' : 'before:-bottom-4'}` : 'pointer-events-none'} ${tooltipPos.top < 25 ? 'translate-y-4 after:-top-[7px]' : '-translate-y-[calc(100%+16px)] after:-bottom-[7px]'}`}
             style={{ left: `${tooltipPos.left}%`, top: `${tooltipPos.top}%` }}
             aria-hidden="true"
+            onMouseEnter={interactiveTooltip ? keepOpen : undefined}
+            onMouseLeave={interactiveTooltip ? () => leavePin(active) : undefined}
           >
             {renderTooltip(active.point)}
           </div>
@@ -526,12 +553,12 @@ export function CircoMap<T extends MapPoint>({ points, labels: t, renderTooltip,
                 </h3>
                 <ul id={listId} hidden={!open} className={`m-0 list-none gap-0.5 px-0 pt-1.5 pb-2.5 ${open ? 'grid' : 'hidden'}`}>
                   {entry.points.map((g) => (
-                    <li key={g.id}>
+                    <li key={g.id} className="flex items-center gap-1">
                       <a
                         href={g.href}
                         target="_blank"
                         rel="noopener"
-                        className={`-mx-2 block rounded-md px-2 py-[5px] text-[15px] no-underline hover:bg-lavande hover:text-violet ${activeId === g.id ? 'bg-lavande text-violet' : 'text-noir'}`}
+                        className={`-mx-2 block min-w-0 flex-1 rounded-md px-2 py-[5px] text-[15px] no-underline hover:bg-lavande hover:text-violet ${activeId === g.id ? 'bg-lavande text-violet' : 'text-noir'}`}
                         onMouseEnter={() => {
                           setActiveId(g.id);
                           setHoveredCountry(g.country);
@@ -543,6 +570,7 @@ export function CircoMap<T extends MapPoint>({ points, labels: t, renderTooltip,
                       >
                         {renderItem ? renderItem(g) : g.name}
                       </a>
+                      {renderItemExtra?.(g)}
                     </li>
                   ))}
                 </ul>

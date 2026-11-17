@@ -37,7 +37,11 @@ class Category(models.Model):
 class Article(models.Model):
     class Status(models.TextChoices):
         DRAFT = "draft", "Brouillon"
+        PENDING = "pending", "À valider"
         PUBLISHED = "published", "Publié"
+
+    #: Nombre de validations (par des comptes différents de l'auteur·ice) nécessaires pour publier.
+    REQUIRED_APPROVALS = 2
 
     title = models.CharField("titre", max_length=200)
     slug = models.SlugField(max_length=200, unique=True, blank=True)
@@ -76,6 +80,35 @@ class Article(models.Model):
 
     def __str__(self):
         return self.title
+
+    def approve(self, user):
+        """Enregistre la validation de `user` ; publie l'article dès qu'il en a assez. Renvoie True si publié."""
+        ArticleApproval.objects.get_or_create(article=self, user=user)
+        # Compte en base (et non `self.approvals`, qui peut venir d'un prefetch antérieur à cette validation)
+        if self.status == self.Status.PENDING and ArticleApproval.objects.filter(article=self).count() >= self.REQUIRED_APPROVALS:
+            self.status = self.Status.PUBLISHED
+            self.save()
+            return True
+        return False
+
+
+class ArticleApproval(models.Model):
+    """Validation d'un article « À valider » par un compte autre que celui de l'auteur·ice."""
+
+    article = models.ForeignKey(Article, verbose_name="article", on_delete=models.CASCADE, related_name="approvals")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name="validé par", on_delete=models.CASCADE, related_name="article_approvals",
+    )
+    created_at = models.DateTimeField("validé le", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "validation"
+        verbose_name_plural = "validations"
+        ordering = ["created_at"]
+        constraints = [models.UniqueConstraint(fields=["article", "user"], name="one_approval_per_user")]
+
+    def __str__(self):
+        return f"{self.user} → {self.article}"
 
 
 class ArticleImage(models.Model):

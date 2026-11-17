@@ -13,7 +13,7 @@ export interface Category {
   slug: string;
 }
 
-export type ArticleStatus = 'draft' | 'published';
+export type ArticleStatus = 'draft' | 'pending' | 'published';
 
 export interface Article {
   id: number;
@@ -31,6 +31,11 @@ export interface Article {
   updated_at: string;
   can_edit: boolean;
   can_delete: boolean;
+  /** Noms des comptes ayant validé l'article (statut « pending »). */
+  approvals: string[];
+  approvals_required: number;
+  can_approve: boolean;
+  is_author: boolean;
 }
 
 export interface Paginated<T> {
@@ -73,6 +78,8 @@ export interface ActionGroup {
   latitude: number;
   longitude: number;
   url: string;
+  /** Réseaux sociaux du groupe (admin Django → Groupes d'action). */
+  links: { network: string; url: string }[];
 }
 
 /** Événement de l'agenda, lu par le backend dans le calendrier Zetkin. Heures = heure locale du lieu. */
@@ -89,6 +96,8 @@ export interface CampaignEvent {
   longitude: number | null;
   url: string;
   image: string | null;
+  /** Catégorie : le nom du projet Zetkin de l'événement (« Réunions publiques »…). */
+  category: string;
 }
 
 /** Bureau de vote affiché sur la carte de la page Voter (admin Django → Bureaux de vote). */

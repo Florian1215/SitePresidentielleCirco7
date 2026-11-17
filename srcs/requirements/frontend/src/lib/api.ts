@@ -65,7 +65,6 @@ export interface ArticleQuery {
   page?: number;
   search?: string;
   category?: string;
-  mine?: boolean;
   status?: string;
 }
 
@@ -88,7 +87,6 @@ export const api = {
     if (q.page && q.page > 1) params['page'] = String(q.page);
     if (q.search) params['search'] = q.search;
     if (q.category) params['category'] = q.category;
-    if (q.mine) params['mine'] = '1';
     if (q.status) params['status'] = q.status;
     return request<Paginated<Article>>('/api/articles/', { params, signal });
   },
@@ -116,6 +114,27 @@ export const api = {
     const body = new FormData();
     body.append('image', file);
     return request<{ url: string }>('/api/articles/images/', { method: 'POST', body });
+  },
+
+  /** Valide un article « À valider » ; il est publié dès qu'il a assez de validations. */
+  approveArticle(slug: string) {
+    return request<Article>(`/api/articles/${encodeURIComponent(slug)}/approve/`, { method: 'POST', body: {} });
+  },
+
+  /** Tous les articles visibles par le compte connecté (toutes les pages), éventuellement d'un seul statut. */
+  async allArticles(status?: string, signal?: AbortSignal) {
+    const all: Article[] = [];
+    for (let page = 1; page <= 50; page++) {
+      const res = await this.articles({ status, page }, signal);
+      all.push(...res.results);
+      if (!res.next) break;
+    }
+    return all;
+  },
+
+  /** Tous les articles « À valider ». */
+  pendingArticles(signal?: AbortSignal) {
+    return this.allArticles('pending', signal);
   },
 
   deleteArticle(slug: string) {

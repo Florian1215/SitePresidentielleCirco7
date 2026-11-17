@@ -102,10 +102,6 @@ class SocialLink(models.Model):
 
     network = models.CharField("réseau", max_length=20, choices=NETWORKS)
     url = models.URLField("adresse du compte")
-    label = models.CharField(
-        "intitulé", max_length=80, blank=True,
-        help_text="Facultatif : texte lu par les lecteurs d'écran (par défaut, le nom du réseau).",
-    )
     order = models.PositiveSmallIntegerField("ordre", default=0, help_text="Les plus petits nombres s'affichent en premier.")
     is_active = models.BooleanField("affiché", default=True)
 
@@ -115,7 +111,7 @@ class SocialLink(models.Model):
         ordering = ["order", "network"]
 
     def __str__(self):
-        return self.label or self.get_network_display()
+        return self.get_network_display()
 
 
 class ActionGroup(models.Model):
@@ -142,6 +138,23 @@ class ActionGroup(models.Model):
     def __str__(self):
         return self.name
 
+
+
+class ActionGroupLink(models.Model):
+    """Réseau social d'un groupe d'action (Instagram, Facebook…), affiché dans la liste des groupes."""
+
+    group = models.ForeignKey(ActionGroup, verbose_name="groupe", on_delete=models.CASCADE, related_name="links")
+    network = models.CharField("réseau", max_length=20, choices=SocialLink.NETWORKS)
+    url = models.URLField("adresse du compte")
+    order = models.PositiveSmallIntegerField("ordre", default=0)
+
+    class Meta:
+        verbose_name = "réseau social du groupe"
+        verbose_name_plural = "réseaux sociaux du groupe"
+        ordering = ["order", "network"]
+
+    def __str__(self):
+        return f"{self.get_network_display()} — {self.group}"
 
 class PollingStation(models.Model):
     """Bureau de vote affiché sur la carte de la page « Voter » (adresses fixées par arrêté avant chaque scrutin)."""

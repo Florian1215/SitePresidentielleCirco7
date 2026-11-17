@@ -6,11 +6,14 @@ Deux sources publiques, complémentaires :
 """
 import json
 import logging
+import threading
 import time
+import uuid
 import urllib.parse
 import urllib.request
 
-from django.core.cache import cache
+from django.core.cache import cache, caches
+from django.db import close_old_connections, connection
 
 from .models import COUNTRIES
 
@@ -68,6 +71,53 @@ def fetch_groups(pause=0.3):
         time.sleep(pause)
 
     return groups
+
+
+IMPORT_KEY = "ap-import"
+
+
+def import_new_groups():
+    """Crée les groupes d'Action populaire absents de la base ; les groupes déjà connus ne sont pas modifiés."""
+    from .models import ActionGroup
+
+    groups = fetch_groups()
+    known = {str(i) for i in ActionGroup.objects.exclude(ap_id=None).values_list("ap_id", flat=True)}
+    new = [ActionGroup(ap_id=ap_id, **data) for ap_id, data in groups.items() if str(ap_id) not in known]
+    ActionGroup.objects.bulk_create(new)
+    return len(groups), [{"name": g.name, "city": g.city, "country": g.get_country_display()} for g in new]
+
+
+def start_import_in_background():
+    """Lance l'import dans un fil d'exécution (il dure ~1 min, plus que le délai du serveur web).
+
+    Renvoie l'identifiant de l'import, ou None si un import est déjà en cours.
+    Son état se lit avec import_status(job) pendant une heure, puis il est oublié.
+    """
+    shared = caches["shared"]
+    job = uuid.uuid4().hex
+    if not shared.add(IMPORT_KEY + "-lock", job, 600):
+        return None
+    shared.set(f"{IMPORT_KEY}-{job}", {"state": "running"}, 3600)
+
+    def run():
+        close_old_connections()
+        try:
+            found, created = import_new_groups()
+            status = {"state": "done", "found": found, "created": created}
+        except Exception as err:
+            logger.exception("Import des groupes d'action impossible")
+            status = {"state": "error", "error": str(err)}
+        finally:
+            connection.close()
+        shared.set(f"{IMPORT_KEY}-{job}", status, 3600)
+        shared.delete(IMPORT_KEY + "-lock")
+
+    threading.Thread(target=run, daemon=True).start()
+    return job
+
+
+def import_status(job):
+    return caches["shared"].get(f"{IMPORT_KEY}-{job}")
 
 
 def supporters_count():

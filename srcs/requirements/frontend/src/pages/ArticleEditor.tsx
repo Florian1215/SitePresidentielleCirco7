@@ -3,16 +3,15 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { RichEditor } from '../components/RichEditor';
 import { api, apiErrorMessage } from '../lib/api';
-import { useAuth } from '../lib/auth';
 import { maxLength, required, useForm } from '../lib/forms';
-import type { Category } from '../lib/models';
+import type { ArticleStatus, Category } from '../lib/models';
+import { notifyPendingChanged } from '../lib/pending';
 import { usePageTitle } from '../lib/title';
 
 export default function ArticleEditor() {
   /** Présent uniquement en modification (route blog/:slug/modifier). */
   const { slug } = useParams();
   usePageTitle(slug ? "Modifier l'article" : 'Écrire un article');
-  const auth = useAuth();
   const navigate = useNavigate();
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -21,7 +20,9 @@ export default function ArticleEditor() {
   const [loadError, setLoadError] = useState('');
   const [currentCover, setCurrentCover] = useState<string | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
-  const [wasPublished, setWasPublished] = useState(false);
+  /** Statut de l'article à son ouverture (null : nouvel article). */
+  const [initialStatus, setInitialStatus] = useState<ArticleStatus | null>(null);
+  const wasPublished = initialStatus === 'published';
   const coverFile = useRef<File | null>(null);
   const removeCover = useRef(false);
 
@@ -29,7 +30,6 @@ export default function ArticleEditor() {
     { title: '', excerpt: '', content: '', category: null as number | null, status: 'draft' },
     { title: [required, maxLength(200)], excerpt: [maxLength(400)], content: [required] },
   );
-  const canPublish = auth.canPublish || wasPublished;
 
   useEffect(() => {
     api.categories().then(setCategories, () => {});
@@ -41,7 +41,7 @@ export default function ArticleEditor() {
           return;
         }
         form.setValues({ title: a.title, excerpt: a.excerpt, content: a.content ?? '', category: a.category, status: a.status });
-        setWasPublished(a.status === 'published');
+        setInitialStatus(a.status);
         setCurrentCover(a.cover_image);
       },
       () => setLoadError('Article introuvable.'),
@@ -63,7 +63,7 @@ export default function ArticleEditor() {
     setCoverPreview(null);
   };
 
-  const save = async (status?: 'draft' | 'published') => {
+  const save = async (status?: ArticleStatus) => {
     const v = status ? { ...form.values, status } : form.values;
     if (status) form.set('status', status);
     setError('');
@@ -79,6 +79,7 @@ export default function ArticleEditor() {
         slug,
       );
       setSaving(false);
+      notifyPendingChanged();
       navigate(`/blog/${a.slug}`);
     } catch (err) {
       setSaving(false);
@@ -105,9 +106,10 @@ export default function ArticleEditor() {
           <div className="alert alert-err">{loadError}</div>
         ) : (
           <>
-            {!auth.canPublish && (
+            {!wasPublished && (
               <div className="alert alert-info mb-6">
-                Vous pouvez rédiger et enregistrer vos articles en brouillon. Un·e éditeur·ice les relira et les publiera.
+                Enregistrez votre article en brouillon, puis <strong>envoyez-le en validation</strong> : il sera publié dès que 2
+                autres comptes l'auront validé (page « À valider »).
               </div>
             )}
 
@@ -147,9 +149,8 @@ export default function ArticleEditor() {
                     <label htmlFor="ed-status">Statut</label>
                     <select id="ed-status" {...form.text('status')}>
                       <option value="draft">Brouillon</option>
-                      <option value="published" disabled={!canPublish}>
-                        Publié
-                      </option>
+                      <option value="pending">À valider</option>
+                      {wasPublished && <option value="published">Publié</option>}
                     </select>
                   </div>
                   {error && (
@@ -160,10 +161,13 @@ export default function ArticleEditor() {
                   <button type="submit" className="btn w-full" disabled={saving}>
                     {saving ? 'Enregistrement…' : 'Enregistrer'}
                   </button>
-                  {auth.canPublish && form.values.status !== 'published' && (
-                    <button type="button" className="btn btn-rouge w-full" disabled={saving} onClick={() => save('published')}>
-                      Publier maintenant
+                  {form.values.status === 'draft' && (
+                    <button type="button" className="btn btn-rouge w-full" disabled={saving} onClick={() => save('pending')}>
+                      Envoyer en validation
                     </button>
+                  )}
+                  {initialStatus === 'pending' && (
+                    <p className="hint m-0">Enregistrer une modification remet les validations de l'article à zéro.</p>
                   )}
                 </div>
 

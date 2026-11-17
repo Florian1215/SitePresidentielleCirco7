@@ -113,16 +113,57 @@ export default function Programme() {
         </div>
       </section>
 
-      <section className="section-sm section-violet">
-        <div className="site-container flex flex-wrap items-center justify-between gap-6">
-          <h2 className="m-0">{t.ctaTitle}</h2>
-          <div className="btn-row">
-            <Link to="/inscription-listes-electorales" className="btn btn-creme">
-              {t.registerBtn}
-            </Link>
-            <a href={CAMPAIGN.links.programmeNational} target="_blank" rel="noopener" className="btn btn-outline">
-              {t.nationalBtn}
+      {/* Programme complet : le livre « L'Avenir en commun » (site national) */}
+      <section className="section-sm pt-0">
+        <div className="site-container flex items-center justify-center gap-4 max-[600px]:flex-col max-[600px]:text-center">
+          {/* Le livre rétrécit si la place manque (largeur max. 250 px), en gardant ses proportions */}
+          <a
+            href={CAMPAIGN.links.programmeComplet}
+            target="_blank"
+            rel="noopener"
+            tabIndex={-1}
+            aria-hidden="true"
+            className="block w-[250px] max-w-[40%] min-w-0 shrink max-[600px]:w-[200px] max-[600px]:max-w-[60%]"
+          >
+            <img
+              src="/img/web/book-300.webp"
+              srcSet="/img/web/book-300.webp 300w, /img/web/book-600.webp 600w"
+              sizes="(max-width: 600px) 200px, 250px"
+              width="250"
+              height="277"
+              alt=""
+              loading="lazy"
+              className="block aspect-[927/1028] h-auto w-full object-contain transition-transform hover:scale-[1.03]"
+            />
+          </a>
+          <div>
+            <h2 className="mb-4">{t.fullTitle}</h2>
+            <a href={CAMPAIGN.links.programmeComplet} target="_blank" rel="noopener" className="btn">
+              {t.fullBtn} ↗
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Bandeau pleine largeur vers le simulateur de l'impôt universel */}
+      <section id="impot-universel" className="section-sm bg-lavande">
+        <div className="site-container grid grid-cols-[auto_minmax(0,640px)_auto] items-center justify-center gap-[clamp(20px,4vw,40px)] max-[760px]:grid-cols-1 max-[760px]:justify-items-center max-[760px]:text-center">
+          <span
+            className="grid h-20 w-20 place-items-center rounded-full bg-white font-titre text-[44px] text-rouge max-[760px]:h-16 max-[760px]:w-16 max-[760px]:text-[34px]"
+            aria-hidden="true"
+          >
+            €
+          </span>
+          <div>
+            <span className="mb-1 block text-[13px] font-bold tracking-[0.08em] text-rouge uppercase">{t.impotEyebrow}</span>
+            <h2 className="m-0 text-[clamp(26px,3.4vw,38px)]">{t.impotTitle}</h2>
+            <p className="mt-2 mb-0 text-[16px] leading-[1.5]">{t.impotText}</p>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <Link to="/impot-universel" className="btn btn-rouge">
+              {t.impotBtn} →
+            </Link>
+            <span className="text-[13px] font-bold">{t.impotMeta}</span>
           </div>
         </div>
       </section>

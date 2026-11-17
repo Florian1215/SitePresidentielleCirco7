@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router';
 import { logout, useAuth } from '../lib/auth';
-import { CAMPAIGN } from '../lib/campaign';
+import { refreshPending, usePendingCount } from '../lib/pending';
 import { useI18n } from '../lib/i18n';
 import { LangSwitch } from './LangSwitch';
 
@@ -27,6 +27,13 @@ export function Header() {
   // Le menu se referme à chaque navigation
   useEffect(() => setOpen(false), [location]);
 
+  // Pastille « À valider » : rafraîchie à chaque changement de page
+  const pending = usePendingCount();
+  const canWrite = auth.canWrite;
+  useEffect(() => {
+    if (canWrite) refreshPending();
+  }, [canWrite, location.pathname]);
+
   const onLogout = async () => {
     await logout();
     navigate('/');
@@ -46,11 +53,20 @@ export function Header() {
               className="flex flex-wrap gap-4 [&_a]:font-medium [&_a]:text-creme [&_a]:no-underline [&_a:hover]:underline"
             >
               {auth.canWrite && (
-                <>
-                  <Link to="/blog/ecrire">Écrire un article</Link>
-                  <Link to="/blog?mine=1">Mes articles</Link>
-                </>
+                <Link to="/redaction/articles" className="inline-flex items-center gap-1.5">
+                  Articles
+                  {pending > 0 && (
+                    <span
+                      className="grid h-5 min-w-5 place-items-center rounded-full bg-rouge px-1 text-[12px] font-bold text-white"
+                      title={`${pending} article${pending > 1 ? 's' : ''} à valider`}
+                    >
+                      {pending}
+                      <span className="sr-only"> article{pending > 1 ? 's' : ''} à valider</span>
+                    </span>
+                  )}
+                </Link>
               )}
+              {auth.canWrite && <Link to="/blog/ecrire">Écrire un article</Link>}
               {user.is_staff && <a href="/admin/">Administration</a>}
               <button type="button" className="btn-link font-medium text-creme no-underline hover:underline" onClick={onLogout}>
                 Déconnexion
@@ -108,9 +124,9 @@ export function Header() {
               ))}
             </ul>
             <div className="flex items-center gap-3.5 max-[1180px]:justify-between">
-              <a href={CAMPAIGN.links.soutenir} target="_blank" rel="noopener" className="btn btn-rouge btn-sm">
+              <Link to="/je-soutiens" className="btn btn-rouge btn-sm">
                 {i18n.d.nav.support}
-              </a>
+              </Link>
             </div>
           </nav>
 

@@ -29,7 +29,10 @@ export const STEPS: Step[] = [
     label: 'Nationalité française',
     q: 'Avez-vous la nationalité française ?',
     help: '',
-    options: [['Oui', 'yes'], ['Non', 'no']],
+    options: [
+      ['Oui', 'yes'],
+      ['Non', 'no'],
+    ],
     unmet: 'no',
     reason: 'la mesure ne vise que les personnes de nationalité française.',
   },
@@ -38,7 +41,10 @@ export const STEPS: Step[] = [
     label: 'Revenu supérieur à 240 300 €',
     q: 'Votre revenu annuel dépasse-t-il 240 300 € ?',
     help: 'Ce seuil, valable en 2026, correspond à cinq fois le plafond annuel de la Sécurité sociale (48 060 €).',
-    options: [['Oui, il dépasse 240 300 €', 'yes'], ['Non, il est inférieur', 'no']],
+    options: [
+      ['Oui, il dépasse 240 300 €', 'yes'],
+      ['Non, il est inférieur', 'no'],
+    ],
     unmet: 'no',
     reason: 'la mesure exige un revenu supérieur à cinq fois le plafond annuel de la Sécurité sociale, soit 240 300 € en 2026.',
   },
@@ -47,7 +53,10 @@ export const STEPS: Step[] = [
     label: 'Départ de France il y a moins de dix ans',
     q: 'Avez-vous quitté la France il y a moins de dix ans ?',
     help: 'La mesure porte sur les dix années qui suivent le départ.',
-    options: [['Oui, moins de dix ans', 'yes'], ["Non, plus de dix ans, ou je n'ai pas quitté la France", 'no']],
+    options: [
+      ['Oui, moins de dix ans', 'yes'],
+      ["Non, plus de dix ans, ou je n'ai pas quitté la France", 'no'],
+    ],
     unmet: 'no',
     reason: "la mesure ne s'applique que pendant dix ans après le départ de France.",
   },
@@ -56,16 +65,20 @@ export const STEPS: Step[] = [
     label: 'Trois ans de résidence en France sur les dix ans avant le départ',
     q: 'Avez-vous vécu en France au moins trois ans au cours des dix années précédant votre départ ?',
     help: "Il s'agit de la résidence fiscale en France. Si vous êtes parti·e de France depuis toujours, répondez non.",
-    options: [['Oui, au moins trois ans', 'yes'], ['Non, moins de trois ans', 'no']],
+    options: [
+      ['Oui, au moins trois ans', 'yes'],
+      ['Non, moins de trois ans', 'no'],
+    ],
     unmet: 'no',
-    reason: "la mesure exige d'avoir résidé en France au moins trois ans au cours des dix années précédant le changement de résidence fiscale.",
+    reason:
+      "la mesure exige d'avoir résidé en France au moins trois ans au cours des dix années précédant le changement de résidence fiscale.",
   },
   {
     id: 'fisc',
     label: 'Fiscalité du pays de résidence inférieure de plus de 40 % à celle de la France',
     type: 'country',
     q: 'Dans quel pays résidez-vous fiscalement ?',
-    help: 'Nous vérifions si la fiscalité de ce pays est inférieure de plus de 40 % à celle de la France (revenus du travail, du capital ou du patrimoine). Estimation : voir la méthodologie plus bas.',
+    help: 'Seuls les pays de la 7e circonscription sont proposés.',
     options: [["Je ne sais pas, ou mon pays n'est pas dans la liste", 'unknown']],
     unmet: 'no',
     reason: 'la mesure ne vise que les États dont la fiscalité est inférieure de plus de 40 % à celle de la France.',
@@ -186,9 +199,7 @@ export function fmtRate(r: number): string {
 }
 
 export function fmtRateD(d: CountryData): string {
-  return d.range
-    ? `entre ${String(d.range[0]).replace('.', ',')} et ${fmtRate(d.range[1])} selon le cas`
-    : fmtRate(d.rate);
+  return d.range ? `entre ${String(d.range[0]).replace('.', ',')} et ${fmtRate(d.range[1])} selon le cas` : fmtRate(d.rate);
 }
 
 export function normalize(t: string): string {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { apiErrorMessage } from '../lib/api';
-import { hasPerm, login, useAuth } from '../lib/auth';
+import { hasPerm, login, logout, register, useAuth } from '../lib/auth';
 import { CAMPAIGN } from '../lib/campaign';
 import { useI18n } from '../lib/i18n';
 import { usePageTitle } from '../lib/title';
@@ -55,26 +55,63 @@ export function NotFound() {
   );
 }
 
-/** Connexion à l'espace rédaction. */
+type Mode = 'login' | 'register';
+
+const TAB = (on: boolean) =>
+  `flex-1 cursor-pointer rounded-full border-0 px-4 py-2 [font-family:inherit] text-[15px] font-bold transition-colors ${
+    on ? 'bg-violet text-creme' : 'bg-transparent text-violet hover:bg-violet/10'
+  }`;
+
+/**
+ * Se connecter (prénom, nom, mot de passe) ou demander un compte.
+ * Un compte créé ici reste en attente : un·e admin le valide dans /admin (action « Valider »),
+ * ce qui donne le seul droit possible, celui d'écrire des articles.
+ * Seul accès : le lien « Se connecter » du pied de page.
+ */
 export function Login() {
   usePageTitle('Connexion');
   const auth = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const [username, setUsername] = useState('');
+  const [mode, setMode] = useState<Mode>('login');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [requested, setRequested] = useState(false);
+
+  const switchMode = (m: Mode) => {
+    setMode(m);
+    setError('');
+    setPassword('');
+    setPassword2('');
+  };
+
+  const mismatch = mode === 'register' && password2 !== '' && password !== password2;
+  const ready = !!firstName.trim() && !!lastName.trim() && !!password && (mode === 'login' || password === password2);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!ready) return;
     setSending(true);
     setError('');
+    const credentials = { first_name: firstName.trim(), last_name: lastName.trim(), password };
     try {
-      const user = await login(username, password);
+      if (mode === 'register') {
+        await register(credentials);
+        setSending(false);
+        setRequested(true);
+        setPassword('');
+        setPassword2('');
+        return;
+      }
+      const user = await login(credentials);
       setSending(false);
       const next = params.get('next');
-      const target = next && next.startsWith('/') && !next.startsWith('//') ? next : hasPerm(user, 'blog.add_article') ? '/blog' : '/';
+      const target =
+        next && next.startsWith('/') && !next.startsWith('//') ? next : hasPerm(user, 'blog.add_article') ? '/blog' : '/';
       navigate(target);
     } catch (err) {
       setSending(false);
@@ -82,53 +119,157 @@ export function Login() {
     }
   };
 
+  if (auth.user) {
+    const name = [auth.user.first_name, auth.user.last_name].filter(Boolean).join(' ') || auth.user.username;
+    return (
+      <section className="section">
+        <div className="site-container max-w-[480px]">
+          <div className="card stack">
+            <h1 className="h2 m-0">Connexion</h1>
+            <p className="m-0">
+              Vous êtes connecté·e en tant que <strong>{name}</strong>.
+            </p>
+            {!auth.canWrite && (
+              <div className="alert alert-info">Votre compte n'a pas encore le droit d'écrire des articles.</div>
+            )}
+            <div className="btn-row">
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={async () => {
+                  await logout();
+                  navigate('/');
+                }}
+              >
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (requested) {
+    return (
+      <section className="section">
+        <div className="site-container max-w-[480px]">
+          <div className="card stack">
+            <span className="text-[40px] leading-none" aria-hidden="true">
+              ⏳
+            </span>
+            <h1 className="h2 m-0">Demande envoyée</h1>
+            <p className="m-0">
+              Merci <strong>{firstName.trim()}</strong> ! Votre compte est <strong>en attente de validation</strong>. Dès qu'un·e
+              administrateur·ice l'aura validé, vous pourrez vous connecter avec vos prénom, nom et mot de passe pour écrire des
+              articles.
+            </p>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => {
+                setRequested(false);
+                switchMode('login');
+              }}
+            >
+              Retour à la connexion
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const isLogin = mode === 'login';
   return (
     <section className="section">
       <div className="site-container max-w-[480px]">
-        <div className="card">
-          <span className="eyebrow">Espace rédaction</span>
-          <h1 className="h2">Connexion</h1>
-          {auth.user ? (
-            <>
-              <p>
-                Vous êtes connecté·e en tant que <strong>{auth.user.username}</strong>.
-              </p>
-              {!auth.canWrite && (
-                <div className="alert alert-info">
-                  Votre compte n'a pas encore le droit d'écrire des articles. Demandez à un·e administrateur·ice de vous ajouter au
-                  groupe « Rédacteur·ices ».
-                </div>
-              )}
-            </>
-          ) : (
-            <form onSubmit={submit} className="stack" noValidate>
+        <div className="card stack">
+          <div
+            className="flex gap-1 rounded-full border-2 border-violet p-1"
+            role="tablist"
+            aria-label="Connexion ou création de compte"
+          >
+            {(['login', 'register'] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                id={`tab-${m}`}
+                aria-selected={mode === m}
+                aria-controls="auth-form"
+                className={TAB(mode === m)}
+                onClick={() => switchMode(m)}
+              >
+                {m === 'login' ? 'Se connecter' : 'Créer un compte'}
+              </button>
+            ))}
+          </div>
+
+          <h1 className="h2 m-0 mt-2">{isLogin ? 'Connexion' : 'Créer un compte'}</h1>
+
+          <form id="auth-form" role="tabpanel" aria-labelledby={`tab-${mode}`} onSubmit={submit} className="stack" noValidate>
+            <div className="grid grid-cols-2 gap-3 max-[520px]:grid-cols-1">
               <div className="field">
-                <label htmlFor="lg-user">Identifiant</label>
-                <input id="lg-user" type="text" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
-              </div>
-              <div className="field">
-                <label htmlFor="lg-pass">Mot de passe</label>
+                <label htmlFor="lg-first">Prénom</label>
                 <input
-                  id="lg-pass"
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  id="lg-first"
+                  type="text"
+                  autoComplete="given-name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                 />
               </div>
-              {error && (
-                <div className="alert alert-err" role="alert">
-                  {error}
-                </div>
-              )}
-              <button className="btn" type="submit" disabled={sending || !username || !password}>
-                {sending ? 'Connexion…' : 'Se connecter'}
-              </button>
-              <p className="muted m-0 text-[14px]">
-                Les comptes sont créés par les administrateur·ices du site. Pas encore de compte ? Contactez l'équipe de campagne.
-              </p>
-            </form>
-          )}
+              <div className="field">
+                <label htmlFor="lg-last">Nom</label>
+                <input
+                  id="lg-last"
+                  type="text"
+                  autoComplete="family-name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="field">
+              <label htmlFor="lg-pass">Mot de passe</label>
+              <input
+                id="lg-pass"
+                type="password"
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              {!isLogin && <span className="hint">Au moins 8 caractères, pas uniquement des chiffres.</span>}
+            </div>
+            {!isLogin && (
+              <div className="field">
+                <label htmlFor="lg-pass2">Confirmer le mot de passe</label>
+                <input
+                  id="lg-pass2"
+                  type="password"
+                  autoComplete="new-password"
+                  value={password2}
+                  aria-invalid={mismatch}
+                  aria-describedby={mismatch ? 'lg-pass2-err' : undefined}
+                  onChange={(e) => setPassword2(e.target.value)}
+                />
+                {mismatch && (
+                  <span id="lg-pass2-err" className="error">
+                    Les deux mots de passe ne correspondent pas.
+                  </span>
+                )}
+              </div>
+            )}
+            {error && (
+              <div className="alert alert-err" role="alert">
+                {error}
+              </div>
+            )}
+            <button className={isLogin ? 'btn' : 'btn btn-rouge'} type="submit" disabled={sending || !ready}>
+              {sending ? 'Envoi…' : isLogin ? 'Se connecter' : 'Demander un compte'}
+            </button>
+          </form>
         </div>
       </div>
     </section>

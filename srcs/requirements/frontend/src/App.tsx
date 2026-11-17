@@ -15,6 +15,8 @@ const BlogList = lazy(() => import('./pages/BlogList'));
 const ArticlePage = lazy(() => import('./pages/ArticlePage'));
 const ArticleEditor = lazy(() => import('./pages/ArticleEditor'));
 const Contact = lazy(() => import('./pages/Contact'));
+const Soutenir = lazy(() => import('./pages/Soutenir'));
+const Redaction = lazy(() => import('./pages/Redaction'));
 const Legal = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.Legal })));
 const Login = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.Login })));
 const NotFound = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.NotFound })));
@@ -76,7 +78,7 @@ export function App() {
             <Route path="/programme" element={<Programme />} />
             <Route path="/circonscription" element={<Circonscription />} />
             <Route path="/inscription-listes-electorales" element={<Voter />} />
-            {/* Simulateur de l'impôt universel : pas encore lié depuis le site (ni menu, ni pied de page) */}
+            {/* Simulateur de l'impôt universel : lié depuis le bas de la page Programme */}
             <Route path="/impot-universel" element={<ImpotUniversel />} />
             <Route path="/agenda" element={<Navigate to="/blog" replace />} />
             <Route path="/blog" element={<BlogList />} />
@@ -96,8 +98,19 @@ export function App() {
                 </RequirePerm>
               }
             />
+            {/* Espace rédaction : tous les articles (non public) */}
+            <Route
+              path="/redaction/articles"
+              element={
+                <RequirePerm perm="blog.add_article">
+                  <Redaction />
+                </RequirePerm>
+              }
+            />
+            <Route path="/a-valider" element={<Navigate to="/redaction/articles?statut=a-valider" replace />} />
             <Route path="/blog/:slug" element={<ArticlePage />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/je-soutiens" element={<Soutenir />} />
             <Route path="/connexion" element={<Login />} />
             <Route path="/mentions-legales" element={<Legal />} />
             <Route path="*" element={<NotFound />} />

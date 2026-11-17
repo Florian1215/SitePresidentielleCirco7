@@ -122,3 +122,18 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
 # Agenda : calendrier public Zetkin de la campagne (page Agenda et accueil)
 ZETKIN_ICS_URL = os.environ.get("ZETKIN_ICS_URL", "https://app.zetkin.org/o/1030/events.ics")
+# API publique Zetkin des événements : elle donne le projet de chaque événement (absent du flux .ics)
+ZETKIN_ACTIONS_URL = os.environ.get("ZETKIN_ACTIONS_URL", "https://app.zetkin.org/api/orgs/1030/actions")
+# Projets Zetkin affichés sur le site (ids) : les événements des autres projets (internes) sont masqués.
+#   4920 « Réunions publiques », 11672 « Diffusion de tracts/Porte-à-Porte »
+ZETKIN_PUBLIC_PROJECTS = {int(p) for p in env_list("ZETKIN_PUBLIC_PROJECTS", "4920,11672")}
+
+# Cache : en mémoire (par processus) par défaut ; « shared » (fichiers) est commun aux processus gunicorn,
+# pour l'état de l'import des groupes d'action lancé depuis l'admin.
+CACHES = {
+    "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
+    "shared": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": os.environ.get("DJANGO_SHARED_CACHE_DIR", "/tmp/django-shared-cache"),
+    },
+}

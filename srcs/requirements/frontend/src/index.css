@@ -53,14 +53,6 @@
   /* Rebond des cartes et affiches au survol : ease-bounce */
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Page « Voter » : l'étape atteinte par le bulletin « saute » (animate-station-hop) */
-  --animate-station-hop: station-hop 0.5s var(--ease-bounce);
-  @keyframes station-hop {
-    40% {
-      translate: 0 -12px;
-    }
-  }
-
   /* Simulateur de l'impôt universel : apparition de chaque écran du questionnaire (animate-iu-in) */
   --animate-iu-in: iu-in 0.25s ease;
   @keyframes iu-in {
@@ -491,6 +483,10 @@
   .badge-draft {
     background: var(--color-rose);
     color: var(--color-rouge-dark);
+  }
+  .badge-pending {
+    background: var(--color-jaune);
+    color: var(--color-noir);
   }
 
   .num-badge {

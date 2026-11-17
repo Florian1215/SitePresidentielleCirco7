@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Article, ArticleImage, Category
+from .models import Article, ArticleApproval, ArticleImage, Category
 from .widgets import RichTextWidget
 
 
@@ -10,14 +10,26 @@ class CategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ["name"]}
 
 
+class ApprovalInline(admin.TabularInline):
+    model = ArticleApproval
+    extra = 0
+    fields = ["user", "created_at"]
+    readonly_fields = ["user", "created_at"]
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
-    list_display = ["title", "author", "category", "status", "published_at", "updated_at"]
+    list_display = ["title", "author", "category", "status", "approvals_count", "published_at", "updated_at"]
+    inlines = [ApprovalInline]
     list_filter = ["status", "category", "author"]
     search_fields = ["title", "excerpt", "content"]
     prepopulated_fields = {"slug": ["title"]}
     date_hierarchy = "created_at"
-    actions = ["publish", "unpublish"]
+    actions = ["publish_now", "unpublish"]
     fieldsets = [
         (None, {"fields": ["title", "slug", "excerpt", "cover_image", "content"]}),
         ("Publication", {"fields": ["category", "status", "author", "published_at"]}),
@@ -35,8 +47,10 @@ class ArticleAdmin(admin.ModelAdmin):
         return qs.filter(author=request.user)
 
     def get_readonly_fields(self, request, obj=None):
+        # La publication passe par 2 validations sur le site ; seul·es les super-utilisateur·ices
+        # peuvent changer le statut ici (et donc publier directement).
         readonly = ["published_at"]
-        if not request.user.has_perm("blog.publish_article"):
+        if not request.user.is_superuser:
             readonly.append("status")
         if not request.user.has_perm("blog.manage_all_articles"):
             readonly.append("author")
@@ -58,16 +72,30 @@ class ArticleAdmin(admin.ModelAdmin):
         if not change and not obj.author_id:
             obj.author = request.user
         super().save_model(request, obj, form, change)
+        # Comme sur le site : modifier un article non publié relance sa validation.
+        if change and form.changed_data and obj.status != Article.Status.PUBLISHED:
+            obj.approvals.all().delete()
 
-    @admin.action(description="Publier les articles sélectionnés", permissions=["publish"])
-    def publish(self, request, queryset):
-        for article in queryset:
+    @admin.display(description="validations")
+    def approvals_count(self, obj):
+        return f"{obj.approvals.count()} / {Article.REQUIRED_APPROVALS}"
+
+    @admin.action(description="Publier directement (sans attendre les validations)", permissions=["publish_now"])
+    def publish_now(self, request, queryset):
+        n = 0
+        for article in queryset.exclude(status=Article.Status.PUBLISHED):
             article.status = Article.Status.PUBLISHED
-            article.save()
+            article.save()  # renseigne la date de publication
+            n += 1
+        self.message_user(request, f"{n} article(s) publié(s).")
+
+    def has_publish_now_permission(self, request):
+        return request.user.is_superuser
 
     @admin.action(description="Repasser en brouillon", permissions=["publish"])
     def unpublish(self, request, queryset):
         queryset.update(status=Article.Status.DRAFT)
+        ArticleApproval.objects.filter(article__in=queryset).delete()
 
     def has_publish_permission(self, request):
         return request.user.has_perm("blog.publish_article")

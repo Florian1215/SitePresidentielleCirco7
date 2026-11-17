@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
+import { ApprovalPanel } from '../components/ApprovalPanel';
 import { api, apiErrorMessage } from '../lib/api';
+import { notifyPendingChanged } from '../lib/pending';
 import { useI18n } from '../lib/i18n';
 import type { Article } from '../lib/models';
 
@@ -69,6 +71,7 @@ export default function ArticlePage() {
             </Link>
             <div className="mb-3 flex gap-2">
               {a.status === 'draft' && <span className="badge badge-draft">Brouillon — non publié</span>}
+              {a.status === 'pending' && <span className="badge badge-pending">À valider — non publié</span>}
               {a.category_detail && (
                 <Link className="badge no-underline" to={`/blog?category=${encodeURIComponent(a.category_detail.slug)}`}>
                   {a.category_detail.name}
@@ -81,6 +84,17 @@ export default function ArticlePage() {
               {i18n.d.article.by} <strong>{a.author_name}</strong>
               {a.published_at && <> · {i18n.date(a.published_at)}</>}
             </p>
+            {a.status === 'pending' && (
+              <div className="mb-5 rounded-site border-2 border-jaune bg-white p-4">
+                <ApprovalPanel
+                  article={a}
+                  onApproved={(updated) => {
+                    setArticle(updated);
+                    notifyPendingChanged();
+                  }}
+                />
+              </div>
+            )}
             {(a.can_edit || a.can_delete) && (
               <>
                 <div className="btn-row">

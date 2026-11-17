@@ -65,14 +65,26 @@ export function restoreAuth(): Promise<User | null> {
   })());
 }
 
-export async function login(username: string, password: string) {
+export interface Credentials {
+  first_name: string;
+  last_name: string;
+  password: string;
+}
+
+/** Connexion avec prénom, nom et mot de passe. */
+export async function login(credentials: Credentials) {
   const { token, user } = await request<{ token: string; user: User }>('/api/auth/login/', {
     method: 'POST',
-    body: { username, password },
+    body: { ...credentials },
   });
   setToken(token);
   authStore.set((s) => ({ ...s, token, user }));
   return user;
+}
+
+/** Demande de compte : il reste en attente jusqu'à sa validation par un·e admin. */
+export function register(credentials: Credentials) {
+  return request<{ detail: string }>('/api/auth/register/', { method: 'POST', body: { ...credentials } });
 }
 
 export async function logout() {

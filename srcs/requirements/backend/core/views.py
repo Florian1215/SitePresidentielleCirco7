@@ -14,6 +14,7 @@ from .serializers import (
     ContactMessageSerializer,
     FriendSiteSerializer,
     LoginSerializer,
+    RegisterSerializer,
     SocialLinkSerializer,
     SupporterSerializer,
     countries_payload,
@@ -43,6 +44,24 @@ class LoginView(APIView):
         user = serializer.validated_data["user"]
         token, _ = Token.objects.get_or_create(user=user)
         return Response({"token": token.key, "user": user_payload(user)})
+
+
+class RegisterView(APIView):
+    """Demande de compte : créé inactif, un·e admin le valide (action « Valider… » dans /admin)."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "public_forms"
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"detail": "Votre demande de compte est enregistrée. Elle doit être validée par un·e administrateur·ice."},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class LogoutView(APIView):
@@ -94,7 +113,7 @@ class ActionGroupsView(APIView):
     authentication_classes = []
 
     def get(self, request):
-        return Response(ActionGroupSerializer(ActionGroup.objects.filter(is_active=True), many=True).data)
+        return Response(ActionGroupSerializer(ActionGroup.objects.filter(is_active=True).prefetch_related("links"), many=True).data)
 
 
 class PollingStationsView(APIView):

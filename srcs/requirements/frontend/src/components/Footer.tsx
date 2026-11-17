@@ -8,8 +8,7 @@ import { FOOTER_ICONS } from './footer-icons';
 import type { SvgIcon } from './footer-icons';
 
 const COL = 'flex-[1_1_160px]';
-const COL_TITLE =
-  'm-0 mb-3.5 border-b border-[rgba(255,252,244,.35)] pb-2.5 font-titre text-[22px] text-jaune uppercase';
+const COL_TITLE = 'm-0 mb-3.5 border-b border-[rgba(255,252,244,.35)] pb-2.5 font-titre text-[22px] text-jaune uppercase';
 const COL_LIST = 'grid gap-2.5';
 const EXT = 'inline-flex items-baseline gap-2';
 
@@ -42,7 +41,14 @@ export function Footer() {
       <div className="site-container flex flex-wrap gap-10">
         <div className="flex flex-[1.4_1_260px] flex-col items-start gap-5 max-[700px]:basis-full">
           <Link to="/" className="flex items-center gap-3 hover:text-creme! hover:no-underline!" aria-label={t.home}>
-            <img className="h-24 w-24 rounded-md" src="/brand/circo7-square-192.webp" width="96" height="96" alt="" loading="lazy" />
+            <img
+              className="h-24 w-24 rounded-md"
+              src="/brand/circo7-square-192.webp"
+              width="96"
+              height="96"
+              alt=""
+              loading="lazy"
+            />
             <span>
               <span className="block font-titre text-[26px] leading-none uppercase">La France insoumise</span>
               <span className="mt-1 block text-[13px] font-bold text-jaune">{i18n.d.nav.logoSub}</span>
@@ -52,20 +58,30 @@ export function Footer() {
             <li>
               <Link to="/mentions-legales">{t.legal}</Link>
             </li>
-            <li>
-              <Link to="/connexion">{t.writers}</Link>
-            </li>
           </ul>
         </div>
 
         <nav className={COL} aria-label={t.site}>
           <p className={COL_TITLE}>{t.site}</p>
           <ul className={COL_LIST}>
-            <li><Link to="/programme">{t.programme}</Link></li>
-            <li><Link to="/circonscription">{t.circonscription}</Link></li>
-            <li><Link to="/inscription-listes-electorales">{t.voteAbroad}</Link></li>
-            <li><Link to="/blog">{t.newsAgenda}</Link></li>
-            <li><Link to="/contact">{t.contact}</Link></li>
+            <li>
+              <Link to="/programme">{t.programme}</Link>
+            </li>
+            <li>
+              <Link to="/circonscription">{t.circonscription}</Link>
+            </li>
+            <li>
+              <Link to="/inscription-listes-electorales">{t.voteAbroad}</Link>
+            </li>
+            <li>
+              <Link to="/blog">{t.newsAgenda}</Link>
+            </li>
+            <li>
+              <Link to="/contact">{t.contact}</Link>
+            </li>
+            <li>
+              <Link to="/connexion">{t.signIn}</Link>
+            </li>
           </ul>
         </nav>
 
@@ -78,14 +94,18 @@ export function Footer() {
                 {t.supportCandidacy}
               </a>
             </li>
-            <li><Link to="/inscription-listes-electorales">{t.registerLists}</Link></li>
+            <li>
+              <Link to="/inscription-listes-electorales">{t.registerLists}</Link>
+            </li>
             <li>
               <a href={c.links.actionPopulaire} target="_blank" rel="noopener" className={EXT}>
                 <External />
                 {t.joinGroup}
               </a>
             </li>
-            <li><a href={'mailto:' + c.contactEmail}>{t.writeUs}</a></li>
+            <li>
+              <a href={'mailto:' + c.contactEmail}>{t.writeUs}</a>
+            </li>
           </ul>
         </div>
 

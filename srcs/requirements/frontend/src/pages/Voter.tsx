@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CircoMap } from '../components/CircoMap';
 import type { MapLabels, MapPoint } from '../components/CircoMap';
 import { Photo } from '../components/Photo';
@@ -11,12 +10,12 @@ import { useI18n } from '../lib/i18n';
 import type { PollingStation } from '../lib/models';
 import { usePageTitle } from '../lib/title';
 
-/** `at` : avancement du bulletin à partir duquel l'étape s'allume. */
-const STEP_LINKS = [
-  { icon: 'check' as const, url: CAMPAIGN.links.checkSituation, at: 0.02 },
-  { icon: 'register' as const, url: CAMPAIGN.links.registerOnline, at: 0.5 },
-  { icon: 'vote' as const, url: CAMPAIGN.links.procuration, at: 1 },
-];
+/** Lien, pictogramme et couleur de chaque étape : --c (picto, numéro, bouton) et --c-fond (fond de la carte et du picto). */
+const STEP_STYLES = [
+  { url: CAMPAIGN.links.checkSituation, icon: 'check', color: '[--c-fond:var(--color-lavande)] [--c:var(--color-violet)]' },
+  { url: CAMPAIGN.links.registerOnline, icon: 'register', color: '[--c-fond:var(--color-rose)] [--c:var(--color-rouge)]' },
+  { url: CAMPAIGN.links.procuration, icon: 'vote', color: '[--c-fond:#d9f2e3] [--c:var(--color-vert)]' },
+] as const;
 
 type StationPoint = MapPoint & { station: PollingStation };
 
@@ -24,23 +23,6 @@ type StationPoint = MapPoint & { station: PollingStation };
 function stationHref(s: PollingStation) {
   return s.url || `https://www.openstreetmap.org/?mlat=${s.latitude}&mlon=${s.longitude}#map=17/${s.latitude}/${s.longitude}`;
 }
-
-/** Couleur de chaque étape : --c (picto, titre, bouton) et --c-fond (fond du picto). */
-const STATION_COLORS = [
-  '[--c-fond:var(--color-lavande)] [--c:var(--color-violet)]',
-  '[--c-fond:var(--color-rose)] [--c:var(--color-rouge)]',
-  '[--c-fond:#d9f2e3] [--c:var(--color-vert)]',
-];
-
-/** Le bulletin : une enveloppe de vote (le rabat est dessiné par ::before), qui avance sur le rail. */
-const BALLOT =
-  "absolute z-3 -mt-4 -ml-[23px] h-8 w-[46px] rounded border-2 border-violet bg-white shadow-[0_6px_14px_rgba(33,35,32,0.18)] before:absolute before:inset-0 before:[clip-path:polygon(0_0,100%_0,50%_60%)] before:content-[''] before:[background:linear-gradient(to_bottom_right,transparent_49%,var(--color-violet)_49%_53%,transparent_53%)_left/50%_100%_no-repeat,linear-gradient(to_bottom_left,transparent_49%,var(--color-violet)_49%_53%,transparent_53%)_right/50%_100%_no-repeat] max-[900px]:left-[46px] motion-reduce:transition-none";
-/** En route : il suit le défilement (sans transition sur la position, sinon il serait en retard). */
-const BALLOT_MOVING =
-  'top-[46px] left-[calc(16.66%_+_var(--p)_*_66.68%)] rotate-[calc(-8deg_+_var(--p)_*_16deg)] transition-[rotate] duration-200 max-[900px]:top-[calc(46px_+_var(--p)_*_(100%_-_92px))]';
-/** Arrivé au bout : il tombe dans l'urne. */
-const BALLOT_DONE =
-  'top-[70px] left-[83.34%] scale-60 rotate-0 opacity-0 [transition:top_0.5s_cubic-bezier(0.55,0,1,0.45),opacity_0.3s_0.35s,rotate_0.4s,scale_0.4s] max-[900px]:top-[calc(100%_-_22px)]';
 
 /** Anneaux de reliure de la feuille de calendrier. */
 const SHEET_RINGS =
@@ -51,44 +33,6 @@ export default function Voter() {
   const i18n = useI18n();
   const t = i18n.d.voter;
   const l = CAMPAIGN.links;
-
-  // ---------- Animation des 3 étapes ----------
-  const track = useRef<HTMLDivElement>(null);
-  /** Avancement du bulletin sur le rail, de 0 (départ) à 1 (dans l'urne). */
-  const [progress, setProgress] = useState(0);
-  const done = progress >= 1;
-
-  useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setProgress(1);
-      return;
-    }
-    const el = track.current!;
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const r = el.getBoundingClientRect();
-      const vh = window.innerHeight;
-      const top = r.top + window.scrollY; // position du rail dans la page
-      // Départ : quand le rail entre par le bas de l'écran (ou dès le haut de la page s'il est déjà visible).
-      // Arrivée : quand le milieu des étapes passe vers le milieu de l'écran, après au moins 1/3 d'écran de défilement.
-      const s0 = Math.max(0, top - vh * 0.9);
-      const s1 = Math.max(s0 + vh / 3, top + r.height / 2 - vh * 0.5);
-      const p = (window.scrollY - s0) / (s1 - s0);
-      setProgress(Math.round(Math.min(1, Math.max(0, p)) * 1000) / 1000);
-    };
-    const onScroll = () => {
-      frame ||= requestAnimationFrame(update);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
-    update();
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-      cancelAnimationFrame(frame);
-    };
-  }, []);
 
   /** Feuilles du calendrier « Les dates à retenir ». */
   const dates = useMemo(() => {
@@ -112,7 +56,8 @@ export default function Voter() {
     ];
   }, [i18n, t]);
 
-  const steps = t.steps.map((s, i) => ({ ...s, ...STEP_LINKS[i] }));
+  const deadline = i18n.date(CAMPAIGN.election.registrationDeadlineOnline, { day: 'numeric', month: 'long' });
+  const steps = t.steps.map((s, i) => ({ ...s, text: i18n.f(s.text, { date: deadline }), ...STEP_STYLES[i] }));
 
   // ---------- Bureaux de vote (admin Django → Bureaux de vote) ----------
   /** undefined = en cours de chargement. */
@@ -184,73 +129,38 @@ export default function Voter() {
         </div>
       </section>
 
-      {/* ÉTAPES : un bulletin avance sur le rail au fil du défilement, puis tombe dans l'urne */}
+      {/* ÉTAPES */}
       <section className="section bg-white">
         <div className="site-container">
-          <h2 className="mb-[clamp(40px,6vw,72px)] text-center">{t.stepsTitle}</h2>
-          {/* --p : avancement du bulletin (0 → 1), mis à jour au défilement */}
-          <div className="relative mx-auto max-w-[1000px]" ref={track} style={{ '--p': progress } as CSSProperties}>
-            {/* Rail : de la 1re à la 3e étape (centres des colonnes : 1/6 et 5/6 de la largeur) ; vertical sur mobile */}
-            <div
-              className="absolute top-[46px] right-[16.66%] left-[16.66%] h-1.5 rounded-[3px] bg-[repeating-linear-gradient(90deg,var(--color-gris)_0_14px,transparent_14px_22px)] max-[900px]:right-auto max-[900px]:bottom-[46px] max-[900px]:left-[46px] max-[900px]:h-auto max-[900px]:w-1.5 max-[900px]:bg-[repeating-linear-gradient(180deg,var(--color-gris)_0_14px,transparent_14px_22px)]"
-              aria-hidden="true"
-            >
-              <span className="absolute inset-0 origin-left scale-x-(--p) rounded-[3px] bg-[linear-gradient(90deg,var(--color-violet),var(--color-rouge),var(--color-vert))] max-[900px]:origin-top max-[900px]:scale-x-100 max-[900px]:scale-y-(--p) max-[900px]:bg-[linear-gradient(180deg,var(--color-violet),var(--color-rouge),var(--color-vert))]"></span>
-            </div>
-            <span className={`${BALLOT} ${done ? BALLOT_DONE : BALLOT_MOVING}`} aria-hidden="true"></span>
-            <ol className="m-0 grid list-none grid-cols-3 gap-6 p-0 max-[900px]:grid-cols-1 max-[900px]:gap-12">
-              {steps.map((s, i) => {
-                const icon = STEP_ICONS[s.icon];
-                // Étape atteinte par le bulletin : elle prend sa couleur et « saute »
-                const on = progress >= s.at;
-                return (
-                  <li
-                    key={s.icon}
-                    className={`flex flex-col items-center text-center max-[900px]:flex-row max-[900px]:flex-wrap max-[900px]:gap-x-[18px] max-[900px]:text-left ${STATION_COLORS[i]}`}
-                  >
+          <h2 className="mb-[clamp(32px,5vw,56px)] text-center">{t.stepsTitle}</h2>
+          <ol className="mx-auto my-0 grid max-w-[1000px] list-none grid-cols-3 gap-6 p-0 max-[900px]:grid-cols-1">
+            {steps.map((s, i) => {
+              const icon = STEP_ICONS[s.icon];
+              return (
+                <li
+                  key={s.url}
+                  className={`group flex flex-col rounded-site border-t-6 border-(--c) bg-(--c-fond) p-6 transition-[translate,rotate] duration-250 ease-bounce hover:-translate-y-1.5 motion-reduce:hover:translate-y-0 ${['hover:-rotate-1', 'hover:rotate-1', 'hover:-rotate-1'][i]} motion-reduce:hover:rotate-0 ${s.color}`}
+                >
+                  <span className="relative grid h-[72px] w-[72px] place-items-center rounded-full bg-white shadow-site transition-[rotate,scale] duration-300 ease-bounce group-hover:scale-110 group-hover:-rotate-12 motion-reduce:group-hover:scale-100 motion-reduce:group-hover:rotate-0">
+                    <svg className="h-8 w-8 fill-(--c)" viewBox={icon.viewBox} aria-hidden="true" focusable="false">
+                      <path d={icon.d} />
+                    </svg>
                     <span
-                      className={`relative z-2 grid h-[92px] w-[92px] place-items-center rounded-full border-3 [transition:background_0.3s,border-color_0.3s,scale_0.4s_var(--ease-bounce)] motion-reduce:animate-none motion-reduce:transition-none ${on ? 'animate-station-hop scale-[1.08] border-solid border-(--c) bg-(--c-fond)' : 'border-dashed border-gris-moyen bg-white'}`}
+                      className="absolute -top-1 -right-1 grid h-7 w-7 place-items-center rounded-full bg-(--c) font-titre text-[16px] text-white"
+                      aria-hidden="true"
                     >
-                      <svg
-                        className={`h-[38px] w-[38px] transition-[fill] duration-300 ${on ? 'fill-(--c)' : 'fill-gris-moyen'}`}
-                        viewBox={icon.viewBox}
-                        aria-hidden="true"
-                        focusable="false"
-                      >
-                        <path d={icon.d} />
-                      </svg>
-                      <span
-                        className={`absolute -top-1.5 -right-1.5 grid h-[30px] w-[30px] place-items-center rounded-full font-titre text-[17px] text-white transition-colors duration-300 ${on ? 'bg-(--c)' : 'bg-gris-moyen'}`}
-                        aria-hidden="true"
-                      >
-                        {i + 1}
-                      </span>
+                      {i + 1}
                     </span>
-                    <h3
-                      className={`mt-4 mb-3.5 text-[clamp(22px,2.4vw,28px)] transition-colors duration-300 max-[900px]:m-0 max-[900px]:flex-1 ${on ? 'text-(--c)' : 'text-gris-moyen'}`}
-                    >
-                      {s.title}
-                    </h3>
-                    <a
-                      href={s.url}
-                      target="_blank"
-                      rel="noopener"
-                      className={`btn btn-sm [transition:background_0.3s,transform_0.15s] max-[900px]:ml-[110px] ${on ? 'bg-(--c)' : 'bg-gris-moyen'}`}
-                    >
-                      {s.cta}
-                    </a>
-                  </li>
-                );
-              })}
-            </ol>
-            {/* Tampon « A voté ! » quand le bulletin est dans l'urne */}
-            <span
-              className={`absolute -top-[18px] left-[calc(83.33%+34px)] z-4 -rotate-12 rounded-md border-3 border-rouge bg-[rgba(255,255,255,0.9)] px-3 py-1 font-titre text-[24px] whitespace-nowrap text-rouge uppercase [transition:opacity_0.2s_0.4s,scale_0.35s_var(--ease-bounce)_0.4s] max-[900px]:top-auto max-[900px]:bottom-16 max-[900px]:left-[130px] motion-reduce:transition-none ${done ? 'scale-100 opacity-100' : 'scale-[2.2] opacity-0'}`}
-              aria-hidden="true"
-            >
-              {t.stamp}
-            </span>
-          </div>
+                  </span>
+                  <h3 className="mt-4 mb-2 text-[clamp(20px,2.2vw,24px)] text-(--c)">{s.title}</h3>
+                  <p className="mb-5 text-noir">{s.text}</p>
+                  <a href={s.url} target="_blank" rel="noopener" className="btn btn-sm mt-auto self-start bg-(--c)">
+                    {s.cta}
+                  </a>
+                </li>
+              );
+            })}
+          </ol>
         </div>
       </section>
 
@@ -297,7 +207,6 @@ export default function Voter() {
           <div className="section-head mb-6">
             <span className="eyebrow">{t.stationsEyebrow}</span>
             <h2>{t.stationsTitle}</h2>
-            <p className="lead">{t.stationsLead}</p>
           </div>
         </div>
 

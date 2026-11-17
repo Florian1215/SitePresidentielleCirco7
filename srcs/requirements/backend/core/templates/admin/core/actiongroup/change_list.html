@@ -1,0 +1,102 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+  {% if has_add_permission %}
+    {# Même style que « Ajouter groupe d'action » (lien .addlink), avec une icône « télécharger » à la place du « + » #}
+    <li>
+      <a href="{% url 'admin:core_actiongroup_import' %}" class="addlink" id="ap-import"
+         style="background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='white' d='M7 1h2v6.6l2.3-2.3 1.4 1.4L8 11.4 3.3 6.7l1.4-1.4L7 7.6zM2 12h2v1.5h8V12h2v3.5H2z'/%3E%3C/svg%3E&quot;);background-size:13px"
+         title="Ajoute les groupes créés sur Action populaire (les groupes déjà présents ne sont pas modifiés)">
+        Importer les nouveaux groupes
+      </a>
+    </li>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
+
+{% block content %}
+  {% if has_add_permission %}
+    {# Journal de l'import : affiché seulement après un clic, jamais conservé #}
+    <div id="ap-import-log" hidden role="status" aria-live="polite"
+         style="clear:both;margin:0 0 16px;padding:12px 16px;border-radius:4px;background:var(--darkened-bg);border-left:4px solid var(--border-color);line-height:1.6"></div>
+  {% endif %}
+  {{ block.super }}
+  {% if has_add_permission %}
+    {# Après block.super : le bouton (outils de l'admin) doit déjà exister dans la page #}
+    <script>
+      (function () {
+        var button = document.getElementById("ap-import");
+        if (!button) return;
+        var log = document.getElementById("ap-import-log");
+        var csrf = "{{ csrf_token }}";
+        var statusUrl = "{% url 'admin:core_actiongroup_import_status' 'JOB' %}";
+        var busy = false;
+
+        function show(color, html) {
+          log.hidden = false;
+          log.style.borderLeftColor = color;
+          log.innerHTML = html;
+        }
+        function esc(text) {
+          var span = document.createElement("span");
+          span.textContent = text == null ? "" : String(text);
+          return span.innerHTML;
+        }
+        function poll(job, started) {
+          fetch(statusUrl.replace("JOB", job), { credentials: "same-origin" })
+            .then(function (r) { return r.json(); })
+            .then(function (s) {
+              if (s.state === "running" || s.state === "unknown") {
+                var sec = Math.round((Date.now() - started) / 1000);
+                show("#e6a700", "<strong>Import en cours…</strong> Interrogation d'Action populaire (" + sec + " s, environ une minute).");
+                setTimeout(function () { poll(job, started); }, 2000);
+                return;
+              }
+              busy = false;
+              if (s.state === "error") {
+                show("#ba2121", "<strong>L'import a échoué :</strong> " + esc(s.error));
+                return;
+              }
+              var n = s.created.length;
+              var html = "<strong>Import terminé.</strong> " + s.found + " groupes trouvés sur Action populaire, ";
+              if (!n) {
+                show("#2f8f4e", html + "<strong>aucun nouveau groupe</strong> : la liste est déjà à jour.");
+                return;
+              }
+              html += "<strong>" + n + " nouveau" + (n > 1 ? "x" : "") + " groupe" + (n > 1 ? "s" : "") + " ajouté" + (n > 1 ? "s" : "") + "</strong> :<ul style='margin:6px 0 8px 18px;padding:0'>";
+              s.created.forEach(function (g) {
+                html += "<li style='list-style:disc'>" + esc(g.name) + " <span style='color:var(--body-quiet-color)'>(" + esc([g.city, g.country].filter(Boolean).join(", ")) + ")</span></li>";
+              });
+              html += "</ul>Ils sont affichés sur la carte. <a href=''>Recharger la liste</a>";
+              show("#2f8f4e", html);
+            })
+            .catch(function () {
+              busy = false;
+              show("#ba2121", "<strong>Impossible de suivre l'import</strong> (connexion). Rechargez la page dans une minute.");
+            });
+        }
+
+        button.addEventListener("click", function (event) {
+          event.preventDefault();
+          if (busy) return;
+          busy = true;
+          show("#e6a700", "<strong>Import lancé…</strong>");
+          fetch(button.href, { method: "POST", credentials: "same-origin", headers: { "X-CSRFToken": csrf } })
+            .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
+            .then(function (res) {
+              if (!res.ok) {
+                busy = false;
+                show("#ba2121", esc(res.body.error || "L'import n'a pas pu être lancé."));
+                return;
+              }
+              poll(res.body.job, Date.now());
+            })
+            .catch(function () {
+              busy = false;
+              show("#ba2121", "L'import n'a pas pu être lancé (connexion).");
+            });
+        });
+      })();
+    </script>
+  {% endif %}
+{% endblock %}

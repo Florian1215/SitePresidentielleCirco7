@@ -1,9 +1,11 @@
 """Agenda de la campagne, lu dans le calendrier public Zetkin (format iCalendar).
 
-L'API Zetkin demande une authentification ; le flux .ics public suffit et contient
-titre, dates, lieu, coordonnées, image et lien d'inscription de chaque événement.
+Le flux .ics public contient titre, dates, lieu, coordonnées, image et lien d'inscription
+de chaque événement, mais pas son projet : on le lit dans l'API publique Zetkin des événements,
+pour n'afficher que ceux des projets publics (settings.ZETKIN_PUBLIC_PROJECTS).
 Les heures du flux sont « flottantes » : c'est l'heure locale du lieu de l'événement.
 """
+import json
 import logging
 import math
 import re
@@ -136,14 +138,35 @@ def parse_ics(text):
     return sorted(events, key=lambda e: e["start"])
 
 
+def _get(url):
+    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(request, timeout=15) as response:
+        return response.read().decode("utf-8")
+
+
+def fetch_projects():
+    """Projet de chaque événement : {id de l'événement: {"id": id du projet, "title": nom du projet}}."""
+    actions = json.loads(_get(settings.ZETKIN_ACTIONS_URL))["data"]
+    return {str(a["id"]): a["campaign"] for a in actions if a.get("campaign")}
+
+
+def public_only(events, projects):
+    """Garde les événements des projets publics, avec le nom du projet comme catégorie.
+    Un événement dont on ne connaît pas le projet est masqué : mieux vaut en cacher un public qu'afficher un interne."""
+    kept = []
+    for e in events:
+        project = projects.get(e["id"])
+        if project and project["id"] in settings.ZETKIN_PUBLIC_PROJECTS:
+            kept.append({**e, "category": project["title"].strip()})
+    return kept
+
+
 def fetch_events():
-    """Événements du calendrier Zetkin, mis en cache 15 minutes. Liste vide si Zetkin est injoignable."""
+    """Événements publics du calendrier Zetkin, mis en cache 15 minutes. Liste vide si Zetkin est injoignable."""
     events = cache.get(CACHE_KEY)
     if events is None:
         try:
-            request = urllib.request.Request(settings.ZETKIN_ICS_URL, headers={"User-Agent": USER_AGENT})
-            with urllib.request.urlopen(request, timeout=15) as response:
-                events = parse_ics(response.read().decode("utf-8"))
+            events = public_only(parse_ics(_get(settings.ZETKIN_ICS_URL)), fetch_projects())
             cache.set(CACHE_KEY, events, CACHE_SECONDS)
         except Exception:  # réseau, format… : on n'empêche pas la page de s'afficher
             logger.exception("Impossible de lire le calendrier Zetkin")

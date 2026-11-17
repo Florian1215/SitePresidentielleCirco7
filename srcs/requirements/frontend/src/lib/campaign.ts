@@ -6,7 +6,7 @@
 export const CAMPAIGN = {
   circo: '7e circonscription des Français·es établi·es hors de France',
   circoShort: '7e circo',
-  zone: "Allemagne, Europe centrale et Balkans",
+  zone: 'Allemagne, Europe centrale et Balkans',
 
   election: {
     // Dates indicatives (à confirmer par décret)
@@ -27,6 +27,8 @@ export const CAMPAIGN = {
     diplomatieElections: 'https://www.diplomatie.gouv.fr/fr/services-aux-francais/elections-a-l-etranger/',
     servicePublicElections: 'https://www.service-public.gouv.fr/particuliers/vosdroits/N47',
     programmeNational: 'https://melenchon2027.fr/',
+    /** Programme complet (livre « L'Avenir en commun ») */
+    programmeComplet: 'https://melenchon2027.fr/programme/livre/',
     // Bouton « Je soutiens » : renvoie vers le site national de la candidature
     soutenir: 'https://melenchon2027.fr/',
     actionPopulaire: 'https://actionpopulaire.fr/',
@@ -43,7 +45,12 @@ export interface Country {
 }
 
 export const COUNTRIES: Country[] = [
-  { code: 'DE', name: 'Allemagne', registered: 114372, posts: 'Berlin, Bonn, Düsseldorf, Francfort, Hambourg, Munich, Sarrebruck, Stuttgart' },
+  {
+    code: 'DE',
+    name: 'Allemagne',
+    registered: 114372,
+    posts: 'Berlin, Bonn, Düsseldorf, Francfort, Hambourg, Munich, Sarrebruck, Stuttgart',
+  },
   { code: 'AT', name: 'Autriche', registered: 8024, posts: 'Vienne' },
   { code: 'PL', name: 'Pologne', registered: 5757, posts: 'Varsovie, Cracovie' },
   { code: 'CZ', name: 'Tchéquie', registered: 2983, posts: 'Prague' },
