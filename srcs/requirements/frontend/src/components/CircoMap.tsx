@@ -22,8 +22,6 @@ export interface MapLabels {
   zoomIn: string;
   zoomOut: string;
   resetZoom: string;
-  legendCirco: string;
-  legendPoint: string;
   registeredN: string;
   pointOne: string;
   pointMany: string;
@@ -44,8 +42,6 @@ interface Props<T extends MapPoint> {
   renderItem?: (point: T) => ReactNode;
   /** Liens affichés à droite d'un élément de la liste (ex. réseaux sociaux), hors du lien principal. */
   renderItemExtra?: (point: T) => ReactNode;
-  /** Sans légende : l'encadré du bas n'apparaît qu'au survol d'un pays (nom, inscrit·es, nombre de points). */
-  hideLegend?: boolean;
   /** Titre posé sur la carte, en haut à gauche (au-dessus de la carte sur mobile). */
   title?: ReactNode;
   /** Encadré en bas du panneau. */
@@ -119,7 +115,6 @@ export function CircoMap<T extends MapPoint>({
   renderItem,
   renderItemExtra,
   title,
-  hideLegend = false,
   panelFooter,
   idPrefix,
 }: Props<T>) {
@@ -525,33 +520,21 @@ export function CircoMap<T extends MapPoint>({
           </button>
         </div>
 
-        {(hovered || !hideLegend) && (
+        {/* Au survol d'un pays : son nom, ses inscrit·es et son nombre de points */}
+        {hovered && (
           <div
             className={`absolute bottom-6 flex flex-wrap items-center gap-x-3.5 gap-y-1 rounded-lg bg-[rgba(255,252,244,0.95)] px-3 py-2 text-[13px] max-[600px]:right-0 max-[600px]:bottom-0 max-[600px]:left-0 max-[600px]:rounded-none [&_strong]:font-titre [&_strong]:text-[18px] [&_strong]:text-violet [&_strong]:uppercase ${EDGE_LEFT}`}
           >
-            {hovered ? (
-              <>
-                <strong>{i18n.country(hovered.code)}</strong>
-                <span>
-                  {hovered.registered ? <>{i18n.f(t.registeredN, { n: i18n.number(hovered.registered) })} · </> : null}
-                  {(() => {
-                    const n = countByCountry[hovered.code] || 0;
-                    return i18n.f(n > 1 ? t.pointMany : t.pointOne, { n });
-                  })()}
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="inline-flex items-center gap-1.5 font-bold">
-                  <i className="h-3.5 w-3.5 rounded-[3px] bg-violet"></i>
-                  {t.legendCirco}
-                </span>
-                <span className="inline-flex items-center gap-1.5 font-bold">
-                  <i className="h-3 w-3 rounded-full border-2 border-white bg-rouge shadow-[0_0_0_1px_var(--color-gris-moyen)]"></i>
-                  {t.legendPoint}
-                </span>
-              </>
-            )}
+            <>
+              <strong>{i18n.country(hovered.code)}</strong>
+              <span>
+                {hovered.registered ? <>{i18n.f(t.registeredN, { n: i18n.number(hovered.registered) })} · </> : null}
+                {(() => {
+                  const n = countByCountry[hovered.code] || 0;
+                  return i18n.f(n > 1 ? t.pointMany : t.pointOne, { n });
+                })()}
+              </span>
+            </>
           </div>
         )}
       </div>

@@ -77,8 +77,6 @@ export default function Circonscription() {
     zoomIn: t.zoomIn,
     zoomOut: t.zoomOut,
     resetZoom: t.resetZoom,
-    legendCirco: t.legendCirco,
-    legendPoint: t.legendGroup,
     registeredN: t.registeredN,
     pointOne: t.groupOne,
     pointMany: t.groupMany,
@@ -133,7 +131,6 @@ export default function Circonscription() {
         {/* Carte en pleine largeur, avec le panneau des groupes posé dessus */}
         <CircoMap
           idPrefix="groupes"
-          hideLegend
           title={
             <>
               <span className="eyebrow">{t.mapEyebrow}</span>

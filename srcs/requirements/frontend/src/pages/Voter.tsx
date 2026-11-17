@@ -81,8 +81,6 @@ export default function Voter() {
     zoomIn: i18n.d.circo.zoomIn,
     zoomOut: i18n.d.circo.zoomOut,
     resetZoom: i18n.d.circo.resetZoom,
-    legendCirco: i18n.d.circo.legendCirco,
-    legendPoint: t.legendStation,
     registeredN: i18n.d.circo.registeredN,
     pointOne: t.stationOne,
     pointMany: t.stationMany,
@@ -202,16 +200,15 @@ export default function Voter() {
       </section>
 
       {/* OÙ VOTER : carte des bureaux de vote */}
-      <section className="section bg-gris-clair pb-0" id="bureaux-de-vote">
-        <div className="site-container">
-          <div className="section-head mb-6">
-            <span className="eyebrow">{t.stationsEyebrow}</span>
-            <h2>{t.stationsTitle}</h2>
-          </div>
-        </div>
-
+      <section className="bg-gris-clair max-[960px]:pt-8" id="bureaux-de-vote">
         <CircoMap
           idPrefix="bureaux"
+          title={
+            <>
+              <span className="eyebrow">{t.stationsEyebrow}</span>
+              <h2 className="m-0 text-[clamp(26px,3vw,40px)]">{t.stationsTitle}</h2>
+            </>
+          }
           points={stationPoints}
           labels={mapLabels}
           renderTooltip={(p) => (
