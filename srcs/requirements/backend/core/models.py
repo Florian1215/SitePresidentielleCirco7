@@ -207,6 +207,5 @@ class FaqEntry(models.Model):
         verbose_name = "question fréquente"
         verbose_name_plural = "questions fréquentes"
         ordering = ["order", "id"]
-
     def __str__(self):
         return self.question_fr

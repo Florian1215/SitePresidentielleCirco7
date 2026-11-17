@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CircoMap } from '../components/CircoMap';
 import type { MapLabels, MapPoint } from '../components/CircoMap';
+import { FaqAccordion } from '../components/FaqAccordion';
 import { Photo } from '../components/Photo';
 import { STEP_ICONS } from '../data/step-icons';
 import { api } from '../lib/api';
@@ -261,14 +262,7 @@ export default function Voter() {
               <span className="eyebrow">{t.faqEyebrow}</span>
               <h2>{t.faqTitle}</h2>
             </div>
-            <div className="grid gap-3">
-              {faqItems.map((item) => (
-                <details key={item.id} className="rounded-site border border-gris bg-white px-[22px] open:border-violet">
-                  <summary className="cursor-pointer list-outside py-[18px] text-[17px] font-bold text-violet">{item.q}</summary>
-                  <p className="pb-1.5 whitespace-pre-line text-texte">{item.a}</p>
-                </details>
-              ))}
-            </div>
+            <FaqAccordion items={faqItems} />
             <p className="muted mt-6 text-[14px]">
               {t.sources}{' '}
               <a href={l.diplomatieElections} target="_blank" rel="noopener">
