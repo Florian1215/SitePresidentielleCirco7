@@ -221,18 +221,18 @@ export default function Circonscription() {
               <li key={e.name} className="flex flex-col items-center rounded-site bg-white px-4 py-6 text-center shadow-site">
                 {e.photo ? (
                   <img
-                    className="h-24 w-24 rounded-full bg-lavande object-cover"
+                    className="h-36 w-36 rounded-full bg-lavande object-cover"
                     src={`/img/web/elus/${e.photo}.webp`}
                     alt=""
-                    width={96}
-                    height={96}
+                    width={144}
+                    height={144}
                     loading="lazy"
                     decoding="async"
                   />
                 ) : (
                   // Pas encore de portrait : les initiales, sur l'une des couleurs du site
                   <span
-                    className={`grid h-24 w-24 place-items-center rounded-full font-titre text-[34px] ${['bg-lavande text-violet', 'bg-rose text-rouge', 'bg-jaune text-noir'][i % 3]}`}
+                    className={`grid h-36 w-36 place-items-center rounded-full font-titre text-[48px] ${['bg-lavande text-violet', 'bg-rose text-rouge', 'bg-jaune text-noir'][i % 3]}`}
                     aria-hidden="true"
                   >
                     {e.name
@@ -251,7 +251,7 @@ export default function Circonscription() {
               </li>
             ))}
           </ul>
-          <p className="muted mt-5 text-[14px]">
+          <p className="muted mt-5 text-center text-[14px]">
             {t.elusRole} · {t.elusSource}
           </p>
 
