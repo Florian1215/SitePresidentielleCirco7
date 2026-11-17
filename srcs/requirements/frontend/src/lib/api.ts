@@ -187,10 +187,6 @@ export const api = {
   footerLinks() {
     return (footerLinks$ ??= request<FooterLinks>('/api/footer-links/').catch(() => ({ friend_sites: [], socials: [] })));
   },
-
-  supporter(data: Record<string, unknown>) {
-    return request<{ detail: string }>('/api/supporters/', { method: 'POST', body: data });
-  },
 };
 
 /** Transforme une erreur DRF en message lisible (messages génériques dans la langue passée, français par défaut). */

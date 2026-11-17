@@ -1,51 +1,15 @@
-import csv
-
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
+from django.http import HttpResponseNotAllowed, JsonResponse
 from django.urls import path, reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from .action_populaire import import_status, start_import_in_background
-from .models import ActionGroup, ActionGroupLink, FaqEntry, ContactMessage, FriendSite, PollingStation, SocialLink, Supporter
-
-
-@admin.register(ContactMessage)
-class ContactMessageAdmin(admin.ModelAdmin):
-    list_display = ["subject", "name", "email", "country", "created_at", "handled"]
-    list_filter = ["handled", "country", "created_at"]
-    list_editable = ["handled"]
-    search_fields = ["name", "email", "subject", "message"]
-    readonly_fields = ["name", "email", "country", "subject", "message", "created_at"]
-
-
-@admin.register(Supporter)
-class SupporterAdmin(admin.ModelAdmin):
-    list_display = [
-        "last_name", "first_name", "email", "country", "city",
-        "wants_registration_help", "wants_to_volunteer", "created_at",
-    ]
-    list_filter = ["country", "wants_registration_help", "wants_reminders", "wants_to_volunteer"]
-    search_fields = ["first_name", "last_name", "email", "city"]
-    actions = ["export_csv"]
-
-    @admin.action(description="Exporter la sélection en CSV")
-    def export_csv(self, request, queryset):
-        response = HttpResponse(content_type="text/csv; charset=utf-8")
-        response["Content-Disposition"] = 'attachment; filename="soutiens.csv"'
-        response.write("﻿")
-        writer = csv.writer(response, delimiter=";")
-        writer.writerow(["Prénom", "Nom", "E-mail", "Téléphone", "Pays", "Ville",
-                         "Aide inscription", "Rappels", "Bénévole", "Date"])
-        for s in queryset:
-            writer.writerow([s.first_name, s.last_name, s.email, s.phone, s.get_country_display(), s.city,
-                             s.wants_registration_help, s.wants_reminders, s.wants_to_volunteer,
-                             s.created_at.strftime("%Y-%m-%d")])
-        return response
+from .models import ActionGroup, ActionGroupLink, FaqEntry, FriendSite, PollingStation, SocialLink
 
 
 @admin.register(FriendSite)

@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from .models import ActionGroup, FaqEntry, FriendSite, PollingStation, SocialLink, Supporter
+from .models import ActionGroup, FaqEntry, FriendSite, PollingStation, SocialLink
 from .action_populaire import supporters_count
 from .zetkin import upcoming_events
 from .serializers import (
@@ -16,7 +16,6 @@ from .serializers import (
     LoginSerializer,
     RegisterSerializer,
     SocialLinkSerializer,
-    SupporterSerializer,
     countries_payload,
 )
 
@@ -147,25 +146,3 @@ class FooterLinksView(APIView):
             "friend_sites": FriendSiteSerializer(FriendSite.objects.filter(is_active=True), many=True).data,
             "socials": SocialLinkSerializer(SocialLink.objects.filter(is_active=True), many=True).data,
         })
-
-
-class SupporterView(APIView):
-    permission_classes = [AllowAny]
-    authentication_classes = []
-    throttle_classes = [ScopedRateThrottle]
-    throttle_scope = "public_forms"
-
-    def post(self, request):
-        serializer = SupporterSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data["email"].strip().lower()
-        # Si l'adresse est déjà connue, on ne modifie rien (personne ne peut écraser
-        # les données d'un·e autre) et on répond de la même façon.
-        created = False
-        if not Supporter.objects.filter(email__iexact=email).exists():
-            serializer.save(email=email)
-            created = True
-        return Response(
-            {"detail": "Merci ! Votre inscription est bien enregistrée."},
-            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
-        )

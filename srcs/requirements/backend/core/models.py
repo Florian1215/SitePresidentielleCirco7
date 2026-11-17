@@ -22,47 +22,6 @@ COUNTRIES = [
 ]
 
 
-class ContactMessage(models.Model):
-    name = models.CharField("nom", max_length=120)
-    email = models.EmailField("e-mail")
-    country = models.CharField("pays", max_length=2, choices=COUNTRIES, blank=True)
-    subject = models.CharField("objet", max_length=200)
-    message = models.TextField("message")
-    created_at = models.DateTimeField("reçu le", auto_now_add=True)
-    handled = models.BooleanField("traité", default=False)
-
-    class Meta:
-        verbose_name = "message de contact"
-        verbose_name_plural = "messages de contact"
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return f"{self.subject} — {self.name}"
-
-
-class Supporter(models.Model):
-    first_name = models.CharField("prénom", max_length=80)
-    last_name = models.CharField("nom", max_length=80)
-    email = models.EmailField("e-mail", unique=True)
-    phone = models.CharField("téléphone", max_length=30, blank=True)
-    country = models.CharField("pays", max_length=2, choices=COUNTRIES)
-    city = models.CharField("ville", max_length=120, blank=True)
-    wants_registration_help = models.BooleanField("souhaite de l'aide pour s'inscrire sur les listes", default=False)
-    wants_reminders = models.BooleanField("souhaite recevoir les rappels électoraux", default=True)
-    wants_to_volunteer = models.BooleanField("souhaite participer à la campagne", default=False)
-    consent = models.BooleanField("consentement RGPD")
-    created_at = models.DateTimeField("inscrit·e le", auto_now_add=True)
-    updated_at = models.DateTimeField("mis à jour le", auto_now=True)
-
-    class Meta:
-        verbose_name = "soutien"
-        verbose_name_plural = "soutiens"
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return f"{self.first_name} {self.last_name} ({self.get_country_display()})"
-
-
 class FriendSite(models.Model):
     """Lien affiché dans la colonne « Sites amis » du pied de page."""
 

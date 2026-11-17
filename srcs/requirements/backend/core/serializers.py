@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.text import slugify
 from rest_framework import serializers
 
-from .models import COUNTRIES, ActionGroup, ActionGroupLink, FaqEntry, FriendSite, PollingStation, SocialLink, Supporter
+from .models import COUNTRIES, ActionGroup, ActionGroupLink, FaqEntry, FriendSite, PollingStation, SocialLink
 
 User = get_user_model()
 
@@ -72,22 +72,6 @@ class RegisterSerializer(serializers.Serializer):
         user.set_password(validated_data["password"])
         user.save()
         return user
-
-
-class SupporterSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Supporter
-        fields = [
-            "first_name", "last_name", "email", "phone", "country", "city",
-            "wants_registration_help", "wants_reminders", "wants_to_volunteer", "consent",
-        ]
-        # L'unicité est gérée dans la vue (mise à jour si l'e-mail existe déjà).
-        extra_kwargs = {"email": {"validators": []}}
-
-    def validate_consent(self, value):
-        if not value:
-            raise serializers.ValidationError("Votre consentement est nécessaire pour enregistrer vos données.")
-        return value
 
 
 class ActionGroupLinkSerializer(serializers.ModelSerializer):
