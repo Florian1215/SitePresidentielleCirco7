@@ -10,7 +10,6 @@ const LINKS = [
   { path: '/circonscription', key: 'circonscription' },
   { path: '/inscription-listes-electorales', key: 'voter' },
   { path: '/blog', key: 'news' },
-  { path: '/contact', key: 'contact' },
 ] as const;
 
 /** Liens du menu ; page en cours : coins arrondis en haut seulement, la ligne rouge restant droite en bas. */

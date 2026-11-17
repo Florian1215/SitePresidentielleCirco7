@@ -183,13 +183,9 @@ export const api = {
     return request<FaqEntry[]>('/api/faq/', { signal });
   },
 
-  /** Sites amis et réseaux sociaux (une seule requête, partagée par le pied de page et la page Contact). */
+  /** Sites amis et réseaux sociaux (une seule requête, partagée par le pied de page et la page « Je soutiens »). */
   footerLinks() {
     return (footerLinks$ ??= request<FooterLinks>('/api/footer-links/').catch(() => ({ friend_sites: [], socials: [] })));
-  },
-
-  contact(data: Record<string, unknown>) {
-    return request<{ detail: string }>('/api/contact/', { method: 'POST', body: data });
   },
 
   supporter(data: Record<string, unknown>) {

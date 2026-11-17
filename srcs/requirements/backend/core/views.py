@@ -11,7 +11,6 @@ from .zetkin import upcoming_events
 from .serializers import (
     ActionGroupSerializer,
     PollingStationSerializer,
-    ContactMessageSerializer,
     FaqEntrySerializer,
     FriendSiteSerializer,
     LoginSerializer,
@@ -148,19 +147,6 @@ class FooterLinksView(APIView):
             "friend_sites": FriendSiteSerializer(FriendSite.objects.filter(is_active=True), many=True).data,
             "socials": SocialLinkSerializer(SocialLink.objects.filter(is_active=True), many=True).data,
         })
-
-
-class ContactView(APIView):
-    permission_classes = [AllowAny]
-    authentication_classes = []
-    throttle_classes = [ScopedRateThrottle]
-    throttle_scope = "public_forms"
-
-    def post(self, request):
-        serializer = ContactMessageSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({"detail": "Merci, votre message a bien été envoyé."}, status=status.HTTP_201_CREATED)
 
 
 class SupporterView(APIView):

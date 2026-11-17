@@ -14,7 +14,6 @@ const ImpotUniversel = lazy(() => import('./pages/ImpotUniversel'));
 const BlogList = lazy(() => import('./pages/BlogList'));
 const ArticlePage = lazy(() => import('./pages/ArticlePage'));
 const ArticleEditor = lazy(() => import('./pages/ArticleEditor'));
-const Contact = lazy(() => import('./pages/Contact'));
 const Soutenir = lazy(() => import('./pages/Soutenir'));
 const Redaction = lazy(() => import('./pages/Redaction'));
 const Legal = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.Legal })));
@@ -109,7 +108,6 @@ export function App() {
             />
             <Route path="/a-valider" element={<Navigate to="/redaction/articles?statut=a-valider" replace />} />
             <Route path="/blog/:slug" element={<ArticlePage />} />
-            <Route path="/contact" element={<Contact />} />
             <Route path="/je-soutiens" element={<Soutenir />} />
             <Route path="/connexion" element={<Login />} />
             <Route path="/mentions-legales" element={<Legal />} />

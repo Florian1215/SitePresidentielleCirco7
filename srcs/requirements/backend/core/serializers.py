@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.text import slugify
 from rest_framework import serializers
 
-from .models import COUNTRIES, ActionGroup, ActionGroupLink, FaqEntry, ContactMessage, FriendSite, PollingStation, SocialLink, Supporter
+from .models import COUNTRIES, ActionGroup, ActionGroupLink, FaqEntry, FriendSite, PollingStation, SocialLink, Supporter
 
 User = get_user_model()
 
@@ -72,12 +72,6 @@ class RegisterSerializer(serializers.Serializer):
         user.set_password(validated_data["password"])
         user.save()
         return user
-
-
-class ContactMessageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ContactMessage
-        fields = ["name", "email", "country", "subject", "message"]
 
 
 class SupporterSerializer(serializers.ModelSerializer):

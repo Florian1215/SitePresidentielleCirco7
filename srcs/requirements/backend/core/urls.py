@@ -14,6 +14,5 @@ urlpatterns = [
     path("polling-stations/", views.PollingStationsView.as_view(), name="polling-stations"),
     path("faq/", views.FaqView.as_view(), name="faq"),
     path("footer-links/", views.FooterLinksView.as_view(), name="footer-links"),
-    path("contact/", views.ContactView.as_view(), name="contact"),
     path("supporters/", views.SupporterView.as_view(), name="supporters"),
 ]

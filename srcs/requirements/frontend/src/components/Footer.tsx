@@ -77,9 +77,6 @@ export function Footer() {
               <Link to="/blog">{t.newsAgenda}</Link>
             </li>
             <li>
-              <Link to="/contact">{t.contact}</Link>
-            </li>
-            <li>
               <Link to="/connexion">{t.signIn}</Link>
             </li>
           </ul>
