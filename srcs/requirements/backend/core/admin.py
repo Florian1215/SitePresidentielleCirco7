@@ -11,7 +11,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from .action_populaire import import_status, start_import_in_background
-from .models import ActionGroup, ActionGroupLink, ContactMessage, FriendSite, PollingStation, SocialLink, Supporter
+from .models import ActionGroup, ActionGroupLink, FaqEntry, ContactMessage, FriendSite, PollingStation, SocialLink, Supporter
 
 
 @admin.register(ContactMessage)
@@ -121,6 +121,25 @@ class ActionGroupAdmin(admin.ModelAdmin):
         if not self.has_add_permission(request):
             raise PermissionDenied
         return JsonResponse(import_status(job) or {"state": "unknown"})
+
+
+@admin.register(FaqEntry)
+class FaqEntryAdmin(admin.ModelAdmin):
+    list_display = ["question_fr", "order", "is_active", "translated"]
+    list_editable = ["order", "is_active"]
+    list_filter = ["is_active"]
+    search_fields = ["question_fr", "answer_fr", "question_en", "question_de"]
+    fieldsets = [
+        ("Français", {"fields": ["question_fr", "answer_fr"]}),
+        ("Anglais", {"fields": ["question_en", "answer_en"], "classes": ["collapse"]}),
+        ("Allemand", {"fields": ["question_de", "answer_de"], "classes": ["collapse"]}),
+        ("Affichage", {"fields": ["order", "is_active"]}),
+    ]
+
+    @admin.display(description="traductions")
+    def translated(self, obj):
+        langs = [code for code, q, a in (("EN", obj.question_en, obj.answer_en), ("DE", obj.question_de, obj.answer_de)) if q and a]
+        return ", ".join(langs) or "—"
 
 
 @admin.register(PollingStation)

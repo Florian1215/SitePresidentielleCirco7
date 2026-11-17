@@ -5,13 +5,14 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from .models import ActionGroup, FriendSite, PollingStation, SocialLink, Supporter
+from .models import ActionGroup, FaqEntry, FriendSite, PollingStation, SocialLink, Supporter
 from .action_populaire import supporters_count
 from .zetkin import upcoming_events
 from .serializers import (
     ActionGroupSerializer,
     PollingStationSerializer,
     ContactMessageSerializer,
+    FaqEntrySerializer,
     FriendSiteSerializer,
     LoginSerializer,
     RegisterSerializer,
@@ -124,6 +125,16 @@ class PollingStationsView(APIView):
 
     def get(self, request):
         return Response(PollingStationSerializer(PollingStation.objects.filter(is_active=True), many=True).data)
+
+
+class FaqView(APIView):
+    """Questions fréquentes de la page « Voter » (admin Django → Questions fréquentes)."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        return Response(FaqEntrySerializer(FaqEntry.objects.filter(is_active=True), many=True).data)
 
 
 class FooterLinksView(APIView):

@@ -6,7 +6,7 @@ import { STEP_ICONS } from '../data/step-icons';
 import { api } from '../lib/api';
 import { CAMPAIGN, daysUntil } from '../lib/campaign';
 import { useI18n } from '../lib/i18n';
-import type { PollingStation } from '../lib/models';
+import type { FaqEntry, PollingStation } from '../lib/models';
 import { usePageTitle } from '../lib/title';
 
 /** Lien, pictogramme et couleur de chaque étape : --c (picto, numéro, bouton) et --c-fond (fond de la carte et du picto). */
@@ -31,6 +31,19 @@ export default function Voter() {
   usePageTitle('voter');
   const i18n = useI18n();
   const t = i18n.d.voter;
+
+  // Questions fréquentes (admin Django), dans la langue du site ; à défaut de traduction, en français
+  const [faq, setFaq] = useState<FaqEntry[]>([]);
+  useEffect(() => {
+    const ctrl = new AbortController();
+    api.faq(ctrl.signal).then(setFaq, () => {});
+    return () => ctrl.abort();
+  }, []);
+  const faqItems = faq.map((f) => {
+    const q = (i18n.lang === 'en' ? f.question_en : i18n.lang === 'de' ? f.question_de : '') || f.question_fr;
+    const a = (i18n.lang === 'en' ? f.answer_en : i18n.lang === 'de' ? f.answer_de : '') || f.answer_fr;
+    return { id: f.id, q, a };
+  });
   const l = CAMPAIGN.links;
 
   /** Feuilles du calendrier « Les dates à retenir ». */
@@ -240,33 +253,35 @@ export default function Voter() {
         />
       </section>
 
-      {/* FAQ */}
-      <section className="section">
-        <div className="site-container max-w-[820px]">
-          <div className="section-head">
-            <span className="eyebrow">{t.faqEyebrow}</span>
-            <h2>{t.faqTitle}</h2>
+      {/* FAQ (admin Django → Questions fréquentes) : masquée tant qu'il n'y a aucune question */}
+      {faqItems.length > 0 && (
+        <section className="section">
+          <div className="site-container max-w-[820px]">
+            <div className="section-head">
+              <span className="eyebrow">{t.faqEyebrow}</span>
+              <h2>{t.faqTitle}</h2>
+            </div>
+            <div className="grid gap-3">
+              {faqItems.map((item) => (
+                <details key={item.id} className="rounded-site border border-gris bg-white px-[22px] open:border-violet">
+                  <summary className="cursor-pointer list-outside py-[18px] text-[17px] font-bold text-violet">{item.q}</summary>
+                  <p className="pb-1.5 whitespace-pre-line text-texte">{item.a}</p>
+                </details>
+              ))}
+            </div>
+            <p className="muted mt-6 text-[14px]">
+              {t.sources}{' '}
+              <a href={l.diplomatieElections} target="_blank" rel="noopener">
+                {t.sourceDiplo}
+              </a>{' '}
+              ·{' '}
+              <a href={l.servicePublicElections} target="_blank" rel="noopener">
+                {t.sourceSP}
+              </a>
+            </p>
           </div>
-          <div className="grid gap-3">
-            {t.faq.map((item) => (
-              <details key={item.q} className="rounded-site border border-gris bg-white px-[22px] open:border-violet">
-                <summary className="cursor-pointer list-outside py-[18px] text-[17px] font-bold text-violet">{item.q}</summary>
-                <p className="pb-1.5 text-texte">{item.a}</p>
-              </details>
-            ))}
-          </div>
-          <p className="muted mt-6 text-[14px]">
-            {t.sources}{' '}
-            <a href={l.diplomatieElections} target="_blank" rel="noopener">
-              {t.sourceDiplo}
-            </a>{' '}
-            ·{' '}
-            <a href={l.servicePublicElections} target="_blank" rel="noopener">
-              {t.sourceSP}
-            </a>
-          </p>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }

@@ -158,32 +158,6 @@ export const fr = {
     myStationBtn: 'Je vérifie',
     faqEyebrow: 'Questions fréquentes',
     faqTitle: "Tout savoir pour voter depuis l'étranger",
-    faq: [
-      {
-        q: "Je suis inscrit·e au Registre des Français·es de l'étranger, suis-je inscrit·e pour voter ?",
-        a: "Pas forcément. L'inscription au Registre (auprès du consulat) et l'inscription sur la liste électorale consulaire sont deux démarches distinctes, même si elles sont souvent faites en même temps. Vérifiez votre situation électorale en ligne pour en être sûr·e.",
-      },
-      {
-        q: 'Puis-je rester inscrit·e dans ma commune en France ?',
-        a: "Depuis 2019, on ne peut être inscrit·e que sur une seule liste : soit la liste électorale consulaire (vous votez à l'étranger, et pour la ou le député·e des Français·es de l'étranger aux législatives), soit la liste d'une commune française (vous votez en France, en personne ou par procuration). S'inscrire sur la liste consulaire vous radie automatiquement de votre commune.",
-      },
-      {
-        q: 'Peut-on voter par internet à la présidentielle ?',
-        a: "Non. Le vote par internet existe pour les législatives et les élections consulaires, mais pas pour l'élection présidentielle. Il faut voter à l'urne dans votre bureau de vote à l'étranger, ou donner procuration.",
-      },
-      {
-        q: 'Je ne pourrai pas me déplacer le jour du vote, comment faire ?',
-        a: 'Donnez procuration à une personne de confiance inscrite sur les listes électorales. Action populaire (actionpopulaire.fr/procuration) vous met en relation avec une personne pour porter votre voix et vous guide dans la démarche officielle : demande sur maprocuration.gouv.fr, puis vérification de votre identité au consulat (ou dans un commissariat/gendarmerie si vous êtes en France). Faites-le le plus tôt possible : la procuration doit être parvenue au bureau de vote avant le scrutin.',
-      },
-      {
-        q: "Quels documents faut-il pour s'inscrire ?",
-        a: "Un justificatif d'identité et de nationalité française en cours de validité (carte d'identité ou passeport) et un justificatif de résidence dans la circonscription consulaire (contrat de location, facture, attestation d'inscription au Registre…). Tout se fait en ligne avec FranceConnect ou un compte service-public.",
-      },
-      {
-        q: 'Je viens de déménager dans un autre pays de la circonscription, que faire ?',
-        a: "Inscrivez-vous sur la liste électorale du consulat de votre nouveau pays de résidence : vous serez automatiquement radié·e de l'ancienne liste. Pensez aussi à mettre à jour votre inscription au Registre.",
-      },
-    ],
     sources: 'Sources officielles :',
     sourceDiplo: "France Diplomatie — Élections à l'étranger",
     sourceSP: 'Service-public.gouv.fr — Élections',

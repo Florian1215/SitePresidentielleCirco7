@@ -57,6 +57,17 @@ export interface FriendSite {
   url: string;
 }
 
+/** Question fréquente de la page « Voter » (admin Django → Questions fréquentes), dans les trois langues. */
+export interface FaqEntry {
+  id: number;
+  question_fr: string;
+  answer_fr: string;
+  question_en: string;
+  answer_en: string;
+  question_de: string;
+  answer_de: string;
+}
+
 export interface SocialLink {
   id: number;
   network: string;

@@ -151,32 +151,6 @@ export const de: Dict = {
     myStationBtn: 'Prüfen',
     faqEyebrow: 'Häufige Fragen',
     faqTitle: 'Alles zum Wählen aus dem Ausland',
-    faq: [
-      {
-        q: 'Ich bin im Register der Französinnen und Franzosen im Ausland eingetragen. Bin ich damit wahlberechtigt eingetragen?',
-        a: 'Nicht unbedingt. Die Eintragung im Register (beim Konsulat) und die Eintragung in die konsularische Wählerliste sind zwei verschiedene Schritte, auch wenn sie oft gleichzeitig erfolgen. Prüfen Sie Ihren Wahlstatus online, um sicher zu sein.',
-      },
-      {
-        q: 'Kann ich in meiner Gemeinde in Frankreich eingetragen bleiben?',
-        a: 'Seit 2019 kann man nur in einer einzigen Liste eingetragen sein: entweder in der konsularischen Wählerliste (Sie wählen im Ausland und bei Parlamentswahlen die Abgeordnete bzw. den Abgeordneten der Französinnen und Franzosen im Ausland) oder in der Liste einer französischen Gemeinde (Sie wählen in Frankreich, persönlich oder per Vollmacht). Mit der Eintragung in die konsularische Liste werden Sie automatisch aus der Liste Ihrer Gemeinde gestrichen.',
-      },
-      {
-        q: 'Kann man bei der Präsidentschaftswahl online wählen?',
-        a: 'Nein. Online-Wahlen gibt es bei Parlaments- und Konsularwahlen, aber nicht bei der Präsidentschaftswahl. Sie müssen in Ihrem Wahllokal im Ausland persönlich wählen oder eine Vollmacht erteilen.',
-      },
-      {
-        q: 'Ich kann am Wahltag nicht ins Wahllokal kommen. Was kann ich tun?',
-        a: 'Erteilen Sie einer Vertrauensperson, die im Wählerverzeichnis eingetragen ist, eine Vollmacht. Action populaire (actionpopulaire.fr/procuration) vermittelt Ihnen eine Person, die für Sie abstimmt, und begleitet Sie durch das offizielle Verfahren: Antrag auf maprocuration.gouv.fr, danach Identitätsprüfung im Konsulat (oder bei Polizei bzw. Gendarmerie, wenn Sie in Frankreich sind). Tun Sie es so früh wie möglich: Die Vollmacht muss vor der Wahl im Wahllokal vorliegen.',
-      },
-      {
-        q: 'Welche Unterlagen brauche ich für die Eintragung?',
-        a: 'Einen gültigen Nachweis Ihrer Identität und der französischen Staatsangehörigkeit (Personalausweis oder Reisepass) sowie einen Wohnsitznachweis im Konsularbezirk (Mietvertrag, Rechnung, Bescheinigung über die Eintragung im Register…). Alles geht online mit FranceConnect oder einem service-public-Konto.',
-      },
-      {
-        q: 'Ich bin gerade in ein anderes Land des Wahlkreises umgezogen. Was muss ich tun?',
-        a: 'Tragen Sie sich in die Wählerliste des Konsulats Ihres neuen Wohnsitzlandes ein: Sie werden dann automatisch aus der alten Liste gestrichen. Denken Sie auch daran, Ihre Eintragung im Register zu aktualisieren.',
-      },
-    ],
     sources: 'Offizielle Quellen:',
     sourceDiplo: 'France Diplomatie — Wahlen im Ausland (auf Französisch)',
     sourceSP: 'Service-public.gouv.fr — Wahlen (auf Französisch)',

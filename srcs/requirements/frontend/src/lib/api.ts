@@ -2,7 +2,17 @@ import { fr } from '../i18n/fr';
 import type { Dict } from '../i18n/fr';
 import { authStore, clearAuth } from './auth';
 import { langStore } from './i18n';
-import type { ActionGroup, ApiCountry, Article, CampaignEvent, Category, FooterLinks, Paginated, PollingStation } from './models';
+import type {
+  ActionGroup,
+  FaqEntry,
+  ApiCountry,
+  Article,
+  CampaignEvent,
+  Category,
+  FooterLinks,
+  Paginated,
+  PollingStation,
+} from './models';
 
 /** Erreur d'appel à l'API : `status` 0 = serveur injoignable, `error` = corps de la réponse (erreurs DRF). */
 export class ApiError extends Error {
@@ -166,6 +176,11 @@ export const api = {
   /** Bureaux de vote affichés sur la carte de la page Voter. */
   pollingStations() {
     return request<PollingStation[]>('/api/polling-stations/');
+  },
+
+  /** Questions fréquentes de la page « Voter ». */
+  faq(signal?: AbortSignal) {
+    return request<FaqEntry[]>('/api/faq/', { signal });
   },
 
   /** Sites amis et réseaux sociaux (une seule requête, partagée par le pied de page et la page Contact). */

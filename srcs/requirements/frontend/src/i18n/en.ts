@@ -151,32 +151,6 @@ export const en: Dict = {
     myStationBtn: 'Check',
     faqEyebrow: 'Frequently asked questions',
     faqTitle: 'Everything you need to know about voting from abroad',
-    faq: [
-      {
-        q: 'I am on the Register of French citizens abroad. Am I registered to vote?',
-        a: 'Not necessarily. Registering with the consulate (the “Registre”) and registering on the consular electoral roll are two separate steps, even though they are often done at the same time. Check your electoral status online to be sure.',
-      },
-      {
-        q: 'Can I stay registered in my municipality in France?',
-        a: 'Since 2019, you can only be on one roll: either the consular electoral roll (you vote abroad, and in legislative elections for the member of parliament for French citizens abroad) or the roll of a French municipality (you vote in France, in person or by proxy). Registering on the consular roll automatically removes you from your municipality’s roll.',
-      },
-      {
-        q: 'Can I vote online in the presidential election?',
-        a: 'No. Online voting exists for legislative and consular elections, but not for the presidential election. You must vote in person at your polling station abroad, or give a proxy.',
-      },
-      {
-        q: 'I won’t be able to go and vote on election day. What can I do?',
-        a: 'Give a proxy to a trusted person who is registered to vote. Action populaire (actionpopulaire.fr/procuration) puts you in touch with someone who can cast your vote and guides you through the official procedure: an application on maprocuration.gouv.fr, then an identity check at the consulate (or at a police or gendarmerie station if you are in France). Do it as early as possible: the proxy must reach the polling station before the vote.',
-      },
-      {
-        q: 'Which documents do I need to register?',
-        a: 'Valid proof of identity and French nationality (identity card or passport) and proof of residence in the consular district (rental contract, bill, certificate of registration with the consulate…). Everything is done online with FranceConnect or a service-public account.',
-      },
-      {
-        q: 'I have just moved to another country of the constituency. What should I do?',
-        a: 'Register on the electoral roll of the consulate in your new country of residence: you will automatically be removed from the previous roll. Remember to update your registration with the consulate (the “Registre”) as well.',
-      },
-    ],
     sources: 'Official sources:',
     sourceDiplo: 'France Diplomatie — Elections abroad (in French)',
     sourceSP: 'Service-public.gouv.fr — Elections (in French)',

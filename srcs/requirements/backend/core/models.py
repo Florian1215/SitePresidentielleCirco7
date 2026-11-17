@@ -183,3 +183,30 @@ class PollingStation(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.city})"
+
+
+class FaqEntry(models.Model):
+    """Question fréquente de la page « Voter » (modifiable uniquement dans l'admin)."""
+
+    question_fr = models.CharField("question (français)", max_length=300)
+    answer_fr = models.TextField("réponse (français)")
+    question_en = models.CharField(
+        "question (anglais)", max_length=300, blank=True,
+        help_text="Facultatif : à défaut, la version française s'affiche.",
+    )
+    answer_en = models.TextField("réponse (anglais)", blank=True)
+    question_de = models.CharField(
+        "question (allemand)", max_length=300, blank=True,
+        help_text="Facultatif : à défaut, la version française s'affiche.",
+    )
+    answer_de = models.TextField("réponse (allemand)", blank=True)
+    order = models.PositiveSmallIntegerField("ordre", default=0, help_text="Les plus petits nombres s'affichent en premier.")
+    is_active = models.BooleanField("affichée", default=True)
+
+    class Meta:
+        verbose_name = "question fréquente"
+        verbose_name_plural = "questions fréquentes"
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.question_fr

@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.text import slugify
 from rest_framework import serializers
 
-from .models import COUNTRIES, ActionGroup, ActionGroupLink, ContactMessage, FriendSite, PollingStation, SocialLink, Supporter
+from .models import COUNTRIES, ActionGroup, ActionGroupLink, FaqEntry, ContactMessage, FriendSite, PollingStation, SocialLink, Supporter
 
 User = get_user_model()
 
@@ -108,6 +108,14 @@ class ActionGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = ActionGroup
         fields = ["id", "name", "city", "country", "latitude", "longitude", "url", "links"]
+
+
+class FaqEntrySerializer(serializers.ModelSerializer):
+    """Question et réponse dans les trois langues ; le site choisit selon la langue affichée."""
+
+    class Meta:
+        model = FaqEntry
+        fields = ["id", "question_fr", "answer_fr", "question_en", "answer_en", "question_de", "answer_de"]
 
 
 class PollingStationSerializer(serializers.ModelSerializer):
