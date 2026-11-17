@@ -129,17 +129,16 @@ export default function Circonscription() {
       </section>
 
       {/* CARTE */}
-      <section className="section bg-gris-clair pb-0" id="carte">
-        <div className="site-container">
-          <div className="section-head mb-6">
-            <span className="eyebrow">{t.mapEyebrow}</span>
-            <h2>{t.mapTitle}</h2>
-          </div>
-        </div>
-
+      <section className="bg-gris-clair max-[960px]:pt-8" id="carte">
         {/* Carte en pleine largeur, avec le panneau des groupes posé dessus */}
         <CircoMap
           idPrefix="groupes"
+          title={
+            <>
+              <span className="eyebrow">{t.mapEyebrow}</span>
+              <h2 className="m-0 text-[clamp(26px,3vw,40px)]">{t.mapTitle}</h2>
+            </>
+          }
           points={points}
           labels={labels}
           interactiveTooltip

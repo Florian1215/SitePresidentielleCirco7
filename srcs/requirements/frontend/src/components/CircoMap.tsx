@@ -44,6 +44,8 @@ interface Props<T extends MapPoint> {
   renderItem?: (point: T) => ReactNode;
   /** Liens affichés à droite d'un élément de la liste (ex. réseaux sociaux), hors du lien principal. */
   renderItemExtra?: (point: T) => ReactNode;
+  /** Titre posé sur la carte, en haut à gauche (au-dessus de la carte sur mobile). */
+  title?: ReactNode;
   /** Encadré en bas du panneau. */
   panelFooter?: ReactNode;
   /** Préfixe des identifiants HTML (titre de la carte, listes par pays) : « groupes », « bureaux »… */
@@ -114,6 +116,7 @@ export function CircoMap<T extends MapPoint>({
   interactiveTooltip = false,
   renderItem,
   renderItemExtra,
+  title,
   panelFooter,
   idPrefix,
 }: Props<T>) {
@@ -126,6 +129,9 @@ export function CircoMap<T extends MapPoint>({
   const [size, setSize] = useState({ w: MAP_W, h: MAP_H });
   /** Largeur du panneau posé sur la carte (0 quand il passe sous la carte, sur mobile). */
   const [panelPx, setPanelPx] = useState(0);
+  /** Hauteur occupée en haut par le titre posé sur la carte (0 sans titre ou sur mobile). */
+  const titleRef = useRef<HTMLDivElement>(null);
+  const [titlePx, setTitlePx] = useState(0);
   /** Vue choisie par l'utilisateur (zoom, déplacement) ; null = vue d'ensemble. */
   const [custom, setCustom] = useState<View | null>(null);
 
@@ -135,12 +141,29 @@ export function CircoMap<T extends MapPoint>({
    */
   const fullView = useMemo<View>(() => {
     const { w: pxW, h: pxH } = size;
-    const usable = Math.max(1, pxW - panelPx);
-    const h = usable / pxH > MAP_W / MAP_H ? MAP_H * FIT_MARGIN : (MAP_W * FIT_MARGIN * pxH) / usable;
-    const w = (h * pxW) / pxH;
-    const unit = w / pxW;
-    return { x: MAP_W / 2 - (usable / 2) * unit, y: MAP_H / 2 - h / 2, w, h };
-  }, [size, panelPx]);
+    // Zone libre : à gauche du panneau et sous le titre
+    const usableW = Math.max(1, pxW - panelPx);
+    const usableH = Math.max(1, pxH - titlePx);
+    const E = MAP_EXTENT;
+    const cx = usableW / 2;
+    const cy = titlePx + usableH / 2;
+    // Assez petit pour que la circonscription tienne dans la zone libre…
+    const fitUnit = Math.max((MAP_W * FIT_MARGIN) / usableW, (MAP_H * FIT_MARGIN) / usableH);
+    // …sans dézoomer au-delà du fond de carte (sinon ses bords apparaissent sur les grands écrans)
+    const maxUnit = Math.min(
+      (MAP_W / 2 - E.x) / cx,
+      (E.x + E.w - MAP_W / 2) / (pxW - cx),
+      (MAP_H / 2 - E.y) / cy,
+      (E.y + E.h - MAP_H / 2) / (pxH - cy),
+    );
+    const unit = Math.min(fitUnit, maxUnit);
+    return {
+      x: MAP_W / 2 - cx * unit,
+      y: MAP_H / 2 - cy * unit,
+      w: pxW * unit,
+      h: pxH * unit,
+    };
+  }, [size, panelPx, titlePx]);
 
   const view = custom ?? fullView;
   const zoom = fullView.w / view.w;
@@ -177,6 +200,9 @@ export function CircoMap<T extends MapPoint>({
       const panel = panelRef.current;
       const overlaid = panel && getComputedStyle(panel).position === 'absolute';
       setPanelPx(overlaid ? panel.offsetWidth + 32 : 0);
+      const title = titleRef.current;
+      const titleOver = title && getComputedStyle(title).position === 'absolute';
+      setTitlePx(titleOver ? title.offsetTop + title.offsetHeight + 8 : 0);
       setSize({ w: r.width, h: r.height });
       // Vue zoomée : on garde le centre et le niveau de zoom, avec la nouvelle forme du cadre
       const v = live.current.custom;
@@ -379,7 +405,17 @@ export function CircoMap<T extends MapPoint>({
 
   return (
     <div className="relative max-[960px]:pb-8">
-      <div className="relative h-[clamp(520px,78vh,820px)] overflow-hidden bg-[#e6eef8] max-[960px]:h-[400px]">
+      {title && (
+        <div
+          ref={titleRef}
+          className={`absolute top-6 z-2 max-w-[min(560px,calc(100%-440px))] rounded-site bg-[rgba(255,252,244,0.94)] px-5 py-4 shadow-[0_4px_14px_rgba(0,0,0,0.12)] max-[960px]:static max-[960px]:mx-gutter max-[960px]:mb-4 max-[960px]:max-w-none max-[960px]:bg-transparent max-[960px]:p-0 max-[960px]:shadow-none ${EDGE_LEFT}`}
+        >
+          {title}
+        </div>
+      )}
+      <div
+        className={`relative overflow-hidden bg-[#e6eef8] max-[960px]:h-[400px] ${title ? 'h-[clamp(600px,90vh,900px)]' : 'h-[clamp(520px,78vh,820px)]'}`}
+      >
         <svg
           ref={svgRef}
           className={`block h-full w-full select-none ${zoom > 1 ? 'cursor-grab touch-none active:cursor-grabbing' : 'touch-pan-y'}`}
@@ -454,7 +490,7 @@ export function CircoMap<T extends MapPoint>({
         )}
 
         <div
-          className={`absolute top-6 flex flex-col overflow-hidden rounded-[10px] shadow-[0_4px_14px_rgba(0,0,0,0.15)] max-[960px]:top-4 max-[960px]:left-4 ${EDGE_LEFT}`}
+          className={`absolute flex flex-col overflow-hidden rounded-[10px] shadow-[0_4px_14px_rgba(0,0,0,0.15)] max-[960px]:top-4 max-[960px]:left-4 ${title ? 'top-[150px]' : 'top-6'} ${EDGE_LEFT}`}
         >
           <button
             type="button"
