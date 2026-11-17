@@ -271,7 +271,6 @@ export const de: Dict = {
   },
 
   supportPage: {
-    eyebrow: 'Ich unterstütze',
     title: 'Ich unterstütze die Kampagne',
     lead: 'Folgt uns in den sozialen Netzwerken und kommt zu unseren Veranstaltungen: Jedes Teilen und jede Teilnahme hilft, den 7. Wahlkreis zu gewinnen.',
     followTitle: 'Folgt uns',

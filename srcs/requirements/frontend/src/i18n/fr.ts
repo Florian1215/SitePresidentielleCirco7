@@ -278,7 +278,6 @@ export const fr = {
   },
 
   supportPage: {
-    eyebrow: 'Je soutiens',
     title: 'Je soutiens la campagne',
     lead: "N'hésitez pas à nous suivre sur les réseaux sociaux et à venir à nos événements : chaque partage, chaque présence compte pour faire gagner la 7e circonscription.",
     followTitle: 'Suivez-nous',

@@ -33,60 +33,60 @@ export default function Soutenir() {
   return (
     <div>
       {/* 1. JE SOUTIENS LA CAMPAGNE : réseaux sociaux + événements */}
-      <section className="page-hero overflow-hidden">
-        <div className="site-container grid grid-cols-[1.2fr_1fr] items-center gap-12 max-[900px]:grid-cols-1">
-          <div>
-            <span className="eyebrow">{t.eyebrow}</span>
-            <h1>{t.title}</h1>
-            <p className="lead">{t.lead}</p>
-
-            {socials.length > 0 && (
-              <>
-                <h2 className="mt-8 mb-3 text-[22px]">{t.followTitle}</h2>
-                <ul
-                  className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3 p-0"
-                  aria-label={t.networksAria}
-                >
-                  {socials.map((s) => {
-                    const icon = FOOTER_ICONS[s.network] ?? FOOTER_ICONS['other'];
-                    return (
-                      <li key={s.id}>
-                        <a
-                          href={s.url}
-                          target="_blank"
-                          rel="noopener me"
-                          style={{ '--c': networkColor(s.network) } as CSSProperties}
-                          className="flex items-center gap-3 rounded-site bg-(--c) px-4 py-3 font-bold text-white no-underline shadow-site transition-transform hover:-translate-y-0.5 hover:text-white hover:no-underline"
-                        >
-                          <svg
-                            className="h-6 w-6 shrink-0 fill-current"
-                            viewBox={icon.viewBox}
-                            aria-hidden="true"
-                            focusable="false"
-                          >
-                            <path d={icon.d} />
-                          </svg>
-                          {s.label}
-                        </a>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </>
-            )}
-
-            <div className="btn-row mt-7">
-              <Link to="/blog#agenda" className="btn">
-                {t.seeEvents} →
-              </Link>
-            </div>
+      <section className="page-hero overflow-hidden py-[clamp(40px,5.5vw,68px)]!">
+        <div className="site-container text-center">
+          <div className="mx-auto max-w-[760px]">
+            <h1 className="text-[clamp(26px,6vw,72px)] whitespace-nowrap">{t.title}</h1>
+            <p className="lead mx-auto">{t.lead}</p>
           </div>
+
           <Photo
-            className="aspect-[4/5] -rotate-2 overflow-hidden rounded-site shadow-[14px_14px_0_var(--color-rouge)] max-[900px]:aspect-[4/3] max-[900px]:max-w-[560px] max-[900px]:rotate-0"
+            className="mt-6 aspect-[16/9] overflow-hidden rounded-site shadow-[14px_14px_0_var(--color-rouge)] max-[700px]:aspect-[4/3]"
             name="equipeBerlin"
-            sizes="(max-width: 900px) 100vw, 480px"
+            sizes="(max-width: 1248px) 100vw, 1200px"
             caption={t.photoCaption}
           />
+
+          {socials.length > 0 && (
+            <>
+              <h2 className="mt-14 mb-6 text-[clamp(28px,3.4vw,40px)]">{t.followTitle}</h2>
+              <ul
+                className="mx-auto my-0 grid max-w-[720px] list-none grid-cols-3 gap-4 p-0 max-[600px]:grid-cols-2"
+                aria-label={t.networksAria}
+              >
+                {socials.map((s) => {
+                  const icon = FOOTER_ICONS[s.network] ?? FOOTER_ICONS['other'];
+                  return (
+                    <li key={s.id}>
+                      <a
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener me"
+                        style={{ '--c': networkColor(s.network) } as CSSProperties}
+                        className="flex items-center gap-3 rounded-site bg-(--c) px-5 py-4 text-[17px] font-bold text-white no-underline shadow-site transition-transform hover:-translate-y-0.5 hover:text-white hover:no-underline"
+                      >
+                        <svg
+                          className="h-6 w-6 shrink-0 fill-current"
+                          viewBox={icon.viewBox}
+                          aria-hidden="true"
+                          focusable="false"
+                        >
+                          <path d={icon.d} />
+                        </svg>
+                        {s.label}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
+
+          <div className="btn-row mt-12 justify-center">
+            <Link to="/blog#agenda" className="btn">
+              {t.seeEvents} →
+            </Link>
+          </div>
         </div>
       </section>
 

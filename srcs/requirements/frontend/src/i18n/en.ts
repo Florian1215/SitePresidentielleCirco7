@@ -271,7 +271,6 @@ export const en: Dict = {
   },
 
   supportPage: {
-    eyebrow: 'I support',
     title: 'I support the campaign',
     lead: 'Follow us on social media and come to our events: every share and every person who shows up helps us win the 7th constituency.',
     followTitle: 'Follow us',
