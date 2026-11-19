@@ -213,15 +213,9 @@ export function CoverCropper({
       }}
     >
       <div className="stack p-[clamp(16px,3vw,28px)]">
-        <div>
-          <h2 id="crop-title" className="m-0 text-[24px]">
-            Recadrer l'image de couverture
-          </h2>
-          <p className="muted m-0 mt-1 text-[15px]">
-            Déplacez le cadre sur la partie intéressante de l'image, et agrandissez-le ou réduisez-le par ses coins. C'est ce
-            cadre (format 16:9) qui s'affiche dans la liste des articles et en haut de l'article.
-          </p>
-        </div>
+        <h2 id="crop-title" className="m-0 text-[24px]">
+          Recadrer l'image de couverture
+        </h2>
 
         <div className="grid place-items-center rounded-lg bg-gris-clair p-2">
           <div className="relative max-w-full touch-none overflow-hidden select-none">
