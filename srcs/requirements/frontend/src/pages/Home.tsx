@@ -85,7 +85,7 @@ export default function Home() {
       {/* HERO */}
       <section className="overflow-hidden pt-[clamp(40px,7vw,96px)] pb-[clamp(56px,8vw,104px)]">
         <div className="site-container grid grid-cols-[1.25fr_1fr] items-center gap-12 max-[900px]:grid-cols-1">
-          <div>
+          <div className="hero-copy">
             <span className="eyebrow">{i18n.f(t.eyebrow, { circo: i18n.d.common.circo })}</span>
             <h1>
               {t.titleA} <span className="hl-violet">{t.titleHl}</span> {t.titleB}
@@ -103,7 +103,10 @@ export default function Home() {
             </div>
           </div>
 
-          <nav className="relative min-h-[420px] max-[900px]:min-h-[340px] max-[900px]:max-w-[460px]" aria-label={t.postersAria}>
+          <nav
+            className="relative min-h-[420px] max-[900px]:mx-auto max-[900px]:aspect-[8/9] max-[900px]:min-h-0 max-[900px]:w-[92%] max-[900px]:max-w-[460px]"
+            aria-label={t.postersAria}
+          >
             {posters.map((p, i) => (
               <Link
                 key={p.slug + p.top}
@@ -151,7 +154,7 @@ export default function Home() {
               </span>
             </div>
           ))}
-          <Link to="/inscription-listes-electorales" className="btn btn-creme">
+          <Link to="/inscription-listes-electorales" className="btn btn-creme max-[700px]:mx-auto">
             {t.checkRegistration}
           </Link>
         </div>

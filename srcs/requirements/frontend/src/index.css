@@ -442,6 +442,19 @@
     gap: 12px;
   }
 
+  /* Haut de page (titre, texte, boutons) : centré sur mobile et tablette */
+  @media (max-width: 900px) {
+    .hero-copy {
+      text-align: center;
+      & .lead {
+        margin-inline: auto;
+      }
+      & :is(.btn-row, .hero-chips) {
+        justify-content: center;
+      }
+    }
+  }
+
   /* ---------- Cartes, étiquettes ---------- */
 
   .card {

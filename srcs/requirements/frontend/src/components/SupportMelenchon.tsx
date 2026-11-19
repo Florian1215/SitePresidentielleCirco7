@@ -88,7 +88,7 @@ export function SupportMelenchon({ id }: { id?: string }) {
   return (
     <section id={id} className="section overflow-hidden bg-lavande" ref={soutien}>
       <div className="site-container grid grid-cols-[1.2fr_1fr] items-center gap-12 max-[900px]:grid-cols-1">
-        <div>
+        <div className="hero-copy">
           <p className="m-0 font-titre text-[clamp(28px,3.4vw,40px)] text-violet uppercase">{t.weAre}</p>
           {/* Chiffres à chasse fixe : le nombre ne « danse » pas pendant qu'il défile */}
           <p
@@ -108,7 +108,7 @@ export function SupportMelenchon({ id }: { id?: string }) {
           </div>
         </div>
         <Photo
-          className="aspect-[4/5] overflow-hidden rounded-site shadow-[14px_14px_0_var(--color-violet)] max-[900px]:aspect-[4/3] max-[900px]:max-w-[520px]"
+          className="aspect-[4/5] overflow-hidden rounded-site shadow-[14px_14px_0_var(--color-violet)] max-[900px]:aspect-[4/3] max-[900px]:w-[calc(100%-8px)] max-[900px]:max-w-[520px] max-[900px]:justify-self-center max-[900px]:shadow-[8px_8px_0_var(--color-violet)]"
           name="melenchon"
           sizes="(max-width: 900px) 100vw, 480px"
           position="50% 30%"

@@ -107,7 +107,7 @@ export default function Voter() {
       {/* HERO */}
       <section className="overflow-hidden pt-[clamp(40px,7vw,88px)] pb-[clamp(56px,8vw,104px)]">
         <div className="site-container grid grid-cols-[1.4fr_1fr] items-center gap-12 max-[900px]:grid-cols-1">
-          <div>
+          <div className="hero-copy">
             <span className="eyebrow">{t.eyebrow}</span>
             <h1>
               {t.titleA}

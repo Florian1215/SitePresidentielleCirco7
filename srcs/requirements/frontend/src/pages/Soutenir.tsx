@@ -41,7 +41,7 @@ export default function Soutenir() {
           </div>
 
           <Photo
-            className="mt-6 aspect-[16/9] overflow-hidden rounded-site shadow-[14px_14px_0_var(--color-rouge)] max-[700px]:aspect-[4/3]"
+            className="mt-6 aspect-[16/9] overflow-hidden rounded-site shadow-[14px_14px_0_var(--color-rouge)] max-[700px]:mx-auto max-[700px]:aspect-[4/3] max-[700px]:w-[calc(100%-8px)] max-[700px]:shadow-[8px_8px_0_var(--color-rouge)]"
             name="equipeBerlin"
             sizes="(max-width: 1248px) 100vw, 1200px"
             caption={t.photoCaption}

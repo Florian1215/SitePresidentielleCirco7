@@ -90,7 +90,7 @@ export default function Circonscription() {
       {/* HERO */}
       <section className="pt-[clamp(40px,7vw,88px)] pb-[clamp(40px,6vw,72px)]">
         <div className="site-container grid grid-cols-[1.3fr_1fr] items-center gap-12 max-[960px]:grid-cols-1">
-          <div>
+          <div className="hero-copy">
             <span className="eyebrow">{i18n.d.common.circo}</span>
             <h1>
               {i18n.f(t.titleA, { n: COUNTRIES.length })}
@@ -98,7 +98,7 @@ export default function Circonscription() {
               <span className="hl">{t.titleHl}</span>
             </h1>
             <p className="lead max-w-[600px]">{i18n.f(t.lead, { n: i18n.number(TOTAL) })}</p>
-            <ul className="mx-0 mt-7 mb-0 flex list-none flex-wrap gap-3 p-0 [&_span]:text-[13px] [&_span]:font-bold [&_strong]:font-titre [&_strong]:text-[36px] [&_strong]:leading-none">
+            <ul className="hero-chips mx-0 mt-7 mb-0 flex list-none flex-wrap gap-3 p-0 [&_span]:text-[13px] [&_span]:font-bold [&_strong]:font-titre [&_strong]:text-[36px] [&_strong]:leading-none">
               <li className="flex flex-col rounded-site px-[18px] py-3 bg-lavande text-violet">
                 <strong>{COUNTRIES.length}</strong>
                 <span>{t.countries}</span>

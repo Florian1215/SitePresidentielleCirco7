@@ -48,11 +48,11 @@ export default function Programme() {
   return (
     <div>
       <section className="page-hero">
-        <div className="site-container">
+        <div className="site-container hero-copy">
           <span className="eyebrow">{t.eyebrow}</span>
           <h1>{t.title}</h1>
           <p className="lead">{t.lead}</p>
-          <nav className="mt-2 flex flex-wrap gap-2" aria-label={t.navAria}>
+          <nav className="hero-chips mt-2 flex flex-wrap gap-2" aria-label={t.navAria}>
             {categories.map((cat) => (
               <a
                 key={cat.slug}

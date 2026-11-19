@@ -160,7 +160,7 @@ export default function BlogList() {
     <div>
       <section className="page-hero">
         <div className="site-container grid grid-cols-[1.3fr_1fr] items-center gap-10 max-[900px]:grid-cols-1">
-          <div>
+          <div className="hero-copy">
             <span className="eyebrow">{t.eyebrow}</span>
             <h1>{t.title}</h1>
             <p className="lead">{t.lead}</p>
@@ -199,12 +199,7 @@ export default function BlogList() {
                   aria-controls="agenda-filtres"
                   onClick={() => setShowFilters(!showFilters)}
                 >
-                  <svg
-                    className="h-4 w-4 fill-current"
-                    viewBox={VIEW_ICONS.filter.viewBox}
-                    aria-hidden="true"
-                    focusable="false"
-                  >
+                  <svg className="h-4 w-4 fill-current" viewBox={VIEW_ICONS.filter.viewBox} aria-hidden="true" focusable="false">
                     <path d={VIEW_ICONS.filter.d} />
                   </svg>
                   {t.filters}

@@ -60,13 +60,25 @@ export function EventCard({ event: e }: { event: CampaignEvent }) {
         >
           {e.image && (
             <>
-              <img className="absolute inset-0 h-full w-full scale-[1.2] object-cover opacity-75 blur-[18px] saturate-[1.2]" src={e.image} alt="" loading="lazy" decoding="async" aria-hidden="true" />
+              <img
+                className="absolute inset-0 h-full w-full scale-[1.2] object-cover opacity-75 blur-[18px] saturate-[1.2]"
+                src={e.image}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                aria-hidden="true"
+              />
               <img className="relative h-full w-full object-contain" src={e.image} alt="" loading="lazy" decoding="async" />
             </>
           )}
           {/* Date façon feuille de calendrier, posée sur le visuel */}
-          <div className="absolute bottom-3 left-3.5 flex w-16 flex-col items-center overflow-hidden rounded-[10px] bg-white text-center shadow-[0_6px_16px_rgba(0,0,0,.25)]" aria-hidden="true">
-            <span className="self-stretch bg-rouge py-[3px] text-[11px] font-bold tracking-[.06em] text-creme uppercase">{v.month}</span>
+          <div
+            className="absolute bottom-3 left-3.5 flex w-16 flex-col items-center overflow-hidden rounded-[10px] bg-white text-center shadow-[0_6px_16px_rgba(0,0,0,.25)]"
+            aria-hidden="true"
+          >
+            <span className="self-stretch bg-rouge py-[3px] text-[11px] font-bold tracking-[.06em] text-creme uppercase">
+              {v.month}
+            </span>
             <span className="mt-0.5 font-titre text-[32px] leading-[1.05] text-noir">{v.day}</span>
             <span className="mb-[5px] text-[11px] font-bold text-texte capitalize">{v.weekday}</span>
           </div>
@@ -79,7 +91,9 @@ export function EventCard({ event: e }: { event: CampaignEvent }) {
             </span>
             {e.location && <span className="font-medium text-texte [overflow-wrap:anywhere]">{e.location}</span>}
           </p>
-          <h3 className="m-0 mb-2 line-clamp-2 font-texte text-[18px] leading-[1.3] font-bold text-noir [overflow-wrap:anywhere]">{e.title}</h3>
+          <h3 className="m-0 mb-2 line-clamp-2 font-texte text-[18px] leading-[1.3] font-bold text-noir [overflow-wrap:anywhere]">
+            {e.title}
+          </h3>
           {v.excerpt && <p className="m-0 mb-4 line-clamp-3 text-[14px] text-texte [overflow-wrap:anywhere]">{v.excerpt}</p>}
 
           <div className="mt-auto flex flex-wrap gap-2">
@@ -99,7 +113,7 @@ export function EventCard({ event: e }: { event: CampaignEvent }) {
                 {i18n.d.event.calendar}
               </summary>
               <ul
-                className="absolute top-[calc(100%+6px)] left-0 z-[5] m-0 min-w-[230px] list-none rounded-[10px] bg-white p-1.5 shadow-[0_12px_30px_rgba(33,35,32,.2)]"
+                className="absolute top-[calc(100%+6px)] left-0 z-[5] m-0 min-w-[230px] max-[520px]:right-0 max-[520px]:left-auto list-none rounded-[10px] bg-white p-1.5 shadow-[0_12px_30px_rgba(33,35,32,.2)]"
                 onClick={() => menu.current && (menu.current.open = false)}
               >
                 <li>
