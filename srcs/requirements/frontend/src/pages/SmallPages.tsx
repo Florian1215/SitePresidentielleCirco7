@@ -169,7 +169,7 @@ export function Login() {
       <section className="section">
         <div className="site-container max-w-[480px]">
           <div className="card stack">
-            <h1 className="h2 m-0 flex items-center gap-3">
+            <h1 className="h2 m-0 flex items-center gap-3 text-[clamp(24px,6vw,32px)] whitespace-nowrap">
               <span className="text-[0.9em] leading-none" aria-hidden="true">
                 ⏳
               </span>
