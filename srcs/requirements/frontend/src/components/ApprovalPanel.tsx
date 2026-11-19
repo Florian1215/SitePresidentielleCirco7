@@ -33,12 +33,6 @@ export function ApprovalPanel({
     }
   };
 
-  const reason = a.is_author
-    ? "C'est votre article : il doit être validé par d'autres comptes."
-    : !a.can_approve && done > 0
-      ? 'Vous avez déjà validé cet article.'
-      : '';
-
   if (variant === 'squares') {
     return (
       <div className="grid gap-2">
@@ -86,7 +80,6 @@ export function ApprovalPanel({
             );
           })}
         </ul>
-        {reason && <p className="m-0 text-[13px] text-texte">{reason}</p>}
         {error && (
           <div className="alert alert-err m-0" role="alert">
             {error}
@@ -116,15 +109,13 @@ export function ApprovalPanel({
           {done > 0 && <span className="font-normal text-texte"> · {a.approvals.join(', ')}</span>}
         </span>
       </div>
-      {a.can_approve ? (
+      {a.can_approve && (
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" className="btn btn-sm" disabled={sending} onClick={approve}>
             {sending ? 'Envoi…' : '✓ Valider'}
           </button>
           {done + 1 >= total && <span className="text-[14px] text-texte">Votre validation publiera l'article.</span>}
         </div>
-      ) : (
-        reason && <p className="m-0 text-[14px] text-texte">{reason}</p>
       )}
       {error && (
         <div className="alert alert-err m-0" role="alert">
