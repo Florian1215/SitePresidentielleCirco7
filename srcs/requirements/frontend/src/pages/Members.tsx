@@ -1,21 +1,24 @@
 import { useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '../lib/api';
+import { useAuth } from '../lib/auth';
 import { useI18n } from '../lib/i18n';
 import type { Member, MemberRole, MemberStatus } from '../lib/models';
 import { refreshPendingMembers } from '../lib/pending';
 import { usePageTitle } from '../lib/title';
 
-const ROLES: { value: Exclude<MemberRole, 'admin'>; label: string; hint: string }[] = [
+/** Les trois droits attribuables. */
+const ROLES: { value: MemberRole; label: string; hint: string }[] = [
+  { value: 'admin', label: 'Admin', hint: 'tous les droits : articles, publication directe, membres, catégories' },
   { value: 'writer', label: 'Rédacteur·ice', hint: 'écrit des articles et valide ceux des autres' },
-  { value: 'editor', label: 'Éditeur·ice', hint: 'peut aussi modifier et supprimer tous les articles' },
-  { value: 'none', label: 'Membre (sans droit d’écrire)', hint: 'peut seulement se connecter' },
+  { value: 'reviewer', label: 'Relecteur·ice', hint: 'valide seulement les articles des autres' },
 ];
 
 const ROLE_LABEL: Record<MemberRole, string> = {
-  admin: 'Administrateur·ice',
-  editor: 'Éditeur·ice',
+  admin: 'Admin',
   writer: 'Rédacteur·ice',
-  none: 'Membre',
+  reviewer: 'Relecteur·ice',
+  editor: 'Éditeur·ice (ancien rôle)',
+  none: 'Aucun droit',
 };
 
 const STATUS_BADGE: Record<MemberStatus, { label: string; className: string }> = {
@@ -111,7 +114,9 @@ function MemberRow({ member: m, onChange, onRemoved }: { member: Member; onChang
   const i18n = useI18n();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [confirming, setConfirming] = useState<'refuse' | 'revoke' | null>(null);
+  const [confirming, setConfirming] = useState<'refuse' | 'revoke' | 'admin' | null>(null);
+  /** Seul·es les admins peuvent nommer un·e admin. */
+  const canGrantAdmin = useAuth().isSuperAdmin;
   /** Rôle donné à l'acceptation d'une demande. */
   const [acceptRole, setAcceptRole] = useState<MemberRole>('writer');
   const badge = STATUS_BADGE[m.status];
@@ -139,8 +144,14 @@ function MemberRow({ member: m, onChange, onRemoved }: { member: Member; onChang
       disabled={busy}
       onChange={(e) => onSelect(e.target.value as MemberRole)}
     >
+      {/* Ancien rôle (éditeur·ice, aucun droit) : affiché tant qu'on n'en a pas choisi un des trois */}
+      {!ROLES.some((r) => r.value === value) && (
+        <option value={value} disabled>
+          {ROLE_LABEL[value]}
+        </option>
+      )}
       {ROLES.map((r) => (
-        <option key={r.value} value={r.value} title={r.hint}>
+        <option key={r.value} value={r.value} title={r.hint} disabled={r.value === 'admin' && !canGrantAdmin}>
           {r.label}
         </option>
       ))}
@@ -207,18 +218,37 @@ function MemberRow({ member: m, onChange, onRemoved }: { member: Member; onChang
           )
         ) : (
           <div className="flex flex-wrap items-center gap-2">
-            {m.role === 'admin' || !m.editable ? (
+            {!m.editable ? (
               <span className="badge">{ROLE_LABEL[m.role]}</span>
             ) : (
               <>
                 <label htmlFor={`role-${m.id}`} className="visually-hidden">
                   Rôle de {fullName(m)}
                 </label>
-                {roleSelect(m.role, (r) => run(() => api.setMemberRole(m.id, r)), `role-${m.id}`)}
+                {roleSelect(
+                  m.role,
+                  (r) => (r === 'admin' ? setConfirming('admin') : run(() => api.setMemberRole(m.id, r))),
+                  `role-${m.id}`,
+                )}
               </>
             )}
             {m.editable &&
-              (m.status === 'revoked' ? (
+              (confirming === 'admin' ? (
+                <>
+                  <span className="text-[14px] font-bold text-rouge">Donner tous les droits (admin) ?</span>
+                  <button
+                    type="button"
+                    className="btn btn-rouge btn-sm"
+                    disabled={busy}
+                    onClick={() => run(() => api.setMemberRole(m.id, 'admin'))}
+                  >
+                    Oui
+                  </button>
+                  <button type="button" className="btn btn-outline btn-sm" onClick={() => setConfirming(null)}>
+                    Non
+                  </button>
+                </>
+              ) : m.status === 'revoked' ? (
                 <button
                   type="button"
                   className="btn btn-outline btn-sm"

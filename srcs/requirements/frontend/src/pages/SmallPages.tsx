@@ -125,7 +125,13 @@ export function Login() {
       setSending(false);
       const next = params.get('next');
       const target =
-        next && next.startsWith('/') && !next.startsWith('//') ? next : hasPerm(user, 'blog.add_article') ? '/blog' : '/';
+        next && next.startsWith('/') && !next.startsWith('//')
+          ? next
+          : hasPerm(user, 'blog.add_article')
+            ? '/blog'
+            : hasPerm(user, 'blog.review_article')
+              ? '/redaction/articles?statut=a-valider'
+              : '/';
       navigate(target);
     } catch (err) {
       setSending(false);
@@ -143,8 +149,8 @@ export function Login() {
             <p className="m-0">
               Vous êtes connecté·e en tant que <strong>{name}</strong>.
             </p>
-            {!auth.canWrite && (
-              <div className="alert alert-info">Votre compte n'a pas encore le droit d'écrire des articles.</div>
+            {!auth.canWrite && !auth.canReview && (
+              <div className="alert alert-info">Votre compte n'a pas encore de droits sur les articles.</div>
             )}
             <div className="btn-row">
               <button

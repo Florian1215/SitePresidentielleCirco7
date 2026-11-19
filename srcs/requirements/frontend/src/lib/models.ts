@@ -12,7 +12,8 @@ export interface User {
 }
 
 export type MemberStatus = 'pending' | 'active' | 'revoked';
-export type MemberRole = 'none' | 'writer' | 'editor' | 'admin';
+/** admin, writer (rédacteur·ice), reviewer (relecteur·ice) ; editor et none : anciens rôles, encore affichés. */
+export type MemberRole = 'admin' | 'writer' | 'reviewer' | 'editor' | 'none';
 
 /** Compte affiché sur la page « Membres ». */
 export interface Member {

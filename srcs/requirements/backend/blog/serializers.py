@@ -21,10 +21,10 @@ def display_name(user):
 
 
 def can_approve(user, article):
-    """Un compte rédacteur peut valider un article « À valider » dont il n'est pas l'auteur·ice, une seule fois."""
+    """Un compte relecteur (ou rédacteur) peut valider un article « À valider » dont il n'est pas l'auteur·ice, une seule fois."""
     return bool(
         user and user.is_authenticated
-        and user.has_perm("blog.add_article")
+        and user.has_perm("blog.review_article")
         and article.status == Article.Status.PENDING
         and not article.is_signed_by(user)
         and not any(a.user_id == user.id for a in article.approvals.all())

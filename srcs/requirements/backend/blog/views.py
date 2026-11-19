@@ -60,8 +60,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
             qs = qs.filter(published)
         elif not (user.has_perm("blog.publish_article") or user.has_perm("blog.manage_all_articles")):
             visible = published | Q(author=user) | Q(authors=user)
-            if user.has_perm("blog.add_article"):
-                visible |= Q(status=Article.Status.PENDING)  # les rédacteur·ices relisent les articles à valider
+            if user.has_perm("blog.review_article"):
+                visible |= Q(status=Article.Status.PENDING)  # relecteur·ices et rédacteur·ices relisent les articles à valider
             qs = qs.filter(pk__in=Article.objects.filter(visible).values("pk"))
 
         params = self.request.query_params

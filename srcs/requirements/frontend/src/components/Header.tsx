@@ -42,10 +42,10 @@ export function Header() {
 
   // Pastille « À valider » : rafraîchie à chaque changement de page
   const pending = usePendingCount();
-  const canWrite = auth.canWrite;
+  const canReview = auth.canReview;
   useEffect(() => {
-    if (canWrite) refreshPending();
-  }, [canWrite, location.pathname]);
+    if (canReview) refreshPending();
+  }, [canReview, location.pathname]);
 
   // Pastille « Membres » : demandes de compte en attente (administrateur·ices)
   const pendingMembers = usePendingMembersCount();
@@ -72,7 +72,7 @@ export function Header() {
               aria-label="Espace membre"
               className="flex flex-wrap gap-4 [&_a]:font-medium [&_a]:text-creme [&_a]:no-underline [&_a:hover]:underline"
             >
-              {auth.canWrite && (
+              {(auth.canWrite || auth.canReview) && (
                 <Link to="/redaction/articles" className="inline-flex items-center gap-1.5">
                   Articles
                   <CountBadge count={pending} label={`article${pending > 1 ? 's' : ''} à valider`} />

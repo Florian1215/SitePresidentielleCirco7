@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router';
 import { ApprovalPanel } from '../components/ApprovalPanel';
 import { fallback } from '../components/ArticleCard';
 import { api, apiErrorMessage } from '../lib/api';
+import { useAuth } from '../lib/auth';
 import { useI18n } from '../lib/i18n';
 import type { Article, ArticleStatus } from '../lib/models';
 import { notifyPendingChanged } from '../lib/pending';
@@ -35,7 +36,8 @@ export default function Redaction() {
   const [params, setParams] = useSearchParams();
   const filterKey = params.get('statut') ?? '';
   const filter = FILTERS.find((f) => f.key === filterKey) ?? FILTERS[0];
-  const mine = params.get('moi') === '1';
+  const auth = useAuth();
+  const mine = auth.canWrite && params.get('moi') === '1';
 
   const [articles, setArticles] = useState<Article[] | null>(null);
   const [error, setError] = useState(false);
@@ -91,9 +93,11 @@ export default function Redaction() {
             <span className="eyebrow">Espace rédaction</span>
             <h1 className="h2 m-0">Articles</h1>
           </div>
-          <Link to="/blog/ecrire" className="btn btn-rouge">
-            + Écrire un article
-          </Link>
+          {auth.canWrite && (
+            <Link to="/blog/ecrire" className="btn btn-rouge">
+              + Écrire un article
+            </Link>
+          )}
         </div>
 
         <div className="mb-3 flex flex-wrap items-center gap-2" role="group" aria-label="Filtrer par état">
@@ -109,10 +113,15 @@ export default function Redaction() {
               {articles && <span className="ml-1.5 opacity-70">{counts[f.key]}</span>}
             </button>
           ))}
-          <span className="mx-1 h-6 w-px bg-gris" aria-hidden="true" />
-          <button type="button" className={chip(mine)} aria-pressed={mine} onClick={() => setParam('moi', mine ? '' : '1')}>
-            ✍️ Écrits par moi
-          </button>
+          {/* Relecteur·ices : pas d'articles à elles et eux, donc pas de filtre « Écrits par moi » */}
+          {auth.canWrite && (
+            <>
+              <span className="mx-1 h-6 w-px bg-gris" aria-hidden="true" />
+              <button type="button" className={chip(mine)} aria-pressed={mine} onClick={() => setParam('moi', mine ? '' : '1')}>
+                ✍️ Écrits par moi
+              </button>
+            </>
+          )}
         </div>
         {filter.status === 'pending' && (
           <p className="muted mt-0 mb-6 text-[15px]">

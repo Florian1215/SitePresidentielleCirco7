@@ -90,6 +90,7 @@ class Article(models.Model):
         permissions = [
             ("publish_article", "Peut publier un article"),
             ("manage_all_articles", "Peut modifier et supprimer les articles des autres"),
+            ("review_article", "Peut valider les articles « À valider »"),
         ]
 
     def save(self, *args, **kwargs):

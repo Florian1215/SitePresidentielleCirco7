@@ -102,6 +102,8 @@ export function useAuth() {
     ...state,
     isLoggedIn: state.user !== null,
     canWrite: hasPerm(state.user, 'blog.add_article'),
+    /** Valider les articles « À valider » (relecteur·ices, rédacteur·ices, admins). */
+    canReview: hasPerm(state.user, 'blog.review_article'),
     canPublish: hasPerm(state.user, 'blog.publish_article'),
     /** Administrateur·ice principal·e : publication directe des articles. */
     isSuperAdmin: state.user?.is_superuser ?? false,

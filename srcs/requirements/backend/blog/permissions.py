@@ -6,6 +6,7 @@ from rest_framework.permissions import SAFE_METHODS, BasePermission
 #   blog.delete_article       -> supprimer ses propres articles
 #   blog.publish_article      -> publier (sinon l'article reste en brouillon)
 #   blog.manage_all_articles  -> modifier / supprimer les articles des autres
+#   blog.review_article       -> valider les articles « À valider » (relecteur·ices et rédacteur·ices)
 # Les co-auteur·ices d'un article (champ « signé par ») ont les mêmes droits que son créateur·ice.
 # Les super-utilisateur·ices (administrateur·ices principaux) peuvent publier directement, sans validations.
 

@@ -12,9 +12,13 @@ from rest_framework.views import APIView
 User = get_user_model()
 
 WRITERS_GROUP = "Rédacteur·ices"
+REVIEWERS_GROUP = "Relecteur·ices"
+#: Ancien rôle (modifier les articles des autres), encore affiché pour les comptes qui l'ont.
 EDITORS_GROUP = "Éditeur·ices"
-#: Rôle → groupe Django (« none » : compte sans droit d'écrire).
-ROLE_GROUPS = {"writer": WRITERS_GROUP, "editor": EDITORS_GROUP}
+#: Rôle → groupe Django. « admin » = super-utilisateur·ice (tous les droits, y compris gérer les membres).
+ROLE_GROUPS = {"writer": WRITERS_GROUP, "reviewer": REVIEWERS_GROUP}
+#: Rôles attribuables depuis la page « Membres ».
+ROLES = ("admin", "writer", "reviewer")
 
 
 def can_manage_members(user):
@@ -43,6 +47,8 @@ def member_role(user):
         return "editor"
     if WRITERS_GROUP in names:
         return "writer"
+    if REVIEWERS_GROUP in names:
+        return "reviewer"
     return "none"
 
 
@@ -63,11 +69,26 @@ def member_payload(user, me):
     }
 
 
+def check_role(role, me):
+    """Message d'erreur si `me` ne peut pas attribuer ce rôle, sinon None."""
+    if role not in ROLES:
+        return "Rôle inconnu."
+    if role == "admin" and not me.is_superuser:
+        return "Seul·es les administrateur·ices peuvent nommer un·e administrateur·ice."
+    return None
+
+
 def set_role(user, role):
-    groups = {name: Group.objects.get_or_create(name=name)[0] for name in ROLE_GROUPS.values()}
-    user.groups.remove(*groups.values())
+    """Un seul rôle à la fois : on retire les autres groupes de rôle (et le statut d'admin) avant d'appliquer le nouveau."""
+    groups = [Group.objects.get_or_create(name=name)[0] for name in (*ROLE_GROUPS.values(), EDITORS_GROUP)]
+    user.groups.remove(*groups)
+    is_admin = role == "admin"
+    if user.is_superuser != is_admin:
+        user.is_superuser = is_admin
+        user.is_staff = is_admin  # accès à l'administration Django
+        user.save(update_fields=["is_superuser", "is_staff"])
     if role in ROLE_GROUPS:
-        user.groups.add(groups[ROLE_GROUPS[role]])
+        user.groups.add(Group.objects.get(name=ROLE_GROUPS[role]))
 
 
 class MembersView(APIView):
@@ -103,8 +124,9 @@ class MemberView(APIView):
         action = request.data.get("action")
         if action == "accept":
             role = request.data.get("role", "writer")
-            if role not in (*ROLE_GROUPS, "none"):
-                return Response({"detail": "Rôle inconnu."}, status=status.HTTP_400_BAD_REQUEST)
+            problem = check_role(role, request.user)
+            if problem:
+                return Response({"detail": problem}, status=status.HTTP_400_BAD_REQUEST)
             set_role(user, role)
             user.is_active = True
         elif action == "restore":
@@ -122,8 +144,9 @@ class MemberView(APIView):
         if user is None:
             return self._forbidden()
         role = request.data.get("role")
-        if role not in (*ROLE_GROUPS, "none"):
-            return Response({"detail": "Rôle inconnu."}, status=status.HTTP_400_BAD_REQUEST)
+        problem = check_role(role, request.user)
+        if problem:
+            return Response({"detail": problem}, status=status.HTTP_400_BAD_REQUEST)
         set_role(user, role)
         return self._ok(request, pk)
 

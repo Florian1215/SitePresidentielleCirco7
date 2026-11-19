@@ -114,7 +114,7 @@ export function App() {
             <Route
               path="/redaction/articles"
               element={
-                <RequirePerm perm="blog.add_article">
+                <RequirePerm perm="blog.review_article">
                   <Redaction />
                 </RequirePerm>
               }
