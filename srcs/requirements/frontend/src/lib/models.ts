@@ -31,6 +31,34 @@ export interface Member {
   editable: boolean;
 }
 
+/** Lien de suivi (page « Trackers ») et ses visites, par langue du lien. */
+export interface Tracker {
+  id: number;
+  name: string;
+  code: string;
+  created_at: string;
+  total: number;
+  counts: Record<'fr' | 'en' | 'de', number>;
+  last_visit: string | null;
+}
+
+/** Statistiques des visites (page « Trackers »). */
+export interface VisitStats {
+  total: number;
+  today: number;
+  last_7_days: number;
+  last_30_days: number;
+  /** Arrivées par un lien de suivi. */
+  tracked: number;
+  /** Arrivées sans lien de suivi… */
+  untracked: number;
+  /** … dont accès direct (adresse tapée, favori, application sans origine). */
+  direct: number;
+  by_lang: Record<'fr' | 'en' | 'de', number>;
+  /** Origine des visites sans lien de suivi (Google, ChatGPT, nom du site…), la plus fréquente d'abord. */
+  sources: { source: string; count: number }[];
+}
+
 /** Signataire possible d'un article : compte rédacteur ou signature collective. */
 export interface Signer {
   id: number;

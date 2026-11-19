@@ -17,6 +17,7 @@ const ArticleEditor = lazy(() => import('./pages/ArticleEditor'));
 const Soutenir = lazy(() => import('./pages/Soutenir'));
 const Redaction = lazy(() => import('./pages/Redaction'));
 const Members = lazy(() => import('./pages/Members'));
+const Trackers = lazy(() => import('./pages/Trackers'));
 const Legal = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.Legal })));
 const Login = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.Login })));
 const ResetPassword = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.ResetPassword })));
@@ -124,6 +125,14 @@ export function App() {
               element={
                 <RequireAdmin allowed={(a) => a.canManageMembers}>
                   <Members />
+                </RequireAdmin>
+              }
+            />
+            <Route
+              path="/redaction/trackers"
+              element={
+                <RequireAdmin allowed={(a) => a.canManageMembers}>
+                  <Trackers />
                 </RequireAdmin>
               }
             />

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import members, views
+from . import members, trackers, views
 
 urlpatterns = [
     path("auth/login/", views.LoginView.as_view(), name="login"),
@@ -11,6 +11,10 @@ urlpatterns = [
     path("members/", members.MembersView.as_view(), name="members"),
     path("members/<int:pk>/", members.MemberView.as_view(), name="member"),
     path("members/<int:pk>/reset-link/", members.MemberResetLinkView.as_view(), name="member-reset-link"),
+    path("trackers/", trackers.TrackersView.as_view(), name="trackers"),
+    path("trackers/<int:pk>/", trackers.TrackerView.as_view(), name="tracker"),
+    path("visits/stats/", trackers.VisitStatsView.as_view(), name="visit-stats"),
+    path("track/", trackers.TrackView.as_view(), name="track"),
     path("countries/", views.CountriesView.as_view(), name="countries"),
     path("supporters-count/", views.SupportersCountView.as_view(), name="supporters-count"),
     path("events/", views.EventsView.as_view(), name="events"),

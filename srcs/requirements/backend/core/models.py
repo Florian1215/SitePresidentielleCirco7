@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 # Pays de la 7e circonscription des Français établis hors de France
@@ -168,3 +169,45 @@ class FaqEntry(models.Model):
         ordering = ["order", "id"]
     def __str__(self):
         return self.question_fr
+
+
+TRACKER_LANGS = [("fr", "français"), ("en", "anglais"), ("de", "allemand")]
+
+
+class Tracker(models.Model):
+    """Lien de suivi (affiche, tract, réseau social…) : compte les visites arrivées par ce lien, par langue."""
+
+    name = models.CharField("nom", max_length=120)
+    code = models.CharField("identifiant", max_length=16, unique=True)
+    created_at = models.DateTimeField("créé le", auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name="créé par", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+
+    class Meta:
+        verbose_name = "tracker"
+        verbose_name_plural = "trackers"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.name
+
+
+class Visit(models.Model):
+    """Une arrivée sur le site : par un lien de suivi (tracker) ou non, avec la langue et l'origine (Google, ChatGPT…)."""
+
+    tracker = models.ForeignKey(
+        Tracker, verbose_name="tracker", null=True, blank=True, on_delete=models.CASCADE, related_name="visits"
+    )
+    lang = models.CharField("langue", max_length=2, choices=TRACKER_LANGS)
+    source = models.CharField("origine", max_length=60, blank=True, help_text="Vide : accès direct (adresse tapée, favori, QR code…).")
+    referrer_host = models.CharField("site d'origine", max_length=255, blank=True)
+    created_at = models.DateTimeField("le", auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name = "visite"
+        verbose_name_plural = "visites"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.created_at:%Y-%m-%d %H:%M} · {self.source or 'direct'}"

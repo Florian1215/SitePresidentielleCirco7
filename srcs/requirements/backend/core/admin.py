@@ -9,7 +9,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from .action_populaire import import_status, start_import_in_background
-from .models import ActionGroup, ActionGroupLink, FaqEntry, FriendSite, PollingStation, SocialLink
+from .models import ActionGroup, ActionGroupLink, FaqEntry, FriendSite, PollingStation, SocialLink, Tracker, Visit
 
 
 @admin.register(FriendSite)
@@ -219,3 +219,37 @@ class AccountAdmin(DjangoUserAdmin):
     def deactivate(self, request, queryset):
         n = queryset.exclude(pk=request.user.pk).update(is_active=False)
         self.message_user(request, f"{n} compte(s) désactivé(s).")
+
+
+@admin.register(Tracker)
+class TrackerAdmin(admin.ModelAdmin):
+    """Les trackers se gèrent surtout depuis la page « Trackers » du site."""
+
+    list_display = ["name", "code", "visit_count", "created_at"]
+    search_fields = ["name", "code"]
+    readonly_fields = ["code", "created_at", "created_by"]
+
+    def get_queryset(self, request):
+        from django.db.models import Count
+
+        return super().get_queryset(request).annotate(_visits=Count("visits"))
+
+    @admin.display(description="visites", ordering="_visits")
+    def visit_count(self, obj):
+        return obj._visits
+
+
+@admin.register(Visit)
+class VisitAdmin(admin.ModelAdmin):
+    """Arrivées sur le site (comptées par le site lui-même, en lecture seule)."""
+
+    list_display = ["created_at", "lang", "source", "referrer_host", "tracker"]
+    list_filter = ["lang", "source", "tracker"]
+    search_fields = ["source", "referrer_host"]
+    date_hierarchy = "created_at"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

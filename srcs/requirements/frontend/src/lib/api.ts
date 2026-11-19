@@ -16,6 +16,8 @@ import type {
   Paginated,
   ReviewComment,
   ReviewCommentStatus,
+  Tracker,
+  VisitStats,
   Signers,
   PollingStation,
 } from './models';
@@ -220,6 +222,27 @@ export const api = {
       method: 'POST',
       body: { password },
     });
+  },
+
+  /** Page « Trackers » : liens de suivi et nombre de visites. */
+  trackers(signal?: AbortSignal) {
+    return request<Tracker[]>('/api/trackers/', { signal });
+  },
+
+  visitStats(signal?: AbortSignal) {
+    return request<VisitStats>('/api/visits/stats/', { signal });
+  },
+
+  createTracker(name: string) {
+    return request<Tracker>('/api/trackers/', { method: 'POST', body: { name } });
+  },
+
+  renameTracker(id: number, name: string) {
+    return request<Tracker>(`/api/trackers/${id}/`, { method: 'PATCH', body: { name } });
+  },
+
+  deleteTracker(id: number) {
+    return request<unknown>(`/api/trackers/${id}/`, { method: 'DELETE' });
   },
 
   /** Refuse (supprime) une demande de compte en attente. */

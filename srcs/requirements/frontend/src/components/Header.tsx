@@ -84,6 +84,7 @@ export function Header() {
                   <CountBadge count={pendingMembers} label={`demande${pendingMembers > 1 ? 's' : ''} de compte en attente`} />
                 </Link>
               )}
+              {auth.canManageMembers && <Link to="/redaction/trackers">Trackers</Link>}
               {user.is_staff && <a href="/admin/">Administration</a>}
               <button type="button" className="btn-link font-medium text-creme no-underline hover:underline" onClick={onLogout}>
                 Déconnexion
