@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
-import { apiErrorMessage } from '../lib/api';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
+import { api, apiErrorMessage } from '../lib/api';
 import { hasPerm, login, logout, register, useAuth } from '../lib/auth';
 import { CAMPAIGN } from '../lib/campaign';
 import { useI18n } from '../lib/i18n';
@@ -298,6 +298,131 @@ export function Login() {
               {sending ? 'Envoi…' : isLogin ? 'Se connecter' : 'Demander un compte'}
             </button>
           </form>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * « Mot de passe oublié » : page ouverte depuis le lien créé par un·e admin (page Membres).
+ * Le lien identifie le compte ; la personne choisit simplement un nouveau mot de passe.
+ */
+export function ResetPassword() {
+  usePageTitle('Mot de passe oublié');
+  const { uid = '', token = '' } = useParams();
+  /** undefined : vérification du lien en cours ; null : lien invalide. */
+  const [firstName, setFirstName] = useState<string | null | undefined>(undefined);
+  const [linkError, setLinkError] = useState('');
+  const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
+  const [tried, setTried] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    api.checkResetLink(uid, token).then(
+      (res) => setFirstName(res.first_name),
+      (err) => {
+        setFirstName(null);
+        setLinkError(apiErrorMessage(err));
+      },
+    );
+  }, [uid, token]);
+
+  /** Mêmes règles que le serveur : au moins 8 caractères, pas uniquement des chiffres. */
+  const weak = password.length < 8 || /^\d+$/.test(password);
+  const mismatch = password2 !== '' && password !== password2;
+  const showWeak = tried && weak;
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setTried(true);
+    if (weak || !password2 || password !== password2) return;
+    setSending(true);
+    setError('');
+    try {
+      await api.resetPassword(uid, token, password);
+      setDone(true);
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <section className="section">
+      <div className="site-container max-w-[480px]">
+        <div className="card stack">
+          <h1 className="h2 m-0">Mot de passe oublié</h1>
+          {firstName === undefined ? (
+            <p className="loader">Vérification du lien…</p>
+          ) : firstName === null ? (
+            <div className="alert alert-err m-0" role="alert">
+              {linkError}
+            </div>
+          ) : done ? (
+            <>
+              <div className="alert alert-ok m-0" role="status">
+                Votre nouveau mot de passe est enregistré.
+              </div>
+              <Link to="/connexion" className="btn self-start">
+                Se connecter
+              </Link>
+            </>
+          ) : (
+            <form onSubmit={submit} className="stack" noValidate>
+              {firstName && (
+                <p className="m-0">
+                  Bonjour <strong>{firstName}</strong>, choisissez votre nouveau mot de passe.
+                </p>
+              )}
+              <div className="field">
+                <label htmlFor="rs-pass">Tapez votre nouveau mot de passe</label>
+                <input
+                  id="rs-pass"
+                  type="password"
+                  autoComplete="new-password"
+                  value={password}
+                  aria-invalid={showWeak}
+                  aria-describedby={showWeak ? 'rs-pass-err' : undefined}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                {showWeak && (
+                  <span id="rs-pass-err" className="error">
+                    Le mot de passe doit faire au moins 8 caractères et ne pas contenir que des chiffres.
+                  </span>
+                )}
+              </div>
+              <div className="field">
+                <label htmlFor="rs-pass2">Confirmez votre nouveau mot de passe</label>
+                <input
+                  id="rs-pass2"
+                  type="password"
+                  autoComplete="new-password"
+                  value={password2}
+                  aria-invalid={mismatch || (tried && !password2)}
+                  aria-describedby={mismatch ? 'rs-pass2-err' : undefined}
+                  onChange={(e) => setPassword2(e.target.value)}
+                />
+                {(mismatch || (tried && !password2)) && (
+                  <span id="rs-pass2-err" className="error">
+                    {mismatch ? 'Les deux mots de passe ne correspondent pas.' : 'Confirmez votre mot de passe.'}
+                  </span>
+                )}
+              </div>
+              {error && (
+                <div className="alert alert-err m-0" role="alert">
+                  {error}
+                </div>
+              )}
+              <button type="submit" className="btn" disabled={sending}>
+                {sending ? 'Enregistrement…' : 'Enregistrer'}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </section>

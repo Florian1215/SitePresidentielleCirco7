@@ -1,3 +1,9 @@
+from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.tokens import default_token_generator
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -72,6 +78,46 @@ class LogoutView(APIView):
     def post(self, request):
         Token.objects.filter(user=request.user).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class PasswordResetView(APIView):
+    """Page « Nouveau mot de passe » ouverte depuis le lien créé par un·e admin (page Membres).
+
+    GET : vérifie le lien et renvoie le prénom de la personne ; POST {password} : enregistre le nouveau mot de passe.
+    """
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "login"
+    INVALID = "Ce lien n'est plus valable (déjà utilisé ou expiré). Demandez-en un nouveau à un·e admin."
+
+    def _user(self, uid, token):
+        try:
+            user = get_user_model().objects.get(pk=force_str(urlsafe_base64_decode(uid)), is_active=True)
+        except (ValueError, TypeError, OverflowError, get_user_model().DoesNotExist):
+            return None
+        return user if default_token_generator.check_token(user, token) else None
+
+    def get(self, request, uid, token):
+        user = self._user(uid, token)
+        if user is None:
+            return Response({"detail": self.INVALID}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"first_name": user.first_name})
+
+    def post(self, request, uid, token):
+        user = self._user(uid, token)
+        if user is None:
+            return Response({"detail": self.INVALID}, status=status.HTTP_400_BAD_REQUEST)
+        password = request.data.get("password") or ""
+        try:
+            validate_password(password, user)
+        except DjangoValidationError as err:
+            return Response({"password": list(err.messages)}, status=status.HTTP_400_BAD_REQUEST)
+        user.set_password(password)
+        user.save(update_fields=["password"])
+        Token.objects.filter(user=user).delete()  # déconnecte les sessions ouvertes avec l'ancien mot de passe
+        return Response({"detail": "Mot de passe enregistré."})
 
 
 class MeView(APIView):

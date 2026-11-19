@@ -1,7 +1,11 @@
 """Gestion des membres depuis le site (page « Membres ») : demandes de compte, rôles, accès."""
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -160,3 +164,26 @@ class MemberView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MemberResetLinkView(APIView):
+    """Lien de réinitialisation du mot de passe, créé par un·e admin et transmis par lui ou elle à la personne.
+
+    Le lien (identifiant + code) est signé avec la clé secrète du site : il expire après PASSWORD_RESET_TIMEOUT
+    et ne sert qu'une fois (le code ne correspond plus dès que le mot de passe a changé).
+    """
+
+    permission_classes = [IsAuthenticated, CanManageMembers]
+
+    def post(self, request, pk):
+        user = get_object_or_404(User.objects.prefetch_related("groups"), pk=pk)
+        if not member_payload(user, request.user)["editable"]:
+            return Response({"detail": "Vous ne pouvez pas modifier ce compte."}, status=status.HTTP_403_FORBIDDEN)
+        if not user.is_active:
+            return Response({"detail": "Ce compte n'est pas actif : acceptez-le ou rétablissez son accès d'abord."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+            "token": default_token_generator.make_token(user),
+            "valid_days": settings.PASSWORD_RESET_TIMEOUT // 86400,
+        })

@@ -96,6 +96,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+# Liens « nouveau mot de passe » créés par les admins (page Membres) : valables 3 jours, une seule fois.
+PASSWORD_RESET_TIMEOUT = 3 * 24 * 3600
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",

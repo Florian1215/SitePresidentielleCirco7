@@ -20,6 +20,7 @@ const Members = lazy(() => import('./pages/Members'));
 const Taxonomy = lazy(() => import('./pages/Taxonomy'));
 const Legal = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.Legal })));
 const Login = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.Login })));
+const ResetPassword = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.ResetPassword })));
 const NotFound = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.NotFound })));
 
 /** Autorise l'accès si l'utilisateur possède la permission Django donnée. */
@@ -139,6 +140,8 @@ export function App() {
             <Route path="/blog/:slug" element={<ArticlePage />} />
             <Route path="/je-soutiens" element={<Soutenir />} />
             <Route path="/connexion" element={<Login />} />
+            {/* Lien « nouveau mot de passe » créé par un·e admin (page Membres) */}
+            <Route path="/mot-de-passe/:uid/:token" element={<ResetPassword />} />
             <Route path="/mentions-legales" element={<Legal />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

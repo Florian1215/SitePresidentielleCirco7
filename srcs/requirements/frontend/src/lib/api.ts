@@ -179,6 +179,26 @@ export const api = {
     return request<Member>(`/api/members/${id}/`, { method: 'PATCH', body: { role } });
   },
 
+  /** Crée un lien « nouveau mot de passe » pour ce membre (identifiant + code), à lui transmettre. */
+  memberResetLink(id: number) {
+    return request<{ uid: string; token: string; valid_days: number }>(`/api/members/${id}/reset-link/`, {
+      method: 'POST',
+      body: {},
+    });
+  },
+
+  /** Vérifie un lien « nouveau mot de passe » ; renvoie le prénom de la personne. */
+  checkResetLink(uid: string, token: string) {
+    return request<{ first_name: string }>(`/api/auth/reset/${encodeURIComponent(uid)}/${encodeURIComponent(token)}/`);
+  },
+
+  resetPassword(uid: string, token: string, password: string) {
+    return request<{ detail: string }>(`/api/auth/reset/${encodeURIComponent(uid)}/${encodeURIComponent(token)}/`, {
+      method: 'POST',
+      body: { password },
+    });
+  },
+
   /** Refuse (supprime) une demande de compte en attente. */
   refuseMember(id: number) {
     return request<unknown>(`/api/members/${id}/`, { method: 'DELETE' });

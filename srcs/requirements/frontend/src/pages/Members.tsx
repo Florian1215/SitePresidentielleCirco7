@@ -120,6 +120,33 @@ function MemberRow({ member: m, onChange, onRemoved }: { member: Member; onChang
   /** Rôle donné à l'acceptation d'une demande. */
   const [acceptRole, setAcceptRole] = useState<MemberRole>('writer');
   const badge = STATUS_BADGE[m.status];
+  /** Lien « nouveau mot de passe » créé pour ce membre (affiché sous son nom). */
+  const [resetLink, setResetLink] = useState<{ url: string; days: number } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const createResetLink = async () => {
+    setBusy(true);
+    setError('');
+    setCopied(false);
+    try {
+      const { uid, token, valid_days } = await api.memberResetLink(m.id);
+      setResetLink({ url: `${window.location.origin}/mot-de-passe/${uid}/${token}`, days: valid_days });
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copyResetLink = async () => {
+    if (!resetLink) return;
+    try {
+      await navigator.clipboard.writeText(resetLink.url);
+      setCopied(true);
+    } catch {
+      /* presse-papiers indisponible : le lien reste sélectionnable dans le champ */
+    }
+  };
 
   const run = async (call: () => Promise<Member | null>) => {
     setBusy(true);
@@ -169,6 +196,11 @@ function MemberRow({ member: m, onChange, onRemoved }: { member: Member; onChang
           {m.username} · {m.status === 'pending' ? 'demande du' : 'compte créé le'} {i18n.date(m.date_joined)}
           {m.last_login && ` · dernière connexion le ${i18n.date(m.last_login)}`}
         </p>
+        {m.editable && m.status === 'active' && !resetLink && (
+          <button type="button" className="btn-link mt-1 text-[13px] font-bold" disabled={busy} onClick={createResetLink}>
+            🔑 Réinitialiser le mot de passe
+          </button>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 max-[700px]:w-full max-[700px]:justify-start">
@@ -284,6 +316,33 @@ function MemberRow({ member: m, onChange, onRemoved }: { member: Member; onChang
           </div>
         )}
       </div>
+
+      {resetLink && (
+        <div className="grid w-full gap-2 rounded-lg bg-lavande p-3">
+          <label htmlFor={`reset-${m.id}`} className="text-[14px] font-bold text-violet">
+            Lien à envoyer à {m.first_name || fullName(m)} pour choisir un nouveau mot de passe
+          </label>
+          <div className="flex gap-2 max-[520px]:flex-col">
+            <input
+              id={`reset-${m.id}`}
+              type="text"
+              readOnly
+              value={resetLink.url}
+              className="min-w-0 flex-1 bg-white text-[14px]"
+              onFocus={(e) => e.target.select()}
+            />
+            <button type="button" className="btn btn-sm shrink-0" onClick={copyResetLink}>
+              {copied ? '✓ Copié' : 'Copier le lien'}
+            </button>
+          </div>
+          <p className="m-0 flex flex-wrap items-center gap-x-3 text-[13px] text-texte">
+            Valable {resetLink.days} jours, une seule fois.
+            <button type="button" className="btn-link text-[13px]" onClick={() => setResetLink(null)}>
+              Fermer
+            </button>
+          </p>
+        </div>
+      )}
 
       {error && (
         <div className="alert alert-err m-0 w-full" role="alert">
