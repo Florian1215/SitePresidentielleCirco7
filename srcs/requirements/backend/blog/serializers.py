@@ -165,6 +165,15 @@ class ArticleSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def validate(self, attrs):
+        # L'image de couverture est obligatoire : elle illustre l'article dans la liste et en haut de sa page.
+        new_cover = attrs.get("cover_image")
+        removing = attrs.get("remove_cover", False)
+        has_cover = bool(self.instance and self.instance.cover_image) and not removing
+        if not new_cover and not has_cover:
+            raise serializers.ValidationError({"cover_image": "L'image de couverture est obligatoire."})
+        return attrs
+
     def validate_signature(self, value):
         try:
             data = json.loads(value)

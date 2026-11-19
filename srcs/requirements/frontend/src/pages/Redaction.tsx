@@ -193,7 +193,7 @@ function ManageCard({
     <article className="flex h-full flex-col overflow-hidden rounded-site bg-white shadow-site">
       <Link
         to={`/blog/${a.slug}`}
-        className="relative block aspect-[4/3] overflow-hidden bg-lavande"
+        className="relative block aspect-video overflow-hidden bg-lavande"
         tabIndex={-1}
         aria-hidden="true"
       >

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
+import { CoverCropper } from '../components/CoverCropper';
 import { RichEditor } from '../components/RichEditor';
 import { SignaturePicker } from '../components/SignaturePicker';
 import { api, apiErrorMessage } from '../lib/api';
@@ -34,7 +35,11 @@ export default function ArticleEditor() {
   );
   const [collectives, setCollectives] = useState<number[]>([]);
   const coverFile = useRef<File | null>(null);
-  const removeCover = useRef(false);
+  const coverInput = useRef<HTMLInputElement>(null);
+  /** Image d'origine choisie (avant recadrage), pour pouvoir la recadrer à nouveau. */
+  const [original, setOriginal] = useState<{ src: string; name: string } | null>(null);
+  /** Fenêtre de recadrage ouverte sur cette image. */
+  const [cropping, setCropping] = useState<{ src: string; name: string } | null>(null);
 
   const form = useForm(
     { title: '', excerpt: '', content: '', category: null as number | null, status: 'draft' },
@@ -61,19 +66,40 @@ export default function ArticleEditor() {
     );
   }, [slug]);
 
+  /** Image choisie : on l'ouvre aussitôt dans la fenêtre de recadrage. */
   const onCover = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] ?? null;
-    coverFile.current = file;
-    removeCover.current = false;
-    if (coverPreview) URL.revokeObjectURL(coverPreview);
-    setCoverPreview(file ? URL.createObjectURL(file) : null);
+    const file = event.target.files?.[0];
+    event.target.value = ''; // pour pouvoir rechoisir le même fichier
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError("Ce fichier n'est pas une image.");
+      return;
+    }
+    setCropping({ src: URL.createObjectURL(file), name: file.name });
   };
 
-  const clearCover = () => {
-    coverFile.current = null;
-    removeCover.current = true;
-    setCurrentCover(null);
-    setCoverPreview(null);
+  const onCropped = (file: File) => {
+    // La nouvelle image d'origine remplace la précédente
+    if (cropping && cropping.src !== original?.src) {
+      if (original?.src.startsWith('blob:')) URL.revokeObjectURL(original.src);
+      setOriginal(cropping);
+    }
+    coverFile.current = file;
+    if (coverPreview) URL.revokeObjectURL(coverPreview);
+    setCoverPreview(URL.createObjectURL(file));
+    setCropping(null);
+    setError('');
+  };
+
+  const onCropCancel = () => {
+    if (cropping && cropping.src !== original?.src && cropping.src.startsWith('blob:')) URL.revokeObjectURL(cropping.src);
+    setCropping(null);
+  };
+
+  /** Recadrer à nouveau : depuis l'image d'origine choisie, sinon depuis l'image déjà en ligne. */
+  const recrop = () => {
+    if (original) setCropping(original);
+    else if (currentCover) setCropping({ src: currentCover, name: 'couverture.jpg' });
   };
 
   const save = async (status?: ArticleStatus) => {
@@ -83,6 +109,10 @@ export default function ArticleEditor() {
     if (form.invalid) {
       form.touchAll();
       setError('Le titre et le contenu sont obligatoires.');
+      return;
+    }
+    if (!coverFile.current && !currentCover) {
+      setError("L'image de couverture est obligatoire.");
       return;
     }
     if (!authors.length && !collectives.length) {
@@ -96,7 +126,6 @@ export default function ArticleEditor() {
           ...v,
           category: v.category ? Number(v.category) : null,
           cover: coverFile.current,
-          removeCover: removeCover.current,
           authors: authors.map((a) => a.id),
           collectives,
         },
@@ -238,24 +267,48 @@ export default function ArticleEditor() {
 
                 <div className="card-flat stack">
                   <div className="field">
-                    <label htmlFor="ed-cover">Image de couverture</label>
-                    {coverSrc && (
+                    <label htmlFor="ed-cover">Image de couverture *</label>
+                    {coverSrc ? (
                       <>
                         <img
                           src={coverSrc}
                           alt="Aperçu de l'image de couverture"
                           className="aspect-video w-full rounded-lg object-cover"
                         />
-                        <button type="button" className="btn-link" onClick={clearCover}>
-                          Retirer l'image
-                        </button>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1">
+                          <button type="button" className="btn-link" onClick={recrop}>
+                            Recadrer
+                          </button>
+                          <button type="button" className="btn-link" onClick={() => coverInput.current?.click()}>
+                            Changer l'image
+                          </button>
+                        </div>
                       </>
+                    ) : (
+                      <button
+                        type="button"
+                        className="grid aspect-video w-full cursor-pointer place-items-center rounded-lg border-2 border-dashed border-violet bg-lavande [font-family:inherit] text-[15px] font-bold text-violet hover:bg-white"
+                        onClick={() => coverInput.current?.click()}
+                      >
+                        + Choisir une image
+                      </button>
                     )}
-                    <input id="ed-cover" type="file" accept="image/*" onChange={onCover} />
+                    <input
+                      ref={coverInput}
+                      id="ed-cover"
+                      type="file"
+                      accept="image/*"
+                      className="visually-hidden"
+                      tabIndex={-1}
+                      onChange={onCover}
+                    />
+                    <span className="hint">Format 16:9 : vous choisissez la partie de l'image à garder.</span>
                   </div>
                 </div>
               </aside>
             </form>
+
+            {cropping && <CoverCropper src={cropping.src} name={cropping.name} onDone={onCropped} onCancel={onCropCancel} />}
           </>
         )}
       </div>
