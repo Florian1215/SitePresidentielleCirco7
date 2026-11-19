@@ -103,6 +103,11 @@ export function useAuth() {
     isLoggedIn: state.user !== null,
     canWrite: hasPerm(state.user, 'blog.add_article'),
     canPublish: hasPerm(state.user, 'blog.publish_article'),
+    /** Administrateur·ice principal·e : publication directe des articles. */
+    isSuperAdmin: state.user?.is_superuser ?? false,
+    canManageMembers: state.user?.can_manage_members ?? false,
+    /** Page « Catégories et auteurs ». */
+    canManageTaxonomy: hasPerm(state.user, 'blog.change_category') || hasPerm(state.user, 'blog.change_collectiveauthor'),
     hasPerm: (perm: string) => hasPerm(state.user, perm),
   };
 }

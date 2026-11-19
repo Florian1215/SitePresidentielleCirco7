@@ -17,3 +17,17 @@ export async function refreshPending() {
 export const notifyPendingChanged = () => void refreshPending();
 
 export const usePendingCount = () => useStore(pendingStore);
+
+/** Nombre de demandes de compte en attente (pastille « Membres », administrateur·ices). */
+const pendingMembersStore = createStore<number>(0);
+
+export async function refreshPendingMembers() {
+  try {
+    const list = await api.members();
+    pendingMembersStore.set(list.filter((m) => m.status === 'pending').length);
+  } catch {
+    /* pastille simplement non mise à jour */
+  }
+}
+
+export const usePendingMembersCount = () => useStore(pendingMembersStore);

@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { RichEditor } from '../components/RichEditor';
+import { SignaturePicker } from '../components/SignaturePicker';
 import { api, apiErrorMessage } from '../lib/api';
+import { useAuth } from '../lib/auth';
 import { maxLength, required, useForm } from '../lib/forms';
-import type { ArticleStatus, Category } from '../lib/models';
+import type { ArticleStatus, Category, Signer, Signers } from '../lib/models';
 import { notifyPendingChanged } from '../lib/pending';
 import { usePageTitle } from '../lib/title';
 
@@ -13,6 +15,8 @@ export default function ArticleEditor() {
   const { slug } = useParams();
   usePageTitle(slug ? "Modifier l'article" : 'Écrire un article');
   const navigate = useNavigate();
+  const auth = useAuth();
+  const me = auth.user;
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [saving, setSaving] = useState(false);
@@ -23,6 +27,12 @@ export default function ArticleEditor() {
   /** Statut de l'article à son ouverture (null : nouvel article). */
   const [initialStatus, setInitialStatus] = useState<ArticleStatus | null>(null);
   const wasPublished = initialStatus === 'published';
+  /** Signature : comptes auteur·ices et signatures collectives (par défaut, le compte connecté). */
+  const [signers, setSigners] = useState<Signers>({ authors: [], collectives: [] });
+  const [authors, setAuthors] = useState<Signer[]>(() =>
+    !slug && me ? [{ id: me.id, name: [me.first_name, me.last_name].filter(Boolean).join(' ') || me.username }] : [],
+  );
+  const [collectives, setCollectives] = useState<number[]>([]);
   const coverFile = useRef<File | null>(null);
   const removeCover = useRef(false);
 
@@ -33,6 +43,7 @@ export default function ArticleEditor() {
 
   useEffect(() => {
     api.categories().then(setCategories, () => {});
+    api.signers().then(setSigners, () => {});
     if (!slug) return;
     api.article(slug).then(
       (a) => {
@@ -43,6 +54,8 @@ export default function ArticleEditor() {
         form.setValues({ title: a.title, excerpt: a.excerpt, content: a.content ?? '', category: a.category, status: a.status });
         setInitialStatus(a.status);
         setCurrentCover(a.cover_image);
+        setAuthors(a.authors_detail);
+        setCollectives(a.collectives_detail.map((c) => c.id));
       },
       () => setLoadError('Article introuvable.'),
     );
@@ -72,10 +85,21 @@ export default function ArticleEditor() {
       setError('Le titre et le contenu sont obligatoires.');
       return;
     }
+    if (!authors.length && !collectives.length) {
+      setError('Choisissez au moins un·e auteur·ice ou une signature collective.');
+      return;
+    }
     setSaving(true);
     try {
       const a = await api.saveArticle(
-        { ...v, category: v.category ? Number(v.category) : null, cover: coverFile.current, removeCover: removeCover.current },
+        {
+          ...v,
+          category: v.category ? Number(v.category) : null,
+          cover: coverFile.current,
+          removeCover: removeCover.current,
+          authors: authors.map((a) => a.id),
+          collectives,
+        },
         slug,
       );
       setSaving(false);
@@ -106,7 +130,7 @@ export default function ArticleEditor() {
           <div className="alert alert-err">{loadError}</div>
         ) : (
           <>
-            {!wasPublished && (
+            {!wasPublished && !auth.isSuperAdmin && (
               <div className="alert alert-info mb-6">
                 Enregistrez votre article en brouillon, puis <strong>envoyez-le en validation</strong> : il sera publié dès que 2
                 autres comptes l'auront validé (page « À valider »).
@@ -150,7 +174,7 @@ export default function ArticleEditor() {
                     <select id="ed-status" {...form.text('status')}>
                       <option value="draft">Brouillon</option>
                       <option value="pending">À valider</option>
-                      {wasPublished && <option value="published">Publié</option>}
+                      {(wasPublished || auth.isSuperAdmin) && <option value="published">Publié</option>}
                     </select>
                   </div>
                   {error && (
@@ -166,9 +190,27 @@ export default function ArticleEditor() {
                       Envoyer en validation
                     </button>
                   )}
+                  {auth.isSuperAdmin && !wasPublished && form.values.status !== 'published' && (
+                    <button type="button" className="btn btn-outline w-full" disabled={saving} onClick={() => save('published')}>
+                      🚀 Publier maintenant
+                    </button>
+                  )}
                   {initialStatus === 'pending' && (
                     <p className="hint m-0">Enregistrer une modification remet les validations de l'article à zéro.</p>
                   )}
+                </div>
+
+                <div className="card-flat stack">
+                  <SignaturePicker
+                    options={signers}
+                    authors={authors}
+                    collectives={collectives}
+                    meId={me?.id}
+                    onChange={(a, c) => {
+                      setAuthors(a);
+                      setCollectives(c);
+                    }}
+                  />
                 </div>
 
                 <div className="card-flat stack">
@@ -186,7 +228,11 @@ export default function ArticleEditor() {
                         </option>
                       ))}
                     </select>
-                    {!categories.length && <span className="hint">Les catégories se créent dans l'administration Django.</span>}
+                    {auth.canManageTaxonomy && (
+                      <Link to="/redaction/categories-auteurs" className="hint">
+                        Gérer les catégories et les signatures collectives
+                      </Link>
+                    )}
                   </div>
                 </div>
 

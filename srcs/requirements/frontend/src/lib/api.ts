@@ -9,8 +9,12 @@ import type {
   Article,
   CampaignEvent,
   Category,
+  CollectiveAuthor,
   FooterLinks,
+  Member,
+  MemberRole,
   Paginated,
+  Signers,
   PollingStation,
 } from './models';
 
@@ -86,6 +90,9 @@ export interface ArticlePayload {
   status: string;
   cover?: File | null;
   removeCover?: boolean;
+  /** Signature : id des comptes et des signatures collectives. */
+  authors?: number[];
+  collectives?: number[];
 }
 
 let footerLinks$: Promise<FooterLinks> | undefined;
@@ -114,6 +121,8 @@ export const api = {
     body.append('status', data.status);
     if (data.cover) body.append('cover_image', data.cover);
     if (data.removeCover) body.append('remove_cover', 'true');
+    if (data.authors && data.collectives)
+      body.append('signature', JSON.stringify({ authors: data.authors, collectives: data.collectives }));
     return slug
       ? request<Article>(`/api/articles/${encodeURIComponent(slug)}/`, { method: 'PATCH', body })
       : request<Article>('/api/articles/', { method: 'POST', body });
@@ -147,12 +156,71 @@ export const api = {
     return this.allArticles('pending', signal);
   },
 
+  /** Publication directe, sans validations (administrateur·ice principal·e). */
+  publishArticle(slug: string) {
+    return request<Article>(`/api/articles/${encodeURIComponent(slug)}/publish/`, { method: 'POST', body: {} });
+  },
+
+  /** Auteur·ices et signatures collectives proposés dans l'éditeur. */
+  signers() {
+    return request<Signers>('/api/articles/signers/');
+  },
+
+  /** Page « Membres » : tous les comptes et demandes de compte. */
+  members(signal?: AbortSignal) {
+    return request<Member[]>('/api/members/', { signal });
+  },
+
+  memberAction(id: number, action: 'accept' | 'revoke' | 'restore', role?: MemberRole) {
+    return request<Member>(`/api/members/${id}/`, { method: 'POST', body: role ? { action, role } : { action } });
+  },
+
+  setMemberRole(id: number, role: MemberRole) {
+    return request<Member>(`/api/members/${id}/`, { method: 'PATCH', body: { role } });
+  },
+
+  /** Refuse (supprime) une demande de compte en attente. */
+  refuseMember(id: number) {
+    return request<unknown>(`/api/members/${id}/`, { method: 'DELETE' });
+  },
+
   deleteArticle(slug: string) {
     return request<unknown>(`/api/articles/${encodeURIComponent(slug)}/`, { method: 'DELETE' });
   },
 
   categories() {
     return request<Category[]>('/api/categories/');
+  },
+
+  createCategory(name: string) {
+    return request<Category>('/api/categories/', { method: 'POST', body: { name } });
+  },
+
+  renameCategory(slug: string, name: string) {
+    return request<Category>(`/api/categories/${encodeURIComponent(slug)}/`, { method: 'PATCH', body: { name } });
+  },
+
+  /** Supprime une catégorie : ses articles restent, sans catégorie. */
+  deleteCategory(slug: string) {
+    return request<unknown>(`/api/categories/${encodeURIComponent(slug)}/`, { method: 'DELETE' });
+  },
+
+  /** Signatures collectives (« Berlin Insoumise »…). */
+  collectiveAuthors() {
+    return request<CollectiveAuthor[]>('/api/collective-authors/');
+  },
+
+  createCollectiveAuthor(name: string) {
+    return request<CollectiveAuthor>('/api/collective-authors/', { method: 'POST', body: { name } });
+  },
+
+  renameCollectiveAuthor(id: number, name: string) {
+    return request<CollectiveAuthor>(`/api/collective-authors/${id}/`, { method: 'PATCH', body: { name } });
+  },
+
+  /** Supprime une signature collective : elle disparaît des articles qu'elle signait. */
+  deleteCollectiveAuthor(id: number) {
+    return request<unknown>(`/api/collective-authors/${id}/`, { method: 'DELETE' });
   },
 
   countries() {

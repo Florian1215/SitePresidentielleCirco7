@@ -4,13 +4,56 @@ export interface User {
   first_name: string;
   last_name: string;
   is_staff: boolean;
+  /** Administrateur·ice principal·e : publie directement, sans validations. */
+  is_superuser: boolean;
+  /** Accès à la page « Membres ». */
+  can_manage_members: boolean;
   permissions: string[];
+}
+
+export type MemberStatus = 'pending' | 'active' | 'revoked';
+export type MemberRole = 'none' | 'writer' | 'editor' | 'admin';
+
+/** Compte affiché sur la page « Membres ». */
+export interface Member {
+  id: number;
+  first_name: string;
+  last_name: string;
+  username: string;
+  status: MemberStatus;
+  role: MemberRole;
+  is_staff: boolean;
+  date_joined: string;
+  last_login: string | null;
+  is_self: boolean;
+  /** Le compte connecté peut agir dessus (pas lui-même, pas un·e super-utilisateur·ice). */
+  editable: boolean;
+}
+
+/** Signataire possible d'un article : compte rédacteur ou signature collective. */
+export interface Signer {
+  id: number;
+  name: string;
+}
+
+export interface Signers {
+  authors: Signer[];
+  collectives: Signer[];
 }
 
 export interface Category {
   id: number;
   name: string;
   slug: string;
+  /** Nombre d'articles (seulement pour les comptes qui gèrent les catégories). */
+  article_count?: number | null;
+}
+
+/** Signature collective (« Berlin Insoumise »…), gérée par les administrateur·ices. */
+export interface CollectiveAuthor {
+  id: number;
+  name: string;
+  article_count?: number | null;
 }
 
 export type ArticleStatus = 'draft' | 'pending' | 'published';
@@ -24,7 +67,10 @@ export interface Article {
   cover_image: string | null;
   category: number | null;
   category_detail: Category | null;
+  /** Signature affichée (« Berlin Insoumise, Alice et Bob »). */
   author_name: string;
+  authors_detail: Signer[];
+  collectives_detail: Signer[];
   status: ArticleStatus;
   published_at: string | null;
   created_at: string;
@@ -36,6 +82,8 @@ export interface Article {
   approvals_required: number;
   can_approve: boolean;
   is_author: boolean;
+  /** Bouton « Publier maintenant » (administrateur·ice principal·e, article non publié). */
+  can_publish_now: boolean;
 }
 
 export interface Paginated<T> {

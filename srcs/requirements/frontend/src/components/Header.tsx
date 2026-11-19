@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router';
 import { logout, useAuth } from '../lib/auth';
-import { refreshPending, usePendingCount } from '../lib/pending';
+import { refreshPending, refreshPendingMembers, usePendingCount, usePendingMembersCount } from '../lib/pending';
 import { useI18n } from '../lib/i18n';
 import { LangSwitch } from './LangSwitch';
 
@@ -13,6 +13,20 @@ const LINKS = [
 ] as const;
 
 /** Liens du menu ; page en cours : coins arrondis en haut seulement, la ligne rouge restant droite en bas. */
+/** Pastille rouge (nombre d'éléments en attente) à côté d'un lien de la barre noire. */
+function CountBadge({ count, label }: { count: number; label: string }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      className="grid h-5 min-w-5 place-items-center rounded-full bg-rouge px-1 text-[12px] font-bold text-white"
+      title={`${count} ${label}`}
+    >
+      {count}
+      <span className="sr-only"> {label}</span>
+    </span>
+  );
+}
+
 const NAV_LINK =
   'block rounded-lg px-2.5 py-2 text-[15px] font-bold whitespace-nowrap text-noir no-underline hover:bg-lavande hover:text-violet aria-[current=page]:rounded-b-none aria-[current=page]:text-violet aria-[current=page]:shadow-[inset_0_-3px_0_var(--color-rouge)] max-[1180px]:px-2 max-[1180px]:py-3 max-[1180px]:text-[18px]';
 
@@ -32,6 +46,13 @@ export function Header() {
   useEffect(() => {
     if (canWrite) refreshPending();
   }, [canWrite, location.pathname]);
+
+  // Pastille « Membres » : demandes de compte en attente (administrateur·ices)
+  const pendingMembers = usePendingMembersCount();
+  const canManageMembers = auth.canManageMembers;
+  useEffect(() => {
+    if (canManageMembers) refreshPendingMembers();
+  }, [canManageMembers, location.pathname]);
 
   const onLogout = async () => {
     await logout();
@@ -54,18 +75,17 @@ export function Header() {
               {auth.canWrite && (
                 <Link to="/redaction/articles" className="inline-flex items-center gap-1.5">
                   Articles
-                  {pending > 0 && (
-                    <span
-                      className="grid h-5 min-w-5 place-items-center rounded-full bg-rouge px-1 text-[12px] font-bold text-white"
-                      title={`${pending} article${pending > 1 ? 's' : ''} à valider`}
-                    >
-                      {pending}
-                      <span className="sr-only"> article{pending > 1 ? 's' : ''} à valider</span>
-                    </span>
-                  )}
+                  <CountBadge count={pending} label={`article${pending > 1 ? 's' : ''} à valider`} />
                 </Link>
               )}
               {auth.canWrite && <Link to="/blog/ecrire">Écrire un article</Link>}
+              {auth.canManageTaxonomy && <Link to="/redaction/categories-auteurs">Catégories & auteurs</Link>}
+              {auth.canManageMembers && (
+                <Link to="/redaction/membres" className="inline-flex items-center gap-1.5">
+                  Membres
+                  <CountBadge count={pendingMembers} label={`demande${pendingMembers > 1 ? 's' : ''} de compte en attente`} />
+                </Link>
+              )}
               {user.is_staff && <a href="/admin/">Administration</a>}
               <button type="button" className="btn-link font-medium text-creme no-underline hover:underline" onClick={onLogout}>
                 Déconnexion

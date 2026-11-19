@@ -1,6 +1,7 @@
 from django.contrib import admin
+from django.db.models import Q
 
-from .models import Article, ArticleApproval, ArticleImage, Category
+from .models import Article, ArticleApproval, ArticleImage, Category, CollectiveAuthor
 from .widgets import RichTextWidget
 
 
@@ -8,6 +9,14 @@ from .widgets import RichTextWidget
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ["name", "slug"]
     prepopulated_fields = {"slug": ["name"]}
+
+
+@admin.register(CollectiveAuthor)
+class CollectiveAuthorAdmin(admin.ModelAdmin):
+    """Signatures collectives proposées dans l'éditeur d'articles (« Berlin Insoumise »…)."""
+
+    list_display = ["name"]
+    search_fields = ["name"]
 
 
 class ApprovalInline(admin.TabularInline):
@@ -32,8 +41,9 @@ class ArticleAdmin(admin.ModelAdmin):
     actions = ["publish_now", "unpublish"]
     fieldsets = [
         (None, {"fields": ["title", "slug", "excerpt", "cover_image", "content"]}),
-        ("Publication", {"fields": ["category", "status", "author", "published_at"]}),
+        ("Publication", {"fields": ["category", "status", "author", "authors", "collectives", "published_at"]}),
     ]
+    filter_horizontal = ["authors", "collectives"]
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         if db_field.name == "content":
@@ -44,7 +54,7 @@ class ArticleAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         if request.user.has_perm("blog.manage_all_articles") or request.user.has_perm("blog.publish_article"):
             return qs
-        return qs.filter(author=request.user)
+        return qs.filter(pk__in=Article.objects.filter(Q(author=request.user) | Q(authors=request.user)).values("pk"))
 
     def get_readonly_fields(self, request, obj=None):
         # La publication passe par 2 validations sur le site ; seul·es les super-utilisateur·ices
@@ -58,13 +68,13 @@ class ArticleAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         allowed = super().has_change_permission(request, obj)
-        if obj is not None and allowed and obj.author_id != request.user.id:
+        if obj is not None and allowed and not obj.is_signed_by(request.user):
             return request.user.has_perm("blog.manage_all_articles")
         return allowed
 
     def has_delete_permission(self, request, obj=None):
         allowed = super().has_delete_permission(request, obj)
-        if obj is not None and allowed and obj.author_id != request.user.id:
+        if obj is not None and allowed and not obj.is_signed_by(request.user):
             return request.user.has_perm("blog.manage_all_articles")
         return allowed
 
@@ -72,6 +82,12 @@ class ArticleAdmin(admin.ModelAdmin):
         if not change and not obj.author_id:
             obj.author = request.user
         super().save_model(request, obj, form, change)
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        obj = form.instance
+        if not obj.authors.exists() and not obj.collectives.exists():
+            obj.authors.add(obj.author)  # un article est toujours signé
         # Comme sur le site : modifier un article non publié relance sa validation.
         if change and form.changed_data and obj.status != Article.Status.PUBLISHED:
             obj.approvals.all().delete()

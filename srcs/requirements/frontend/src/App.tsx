@@ -16,6 +16,8 @@ const ArticlePage = lazy(() => import('./pages/ArticlePage'));
 const ArticleEditor = lazy(() => import('./pages/ArticleEditor'));
 const Soutenir = lazy(() => import('./pages/Soutenir'));
 const Redaction = lazy(() => import('./pages/Redaction'));
+const Members = lazy(() => import('./pages/Members'));
+const Taxonomy = lazy(() => import('./pages/Taxonomy'));
 const Legal = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.Legal })));
 const Login = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.Login })));
 const NotFound = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.NotFound })));
@@ -29,6 +31,17 @@ function RequirePerm({ perm, children }: { perm: string; children: ReactNode }) 
     return <Navigate to={`/connexion?next=${next}`} replace />;
   }
   return auth.hasPerm(perm) ? children : <Navigate to="/blog" replace />;
+}
+
+/** Réservé aux administrateur·ices (pages « Membres », « Catégories et auteurs »). */
+function RequireAdmin({ allowed, children }: { allowed: (auth: ReturnType<typeof useAuth>) => boolean; children: ReactNode }) {
+  const auth = useAuth();
+  const location = useLocation();
+  if (!auth.isLoggedIn) {
+    const next = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/connexion?next=${next}`} replace />;
+  }
+  return allowed(auth) ? children : <Navigate to="/" replace />;
 }
 
 /**
@@ -104,6 +117,22 @@ export function App() {
                 <RequirePerm perm="blog.add_article">
                   <Redaction />
                 </RequirePerm>
+              }
+            />
+            <Route
+              path="/redaction/membres"
+              element={
+                <RequireAdmin allowed={(a) => a.canManageMembers}>
+                  <Members />
+                </RequireAdmin>
+              }
+            />
+            <Route
+              path="/redaction/categories-auteurs"
+              element={
+                <RequireAdmin allowed={(a) => a.canManageTaxonomy}>
+                  <Taxonomy />
+                </RequireAdmin>
               }
             />
             <Route path="/a-valider" element={<Navigate to="/redaction/articles?statut=a-valider" replace />} />

@@ -34,6 +34,20 @@ class Category(models.Model):
         return self.name
 
 
+class CollectiveAuthor(models.Model):
+    """Signature collective d'un article (« Berlin Insoumise »…), pour les annonces communes."""
+
+    name = models.CharField("nom", max_length=80, unique=True)
+
+    class Meta:
+        verbose_name = "signature collective"
+        verbose_name_plural = "signatures collectives"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
 class Article(models.Model):
     class Status(models.TextChoices):
         DRAFT = "draft", "Brouillon"
@@ -55,6 +69,14 @@ class Article(models.Model):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL, verbose_name="auteur·ice",
         on_delete=models.PROTECT, related_name="articles",
+        help_text="Compte qui a créé l'article (droits de modification).",
+    )
+    authors = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, verbose_name="signé par", blank=True, related_name="signed_articles",
+        help_text="Auteur·ices affiché·es ; ils et elles peuvent aussi modifier l'article.",
+    )
+    collectives = models.ManyToManyField(
+        CollectiveAuthor, verbose_name="signatures collectives", blank=True, related_name="articles",
     )
     status = models.CharField("statut", max_length=12, choices=Status.choices, default=Status.DRAFT)
     published_at = models.DateTimeField("date de publication", null=True, blank=True)
@@ -80,6 +102,20 @@ class Article(models.Model):
 
     def __str__(self):
         return self.title
+
+    def is_signed_by(self, user):
+        """Créateur·ice ou co-auteur·ice de l'article."""
+        return bool(user and user.is_authenticated) and (
+            self.author_id == user.id or any(a.id == user.id for a in self.authors.all())
+        )
+
+    def byline(self):
+        """Signature affichée : signatures collectives puis auteur·ices (à défaut, le compte créateur)."""
+        names = [c.name for c in self.collectives.all()]
+        names += [u.get_full_name() or u.get_username() for u in self.authors.all()]
+        if not names:
+            names = [self.author.get_full_name() or self.author.get_username()]
+        return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " et " + names[-1]
 
     def approve(self, user):
         """Enregistre la validation de `user` ; publie l'article dès qu'il en a assez. Renvoie True si publié."""

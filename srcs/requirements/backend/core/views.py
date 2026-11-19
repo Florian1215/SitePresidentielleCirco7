@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
+from .members import can_manage_members
 from .models import ActionGroup, FaqEntry, FriendSite, PollingStation, SocialLink
 from .action_populaire import supporters_count
 from .zetkin import upcoming_events
@@ -27,6 +28,8 @@ def user_payload(user):
         "first_name": user.first_name,
         "last_name": user.last_name,
         "is_staff": user.is_staff,
+        "is_superuser": user.is_superuser,
+        "can_manage_members": can_manage_members(user),
         "permissions": sorted(user.get_all_permissions()),
     }
 

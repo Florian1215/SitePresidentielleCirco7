@@ -68,9 +68,14 @@ export default function Redaction() {
 
   const shown = (articles ?? []).filter((a) => (!filter.status || a.status === filter.status) && (!mine || a.is_author));
 
-  const replace = (updated: Article) => {
+  const replace = (updated: Article, how: 'approved' | 'published' = 'approved') => {
     setArticles((list) => list?.map((a) => (a.id === updated.id ? updated : a)) ?? null);
-    if (updated.status === 'published') setNotice(`🎉 « ${updated.title} » a reçu ses validations : il est publié.`);
+    if (updated.status === 'published')
+      setNotice(
+        how === 'published'
+          ? `🎉 « ${updated.title} » est publié.`
+          : `🎉 « ${updated.title} » a reçu ses validations : il est publié.`,
+      );
     notifyPendingChanged();
   };
   const removed = (id: number) => {
@@ -151,12 +156,26 @@ function ManageCard({
   onDeleted,
 }: {
   article: Article;
-  onChange: (a: Article) => void;
+  onChange: (a: Article, how?: 'approved' | 'published') => void;
   onDeleted: () => void;
 }) {
   const i18n = useI18n();
   const [confirming, setConfirming] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState('');
+
+  /** Publication directe (administrateur·ice principal·e), sans attendre les validations. */
+  const publish = async () => {
+    setError('');
+    setPublishing(true);
+    try {
+      onChange(await api.publishArticle(a.slug), 'published');
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setPublishing(false);
+    }
+  };
   const badge = STATUS_BADGE[a.status];
 
   const remove = async () => {
@@ -209,6 +228,14 @@ function ManageCard({
         {a.status === 'pending' && (
           <div className="border-t border-gris pt-3 text-[14px]">
             <ApprovalPanel article={a} onApproved={onChange} />
+          </div>
+        )}
+
+        {a.can_publish_now && (
+          <div className="border-t border-gris pt-3">
+            <button type="button" className="btn btn-rouge btn-sm w-full" disabled={publishing} onClick={publish}>
+              {publishing ? 'Publication…' : '🚀 Publier maintenant'}
+            </button>
           </div>
         )}
 
