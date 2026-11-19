@@ -9,7 +9,22 @@ import type { Article, CampaignEvent, Category } from '../lib/models';
 import { usePageTitle } from '../lib/title';
 
 /** Agenda : les premiers rendez-vous (3 cartes par ligne, 3 lignes), puis tout l'agenda sur demande. */
-const EVENTS_SHOWN = 9;
+/** Rangées de rendez-vous affichées avant « Voir plus » (3 cartes sur mobile, 6 sur tablette, 9 sur ordinateur). */
+const EVENT_ROWS = 3;
+
+/** Nombre de colonnes réellement affichées par une grille CSS (suit le redimensionnement de l'écran). */
+function useGridColumns(grid: HTMLElement | null, initial: number) {
+  const [columns, setColumns] = useState(initial);
+  useEffect(() => {
+    if (!grid) return;
+    const update = () => setColumns(getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length || 1);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(grid);
+    return () => observer.disconnect();
+  }, [grid]);
+  return columns;
+}
 
 const CHIP = 'cursor-pointer rounded-full border-2 px-3.5 py-1.5 [font-family:inherit] text-[14px] leading-[inherit] font-bold';
 const chip = (on: boolean, white = false) =>
@@ -98,7 +113,10 @@ export default function BlogList() {
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count || i18n.compare(a.name, b.name));
   }, [events, i18n]);
-  const visibleEvents = allEvents ? filteredEvents : filteredEvents.slice(0, EVENTS_SHOWN);
+  /** Grille des rendez-vous : on n'en montre que EVENT_ROWS rangées, quel que soit le nombre de colonnes. */
+  const [eventsGrid, setEventsGrid] = useState<HTMLUListElement | null>(null);
+  const eventsShown = EVENT_ROWS * useGridColumns(eventsGrid, 3);
+  const visibleEvents = allEvents ? filteredEvents : filteredEvents.slice(0, eventsShown);
 
   /** Affichage de l'agenda : cartes des rendez-vous ou carte géographique. */
   const [view, setView] = useState<'list' | 'map'>('list');
@@ -289,17 +307,17 @@ export default function BlogList() {
             </>
           ) : (
             <>
-              <ul className="grid grid-3 m-0 list-none p-0">
+              <ul className="grid grid-3 m-0 list-none p-0" ref={setEventsGrid}>
                 {visibleEvents.map((e) => (
                   <li key={e.id}>
                     <EventCard event={e} />
                   </li>
                 ))}
               </ul>
-              {filteredEvents.length > EVENTS_SHOWN && (
+              {filteredEvents.length > eventsShown && (
                 <div className="mt-7 flex justify-center">
                   <button type="button" className="btn btn-outline" onClick={() => setAllEvents(!allEvents)}>
-                    {allEvents ? t.showLess : i18n.f(t.showMore, { n: filteredEvents.length - EVENTS_SHOWN })}
+                    {allEvents ? t.showLess : i18n.f(t.showMore, { n: filteredEvents.length - eventsShown })}
                   </button>
                 </div>
               )}
