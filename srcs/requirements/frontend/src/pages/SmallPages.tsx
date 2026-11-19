@@ -85,20 +85,30 @@ export function Login() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [requested, setRequested] = useState(false);
+  /** La personne a tenté de demander un compte : on signale alors un mot de passe trop faible. */
+  const [triedRegister, setTriedRegister] = useState(false);
 
   const switchMode = (m: Mode) => {
     setMode(m);
     setError('');
+    setTriedRegister(false);
     setPassword('');
     setPassword2('');
   };
 
   const mismatch = mode === 'register' && password2 !== '' && password !== password2;
+  /** Mêmes règles que le serveur : au moins 8 caractères, pas uniquement des chiffres. */
+  const weakPassword = password.length < 8 || /^\d+$/.test(password);
+  const showWeak = mode === 'register' && triedRegister && weakPassword;
   const ready = !!firstName.trim() && !!lastName.trim() && !!password && (mode === 'login' || password === password2);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!ready) return;
+    if (mode === 'register') {
+      setTriedRegister(true);
+      if (weakPassword) return;
+    }
     setSending(true);
     setError('');
     const credentials = { first_name: firstName.trim(), last_name: lastName.trim(), password };
@@ -159,10 +169,12 @@ export function Login() {
       <section className="section">
         <div className="site-container max-w-[480px]">
           <div className="card stack">
-            <span className="text-[40px] leading-none" aria-hidden="true">
-              ⏳
-            </span>
-            <h1 className="h2 m-0">Demande envoyée</h1>
+            <h1 className="h2 m-0 flex items-center gap-3">
+              <span className="text-[0.9em] leading-none" aria-hidden="true">
+                ⏳
+              </span>
+              Demande envoyée
+            </h1>
             <p className="m-0">
               Merci <strong>{firstName.trim()}</strong> ! Votre compte est <strong>en attente de validation</strong>. Dès qu'un·e
               administrateur·ice l'aura validé, vous pourrez vous connecter avec vos prénom, nom et mot de passe pour écrire des
@@ -242,9 +254,15 @@ export function Login() {
                 type="password"
                 autoComplete={isLogin ? 'current-password' : 'new-password'}
                 value={password}
+                aria-invalid={showWeak}
+                aria-describedby={showWeak ? 'lg-pass-err' : undefined}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              {!isLogin && <span className="hint">Au moins 8 caractères, pas uniquement des chiffres.</span>}
+              {showWeak && (
+                <span id="lg-pass-err" className="error">
+                  Le mot de passe doit faire au moins 8 caractères et ne pas contenir que des chiffres.
+                </span>
+              )}
             </div>
             {!isLogin && (
               <div className="field">
