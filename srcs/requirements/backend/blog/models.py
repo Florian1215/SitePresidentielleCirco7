@@ -165,3 +165,34 @@ class ArticleImage(models.Model):
 
     def __str__(self):
         return self.image.name
+
+
+class ArticleComment(models.Model):
+    """Commentaire de relecture sur un article non publié (« attention, faute ici », « plutôt cette formulation »…).
+
+    Visible seulement par les auteur·ices de l'article et les comptes qui peuvent valider ; l'auteur·ice indique
+    ensuite s'il a été pris en compte ou non.
+    """
+
+    class Status(models.TextChoices):
+        OPEN = "open", "À traiter"
+        DONE = "done", "Pris en compte"
+        DECLINED = "declined", "Pas pris en compte"
+
+    article = models.ForeignKey(Article, verbose_name="article", on_delete=models.CASCADE, related_name="comments")
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name="auteur·ice du commentaire", null=True,
+        on_delete=models.SET_NULL, related_name="article_comments",
+    )
+    text = models.TextField("commentaire", max_length=3000)
+    status = models.CharField("suite donnée", max_length=10, choices=Status.choices, default=Status.OPEN)
+    created_at = models.DateTimeField("écrit le", auto_now_add=True)
+    updated_at = models.DateTimeField("modifié le", auto_now=True)
+
+    class Meta:
+        verbose_name = "commentaire de relecture"
+        verbose_name_plural = "commentaires de relecture"
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"{self.author} → {self.article} : {self.text[:40]}"

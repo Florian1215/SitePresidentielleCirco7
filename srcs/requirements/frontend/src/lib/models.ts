@@ -85,6 +85,28 @@ export interface Article {
   is_author: boolean;
   /** Bouton « Publier maintenant » (administrateur·ice principal·e, article non publié). */
   can_publish_now: boolean;
+  /** Commentaires de relecture (null : le compte ne peut pas les voir). */
+  comments_count: number | null;
+  /** Dont ceux qui attendent une réponse de l'auteur·ice. */
+  open_comments_count: number | null;
+  can_comment: boolean;
+}
+
+/** Suite donnée à un commentaire de relecture par l'auteur·ice de l'article. */
+export type ReviewCommentStatus = 'open' | 'done' | 'declined';
+
+/** Commentaire de relecture (« attention, faute ici »…) laissé pendant la validation d'un article. */
+export interface ReviewComment {
+  id: number;
+  text: string;
+  status: ReviewCommentStatus;
+  author_name: string;
+  is_mine: boolean;
+  created_at: string;
+  /** Auteur·ices de l'article : indiquer « pris en compte » ou non. */
+  can_set_status: boolean;
+  /** Son propre commentaire, tant qu'il n'a pas reçu de réponse. */
+  can_delete: boolean;
 }
 
 export interface Paginated<T> {

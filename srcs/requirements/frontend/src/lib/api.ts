@@ -14,6 +14,8 @@ import type {
   Member,
   MemberRole,
   Paginated,
+  ReviewComment,
+  ReviewCommentStatus,
   Signers,
   PollingStation,
 } from './models';
@@ -154,6 +156,27 @@ export const api = {
   /** Tous les articles « À valider ». */
   pendingArticles(signal?: AbortSignal) {
     return this.allArticles('pending', signal);
+  },
+
+  /** Commentaires de relecture d'un article. */
+  articleComments(slug: string) {
+    return request<ReviewComment[]>(`/api/articles/${encodeURIComponent(slug)}/comments/`);
+  },
+
+  addArticleComment(slug: string, text: string) {
+    return request<ReviewComment>(`/api/articles/${encodeURIComponent(slug)}/comments/`, { method: 'POST', body: { text } });
+  },
+
+  /** « Pris en compte » (done), « pas pris en compte » (declined) ou à traiter (open). */
+  setArticleCommentStatus(slug: string, id: number, status: ReviewCommentStatus) {
+    return request<ReviewComment>(`/api/articles/${encodeURIComponent(slug)}/comments/${id}/`, {
+      method: 'PATCH',
+      body: { status },
+    });
+  },
+
+  deleteArticleComment(slug: string, id: number) {
+    return request<unknown>(`/api/articles/${encodeURIComponent(slug)}/comments/${id}/`, { method: 'DELETE' });
   },
 
   /** Publication directe, sans validations (administrateur·ice principal·e). */

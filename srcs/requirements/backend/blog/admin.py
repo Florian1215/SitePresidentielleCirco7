@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.db.models import Q
 
-from .models import Article, ArticleApproval, ArticleImage, Category, CollectiveAuthor
+from .models import Article, ArticleApproval, ArticleComment, ArticleImage, Category, CollectiveAuthor
 from .widgets import RichTextWidget
 
 
@@ -124,3 +124,13 @@ class ArticleImageAdmin(admin.ModelAdmin):
     list_display = ["image", "uploaded_by", "created_at"]
     list_filter = ["created_at"]
     readonly_fields = ["uploaded_by", "created_at"]
+
+
+@admin.register(ArticleComment)
+class ArticleCommentAdmin(admin.ModelAdmin):
+    """Commentaires de relecture (écrits et traités depuis la page de l'article sur le site)."""
+
+    list_display = ["article", "author", "status", "created_at"]
+    list_filter = ["status"]
+    search_fields = ["text", "article__title"]
+    readonly_fields = ["article", "author", "created_at", "updated_at"]

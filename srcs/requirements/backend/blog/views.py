@@ -1,4 +1,5 @@
 from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -6,14 +7,18 @@ from rest_framework.response import Response
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 
-from .models import Article, Category, CollectiveAuthor
+from .models import Article, ArticleComment, Category, CollectiveAuthor
 from .permissions import ArticlePermission, CategoryPermission, CollectiveAuthorPermission, can_publish_now
 from .serializers import (
+    ArticleCommentSerializer,
     ArticleListSerializer,
     ArticleSerializer,
     CategorySerializer,
     CollectiveAuthorSerializer,
+    can_answer_comments,
     can_approve,
+    can_comment,
+    can_see_comments,
     signers_payload,
 )
 
@@ -53,7 +58,16 @@ class ArticleViewSet(viewsets.ModelViewSet):
     search_fields = ["title", "excerpt", "content"]
 
     def get_queryset(self):
-        qs = Article.objects.select_related("author", "category").prefetch_related("approvals__user", "authors", "collectives")
+        qs = (
+            Article.objects.select_related("author", "category")
+            .prefetch_related("approvals__user", "authors", "collectives")
+            .annotate(
+                n_comments=Count("comments", distinct=True),
+                n_open_comments=Count("comments", filter=Q(comments__status=ArticleComment.Status.OPEN), distinct=True),
+            )
+            # Avec un comptage (GROUP BY), Django n'applique plus l'ordre par défaut du modèle : on le redonne.
+            .order_by(*Article._meta.ordering)
+        )
         user = self.request.user
         published = Q(status=Article.Status.PUBLISHED)
         if not user.is_authenticated:
@@ -103,6 +117,49 @@ class ArticleViewSet(viewsets.ModelViewSet):
             article.save()
         article = self.get_queryset().get(pk=article.pk)
         return Response(ArticleSerializer(article, context=self.get_serializer_context()).data)
+
+
+    # ---------- Commentaires de relecture ----------
+
+    @action(detail=True, methods=["get", "post"], permission_classes=[IsAuthenticated])
+    def comments(self, request, slug=None):
+        """GET : commentaires de relecture de l'article ; POST {text} : en ajouter un."""
+        article = self.get_object()
+        context = self.get_serializer_context()
+        if request.method == "GET":
+            if not can_see_comments(request.user, article):
+                return Response(status=status.HTTP_403_FORBIDDEN)
+            qs = article.comments.select_related("author", "article")
+            return Response(ArticleCommentSerializer(qs, many=True, context=context).data)
+        if not can_comment(request.user, article):
+            return Response({"detail": "Vous ne pouvez pas commenter cet article (il est peut-être déjà publié)."},
+                            status=status.HTTP_403_FORBIDDEN)
+        serializer = ArticleCommentSerializer(data=request.data, context=context)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(article=article, author=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["patch", "delete"], permission_classes=[IsAuthenticated],
+            url_path=r"comments/(?P<comment_id>\d+)")
+    def comment(self, request, slug=None, comment_id=None):
+        """PATCH {status} : « pris en compte » ou non (auteur·ices de l'article) ; DELETE : retirer son commentaire."""
+        article = self.get_object()
+        comment = get_object_or_404(ArticleComment.objects.select_related("author", "article"), pk=comment_id, article=article)
+        context = self.get_serializer_context()
+        if request.method == "DELETE":
+            if not ArticleCommentSerializer(comment, context=context).data["can_delete"]:
+                return Response({"detail": "Vous ne pouvez pas supprimer ce commentaire."}, status=status.HTTP_403_FORBIDDEN)
+            comment.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        if not can_answer_comments(request.user, article):
+            return Response({"detail": "Seul·es les auteur·ices de l'article indiquent la suite donnée."},
+                            status=status.HTTP_403_FORBIDDEN)
+        new_status = request.data.get("status")
+        if new_status not in ArticleComment.Status.values:
+            return Response({"detail": "Statut inconnu."}, status=status.HTTP_400_BAD_REQUEST)
+        comment.status = new_status
+        comment.save(update_fields=["status", "updated_at"])
+        return Response(ArticleCommentSerializer(comment, context=context).data)
 
 
 class SignersView(APIView):

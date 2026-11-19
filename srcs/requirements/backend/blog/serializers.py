@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework import serializers
 
-from .models import Article, Category, CollectiveAuthor
+from .models import Article, ArticleComment, Category, CollectiveAuthor
 from .permissions import can_publish_now
 
 User = get_user_model()
@@ -58,6 +58,62 @@ class NamedSerializer(serializers.ModelSerializer):
         return obj.articles.count() if count is None else count
 
 
+# ---------- Commentaires de relecture ----------
+
+def can_see_comments(user, article):
+    """Auteur·ices de l'article et comptes qui valident (relecteur·ices, rédacteur·ices, admins)."""
+    return bool(user and user.is_authenticated) and (
+        article.is_signed_by(user) or user.has_perm("blog.review_article") or user.has_perm("blog.manage_all_articles")
+    )
+
+
+def can_comment(user, article):
+    """On commente un article tant qu'il n'est pas publié."""
+    return article.status != Article.Status.PUBLISHED and can_see_comments(user, article)
+
+
+def can_answer_comments(user, article):
+    """Indiquer si un commentaire a été pris en compte : les auteur·ices de l'article (et les éditeur·ices)."""
+    return bool(user and user.is_authenticated) and (
+        article.is_signed_by(user) or user.has_perm("blog.manage_all_articles")
+    )
+
+
+class ArticleCommentSerializer(serializers.ModelSerializer):
+    author_name = serializers.SerializerMethodField()
+    is_mine = serializers.SerializerMethodField()
+    can_set_status = serializers.SerializerMethodField()
+    can_delete = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ArticleComment
+        fields = ["id", "text", "status", "author_name", "is_mine", "created_at", "can_set_status", "can_delete"]
+        read_only_fields = ["status", "created_at"]
+
+    def _user(self):
+        return getattr(self.context.get("request"), "user", None)
+
+    def get_author_name(self, obj):
+        return display_name(obj.author) if obj.author else "Compte supprimé"
+
+    def get_is_mine(self, obj):
+        user = self._user()
+        return bool(user and obj.author_id == user.id)
+
+    def get_can_set_status(self, obj):
+        return can_answer_comments(self._user(), obj.article)
+
+    def get_can_delete(self, obj):
+        # Son propre commentaire, tant qu'il n'a pas reçu de réponse
+        return self.get_is_mine(obj) and obj.status == ArticleComment.Status.OPEN
+
+    def validate_text(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Le commentaire est vide.")
+        return value
+
+
 class CategorySerializer(NamedSerializer):
     manage_perm = "blog.change_category"
 
@@ -94,6 +150,9 @@ class ArticleSerializer(serializers.ModelSerializer):
     authors_detail = serializers.SerializerMethodField()
     collectives_detail = serializers.SerializerMethodField()
     can_publish_now = serializers.SerializerMethodField()
+    comments_count = serializers.SerializerMethodField()
+    open_comments_count = serializers.SerializerMethodField()
+    can_comment = serializers.SerializerMethodField()
     #: Signature, en JSON : {"authors": [id de comptes], "collectives": [id de signatures collectives]}
     signature = serializers.CharField(write_only=True, required=False)
 
@@ -105,6 +164,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             "published_at", "created_at", "updated_at", "can_edit", "can_delete",
             "approvals", "approvals_required", "can_approve", "is_author",
             "authors_detail", "collectives_detail", "signature", "can_publish_now",
+            "comments_count", "open_comments_count", "can_comment",
         ]
         read_only_fields = ["slug", "published_at", "created_at", "updated_at"]
 
@@ -124,6 +184,25 @@ class ArticleSerializer(serializers.ModelSerializer):
     def _user(self):
         request = self.context.get("request")
         return getattr(request, "user", None)
+
+    def _comment_count(self, obj, open_only):
+        """Nombre de commentaires de relecture (None pour qui ne peut pas les voir)."""
+        if not can_see_comments(self._user(), obj):
+            return None
+        attr = "n_open_comments" if open_only else "n_comments"
+        if hasattr(obj, attr):
+            return getattr(obj, attr)
+        qs = obj.comments.all()
+        return qs.filter(status=ArticleComment.Status.OPEN).count() if open_only else qs.count()
+
+    def get_comments_count(self, obj):
+        return self._comment_count(obj, open_only=False)
+
+    def get_open_comments_count(self, obj):
+        return self._comment_count(obj, open_only=True)
+
+    def get_can_comment(self, obj):
+        return can_comment(self._user(), obj)
 
     def _user_can(self, obj, perm):
         request = self.context.get("request")

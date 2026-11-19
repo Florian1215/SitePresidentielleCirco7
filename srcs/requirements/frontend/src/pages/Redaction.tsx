@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { ApprovalPanel } from '../components/ApprovalPanel';
+import { CommentCount } from '../components/CommentCount';
 import { TaxonomyPanels } from '../components/TaxonomyPanels';
 import { fallback } from '../components/ArticleCard';
 import { api, apiErrorMessage } from '../lib/api';
@@ -236,6 +237,15 @@ function ManageCard({
             ? `publié le ${i18n.date(a.published_at)}`
             : `modifié le ${i18n.date(a.updated_at)}`}
         </p>
+
+        {!!a.comments_count && (
+          <CommentCount
+            slug={a.slug}
+            total={a.comments_count}
+            open={a.open_comments_count ?? 0}
+            className="self-start text-[13px]"
+          />
+        )}
 
         {a.status === 'pending' && (
           <div className="border-t border-gris pt-3 text-[14px]">

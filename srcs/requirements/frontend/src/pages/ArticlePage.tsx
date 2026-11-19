@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { ApprovalPanel } from '../components/ApprovalPanel';
+import { CommentCount } from '../components/CommentCount';
+import { ReviewComments } from '../components/ReviewComments';
 import { api, apiErrorMessage } from '../lib/api';
 import { notifyPendingChanged } from '../lib/pending';
 import { useI18n } from '../lib/i18n';
@@ -45,6 +47,8 @@ export default function ArticlePage() {
 
   if (article) {
     const a = article;
+    /** Commentaires de relecture : pour qui peut les voir, sur un article pas encore publié (ou déjà commenté). */
+    const showComments = a.comments_count !== null && (a.status !== 'published' || a.comments_count > 0);
     const cover = !!a.cover_image;
     return (
       <article>
@@ -96,6 +100,11 @@ export default function ArticlePage() {
                 />
               </div>
             )}
+            {showComments && (
+              <p className="mb-5">
+                <CommentCount slug={a.slug} total={a.comments_count ?? 0} open={a.open_comments_count ?? 0} />
+              </p>
+            )}
             {(a.can_edit || a.can_delete) && (
               <>
                 <div className="btn-row">
@@ -134,6 +143,14 @@ export default function ArticlePage() {
               de balises). On l'affiche tel quel pour garder l'alignement (classes) et les vidéos intégrées (iframes).
             */}
             <div className="prose" dangerouslySetInnerHTML={{ __html: a.content ?? '' }} />
+            {showComments && (
+              <ReviewComments
+                article={a}
+                onCountsChange={(total, open) =>
+                  setArticle((cur) => cur && { ...cur, comments_count: total, open_comments_count: open })
+                }
+              />
+            )}
           </div>
         </div>
       </article>
