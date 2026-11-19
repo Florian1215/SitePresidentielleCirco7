@@ -1,18 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '../lib/api';
 import { useI18n } from '../lib/i18n';
 import type { Member, MemberRole, MemberStatus } from '../lib/models';
 import { refreshPendingMembers } from '../lib/pending';
 import { usePageTitle } from '../lib/title';
-
-/** Filtres d'état (paramètre d'adresse ?statut=…). */
-const FILTERS: { key: string; label: string; status?: MemberStatus }[] = [
-  { key: '', label: 'Demandes en attente', status: 'pending' },
-  { key: 'actifs', label: 'Membres actifs', status: 'active' },
-  { key: 'retires', label: 'Accès retirés', status: 'revoked' },
-  { key: 'tous', label: 'Tous' },
-];
 
 const ROLES: { value: Exclude<MemberRole, 'admin'>; label: string; hint: string }[] = [
   { value: 'writer', label: 'Rédacteur·ice', hint: 'écrit des articles et valide ceux des autres' },
@@ -33,23 +24,24 @@ const STATUS_BADGE: Record<MemberStatus, { label: string; className: string }> =
   revoked: { label: 'Accès retiré', className: 'badge badge-draft' },
 };
 
-const CHIP = 'cursor-pointer rounded-full border-2 px-3.5 py-1.5 [font-family:inherit] text-[14px] font-bold';
-const chip = (on: boolean) =>
-  `${CHIP} ${on ? 'border-violet bg-violet text-creme' : 'border-violet bg-white text-violet hover:bg-lavande'}`;
+/** Ordre de la liste : demandes en attente d'abord, puis membres actifs, puis accès retirés. */
+const STATUS_ORDER: Record<MemberStatus, number> = { pending: 0, active: 1, revoked: 2 };
 
 const fullName = (m: Member) => [m.first_name, m.last_name].filter(Boolean).join(' ') || m.username;
 
 /** Recherche sans tenir compte des accents ni de la casse. */
-const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const fold = (s: string) =>
+  s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
 
 /**
- * Page « Membres » (administrateur·ices) : demandes de compte à accepter ou refuser,
- * rôle de chaque membre, retrait et rétablissement de l'accès.
+ * Page « Membres » (administrateur·ices) : la liste de tous les comptes, avec une recherche.
+ * À droite de chaque membre : son statut et les actions (accepter / refuser une demande, rôle, retirer ou rétablir l'accès).
  */
 export default function Members() {
   usePageTitle('Membres — espace rédaction');
-  const [params, setParams] = useSearchParams();
-  const filter = FILTERS.find((f) => f.key === (params.get('statut') ?? '')) ?? FILTERS[0];
   const [query, setQuery] = useState('');
   const [members, setMembers] = useState<Member[] | null>(null);
   const [error, setError] = useState(false);
@@ -62,27 +54,11 @@ export default function Members() {
     return () => ctrl.abort();
   }, []);
 
-  const setFilter = (key: string) =>
-    setParams(
-      (p) => {
-        const next = new URLSearchParams(p);
-        if (key) next.set('statut', key);
-        else next.delete('statut');
-        return next;
-      },
-      { replace: true },
-    );
-
-  const counts = useMemo(
-    () =>
-      Object.fromEntries(FILTERS.map((f) => [f.key, (members ?? []).filter((m) => !f.status || m.status === f.status).length])),
-    [members],
-  );
-
   const q = fold(query.trim());
-  const shown = (members ?? []).filter(
-    (m) => (!filter.status || m.status === filter.status) && (!q || fold(`${fullName(m)} ${m.username}`).includes(q)),
-  );
+  // Tri stable : l'ordre du serveur (comptes les plus récents d'abord) est conservé dans chaque statut
+  const shown = (members ?? [])
+    .filter((m) => !q || fold(`${fullName(m)} ${m.username}`).includes(q))
+    .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
 
   const replace = (updated: Member) => {
     setMembers((list) => list?.map((m) => (m.id === updated.id ? updated : m)) ?? null);
@@ -95,26 +71,8 @@ export default function Members() {
 
   return (
     <section className="section-sm">
-      <div className="site-container">
-        <div className="mb-6">
-          <span className="eyebrow">Espace rédaction</span>
-          <h1 className="h2 m-0">Membres</h1>
-        </div>
-
-        <div className="mb-4 flex flex-wrap items-center gap-2" role="group" aria-label="Filtrer par état">
-          {FILTERS.map((f) => (
-            <button
-              key={f.key}
-              type="button"
-              className={chip(filter.key === f.key)}
-              aria-pressed={filter.key === f.key}
-              onClick={() => setFilter(f.key)}
-            >
-              {f.label}
-              {members && <span className="ml-1.5 opacity-70">{counts[f.key]}</span>}
-            </button>
-          ))}
-        </div>
+      <div className="site-container max-w-[1000px]">
+        <h1 className="h2 mb-6">Membres</h1>
 
         <div className="field mb-6 max-w-[420px]">
           <label htmlFor="members-search" className="visually-hidden">
@@ -129,25 +87,14 @@ export default function Members() {
           />
         </div>
 
-        {filter.status === 'pending' && (
-          <p className="muted mt-0 mb-6 text-[15px]">
-            Ces personnes ont demandé un compte depuis la page « Se connecter ». Acceptez-les avec le rôle voulu, ou refusez la
-            demande (elle est alors supprimée).
-          </p>
-        )}
-
         {error ? (
           <div className="alert alert-err">Impossible de charger les membres.</div>
         ) : members === null ? (
           <p className="loader">Chargement…</p>
         ) : !shown.length ? (
-          <div className="card text-center">
-            <p className="m-0 font-bold">
-              {filter.status === 'pending' && !q ? 'Aucune demande en attente.' : 'Aucun membre ici.'}
-            </p>
-          </div>
+          <p className="m-0 font-bold">Aucun membre trouvé.</p>
         ) : (
-          <ul className="m-0 grid list-none gap-3 p-0">
+          <ul className="m-0 list-none divide-y divide-gris overflow-hidden rounded-site border border-gris bg-white p-0">
             {shown.map((m) => (
               <li key={m.id}>
                 <MemberRow member={m} onChange={replace} onRemoved={() => removed(m.id)} />
@@ -201,11 +148,10 @@ function MemberRow({ member: m, onChange, onRemoved }: { member: Member; onChang
   );
 
   return (
-    <article className="card-flat flex flex-wrap items-center gap-x-6 gap-y-3 p-4!">
-      <div className="min-w-[220px] flex-1">
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3.5">
+      <div className="min-w-[200px] flex-1">
         <p className="m-0 flex flex-wrap items-center gap-2">
           <strong className="text-[17px] text-violet">{fullName(m)}</strong>
-          <span className={badge.className}>{badge.label}</span>
           {m.is_self && <span className="badge">Vous</span>}
         </p>
         <p className="m-0 mt-1 text-[13px] text-texte">
@@ -214,99 +160,106 @@ function MemberRow({ member: m, onChange, onRemoved }: { member: Member; onChang
         </p>
       </div>
 
-      {m.status === 'pending' ? (
-        m.editable && (
+      <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 max-[700px]:w-full max-[700px]:justify-start">
+        <span className={badge.className}>{badge.label}</span>
+        {m.status === 'pending' ? (
+          m.editable && (
+            <div className="flex flex-wrap items-center gap-2">
+              {confirming === 'refuse' ? (
+                <>
+                  <span className="text-[14px] font-bold text-rouge">Refuser et supprimer la demande ?</span>
+                  <button
+                    type="button"
+                    className="btn btn-rouge btn-sm"
+                    disabled={busy}
+                    onClick={() => run(() => api.refuseMember(m.id).then(() => null))}
+                  >
+                    Oui
+                  </button>
+                  <button type="button" className="btn btn-outline btn-sm" onClick={() => setConfirming(null)}>
+                    Non
+                  </button>
+                </>
+              ) : (
+                <>
+                  <label htmlFor={`role-new-${m.id}`} className="visually-hidden">
+                    Rôle à l'acceptation
+                  </label>
+                  {roleSelect(acceptRole, setAcceptRole, `role-new-${m.id}`)}
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    disabled={busy}
+                    onClick={() => run(() => api.memberAction(m.id, 'accept', acceptRole))}
+                  >
+                    ✓ Accepter
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-link text-[14px] font-bold text-rouge"
+                    onClick={() => setConfirming('refuse')}
+                  >
+                    Refuser
+                  </button>
+                </>
+              )}
+            </div>
+          )
+        ) : (
           <div className="flex flex-wrap items-center gap-2">
-            {confirming === 'refuse' ? (
-              <>
-                <span className="text-[14px] font-bold text-rouge">Refuser et supprimer la demande ?</span>
-                <button
-                  type="button"
-                  className="btn btn-rouge btn-sm"
-                  disabled={busy}
-                  onClick={() => run(() => api.refuseMember(m.id).then(() => null))}
-                >
-                  Oui
-                </button>
-                <button type="button" className="btn btn-outline btn-sm" onClick={() => setConfirming(null)}>
-                  Non
-                </button>
-              </>
+            {m.role === 'admin' || !m.editable ? (
+              <span className="badge">{ROLE_LABEL[m.role]}</span>
             ) : (
               <>
-                <label htmlFor={`role-new-${m.id}`} className="visually-hidden">
-                  Rôle à l'acceptation
+                <label htmlFor={`role-${m.id}`} className="visually-hidden">
+                  Rôle de {fullName(m)}
                 </label>
-                {roleSelect(acceptRole, setAcceptRole, `role-new-${m.id}`)}
+                {roleSelect(m.role, (r) => run(() => api.setMemberRole(m.id, r)), `role-${m.id}`)}
+              </>
+            )}
+            {m.editable &&
+              (m.status === 'revoked' ? (
                 <button
                   type="button"
-                  className="btn btn-sm"
+                  className="btn btn-outline btn-sm"
                   disabled={busy}
-                  onClick={() => run(() => api.memberAction(m.id, 'accept', acceptRole))}
+                  onClick={() => run(() => api.memberAction(m.id, 'restore'))}
                 >
-                  ✓ Accepter
+                  Rétablir l'accès
                 </button>
+              ) : confirming === 'revoke' ? (
+                <>
+                  <span className="text-[14px] font-bold text-rouge">Retirer l'accès ?</span>
+                  <button
+                    type="button"
+                    className="btn btn-rouge btn-sm"
+                    disabled={busy}
+                    onClick={() => run(() => api.memberAction(m.id, 'revoke'))}
+                  >
+                    Oui
+                  </button>
+                  <button type="button" className="btn btn-outline btn-sm" onClick={() => setConfirming(null)}>
+                    Non
+                  </button>
+                </>
+              ) : (
                 <button
                   type="button"
                   className="btn-link text-[14px] font-bold text-rouge"
-                  onClick={() => setConfirming('refuse')}
+                  onClick={() => setConfirming('revoke')}
                 >
-                  Refuser
+                  Retirer l'accès
                 </button>
-              </>
-            )}
+              ))}
           </div>
-        )
-      ) : (
-        <div className="flex flex-wrap items-center gap-2">
-          {m.role === 'admin' || !m.editable ? (
-            <span className="badge">{ROLE_LABEL[m.role]}</span>
-          ) : (
-            <>
-              <label htmlFor={`role-${m.id}`} className="visually-hidden">
-                Rôle de {fullName(m)}
-              </label>
-              {roleSelect(m.role, (r) => run(() => api.setMemberRole(m.id, r)), `role-${m.id}`)}
-            </>
-          )}
-          {m.editable &&
-            (m.status === 'revoked' ? (
-              <button
-                type="button"
-                className="btn btn-outline btn-sm"
-                disabled={busy}
-                onClick={() => run(() => api.memberAction(m.id, 'restore'))}
-              >
-                Rétablir l'accès
-              </button>
-            ) : confirming === 'revoke' ? (
-              <>
-                <span className="text-[14px] font-bold text-rouge">Retirer l'accès ?</span>
-                <button
-                  type="button"
-                  className="btn btn-rouge btn-sm"
-                  disabled={busy}
-                  onClick={() => run(() => api.memberAction(m.id, 'revoke'))}
-                >
-                  Oui
-                </button>
-                <button type="button" className="btn btn-outline btn-sm" onClick={() => setConfirming(null)}>
-                  Non
-                </button>
-              </>
-            ) : (
-              <button type="button" className="btn-link text-[14px] font-bold text-rouge" onClick={() => setConfirming('revoke')}>
-                Retirer l'accès
-              </button>
-            ))}
-        </div>
-      )}
+        )}
+      </div>
 
       {error && (
         <div className="alert alert-err m-0 w-full" role="alert">
           {error}
         </div>
       )}
-    </article>
+    </div>
   );
 }
