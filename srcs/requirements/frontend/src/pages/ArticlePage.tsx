@@ -85,9 +85,10 @@ export default function ArticlePage() {
               {a.published_at && <> · {i18n.date(a.published_at)}</>}
             </p>
             {a.status === 'pending' && (
-              <div className="mb-5 rounded-site border-2 border-jaune bg-white p-4">
+              <div className="mb-5">
                 <ApprovalPanel
                   article={a}
+                  variant="squares"
                   onApproved={(updated) => {
                     setArticle(updated);
                     notifyPendingChanged();
