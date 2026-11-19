@@ -1,19 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { CSSProperties, FormEvent } from 'react';
+import type { CSSProperties, FormEvent, KeyboardEvent } from 'react';
 import { Link } from 'react-router';
 import { FOOTER_ICONS } from '../components/footer-icons';
 import { Photo } from '../components/Photo';
 import { SupportMelenchon } from '../components/SupportMelenchon';
+import { de } from '../i18n/de';
+import { en } from '../i18n/en';
 import { api } from '../lib/api';
-import { COUNTRIES } from '../lib/campaign';
-import { email, required, requiredTrue, useForm } from '../lib/forms';
 import { useI18n } from '../lib/i18n';
 import { networkColor } from '../lib/networks';
-import type { SocialLink } from '../lib/models';
+import type { EngageForms, SocialLink } from '../lib/models';
 import { usePageTitle } from '../lib/title';
-
-const HELPS = ['helpTracts', 'helpDoors', 'helpSocial', 'helpEvents', 'helpRegistration', 'helpVote'] as const;
-type Help = (typeof HELPS)[number];
 
 /** Page « Je soutiens » : suivre la campagne, soutenir Jean-Luc Mélenchon, s'engager. */
 export default function Soutenir() {
@@ -93,29 +90,19 @@ export default function Soutenir() {
       {/* 2. JE SOUTIENS JEAN-LUC MÉLENCHON (même encart que l'accueil) */}
       <SupportMelenchon id="melenchon" />
 
-      {/* 3. JE M'ENGAGE DANS LA CAMPAGNE */}
+      {/* 3. JE M'ENGAGE DANS LA CAMPAGNE : photo, choix de la ville, puis formulaire Zetkin de cette ville */}
       <section className="section" id="engagement">
-        <div className="site-container grid grid-cols-[1fr_1.3fr] items-start gap-12 max-[900px]:grid-cols-1">
+        <div className="site-container grid grid-cols-[1fr_1fr] items-center gap-12 max-[900px]:grid-cols-1">
+          <Photo
+            className="aspect-[4/3] overflow-hidden rounded-site shadow-[14px_14px_0_var(--color-violet)] max-[900px]:mx-auto max-[900px]:w-[calc(100%-8px)] max-[900px]:max-w-[620px] max-[900px]:shadow-[8px_8px_0_var(--color-violet)]"
+            name="standLfi"
+            sizes="(max-width: 900px) 100vw, 600px"
+          />
           <div>
             <span className="eyebrow">{t.engageEyebrow}</span>
             <h2>{t.engageTitle}</h2>
             <p className="lead">{t.engageLead}</p>
-            <ul className="m-0 mt-6 grid list-none gap-3 p-0">
-              {t.perks.map((perk) => (
-                <li key={perk} className="flex items-start gap-3 font-bold">
-                  <span
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-vert text-[15px] text-white"
-                    aria-hidden="true"
-                  >
-                    ✓
-                  </span>
-                  {perk}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="card">
-            <EngageForm />
+            <EngageChooser />
           </div>
         </div>
       </section>
@@ -123,110 +110,153 @@ export default function Soutenir() {
   );
 }
 
+/** Recherche sans tenir compte des accents ni de la casse : « dusseldorf » trouve Düsseldorf. */
+const fold = (text: string) =>
+  text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/ß/g, 'ss')
+    .trim();
+
+const MAX_SUGGESTIONS = 8;
+
 /**
- * Formulaire « Je m'engage ».
- * TODO : l'envoi n'est pas encore branché (à définir) ; pour l'instant seule la validation des champs fonctionne.
+ * « Je viens de [ville] » + « Je m'engage » : envoie vers le formulaire Zetkin de la ville, sinon vers le formulaire
+ * par défaut (admin Django → Formulaires « Je m'engage »).
+ * La ville se tape librement, avec des suggestions : nom français, anglais ou allemand (« Wien » → Vienne).
+ * Une ville qui n'est pas dans la liste mène au formulaire par défaut.
  */
-function EngageForm() {
+function EngageChooser() {
   const i18n = useI18n();
   const t = i18n.d.supportPage;
-  const f = i18n.d.supporterForm;
-  const countries = useMemo(
-    () => COUNTRIES.map((c) => ({ code: c.code, name: i18n.country(c.code) })).sort((a, b) => i18n.compare(a.name, b.name)),
-    [i18n],
+  const [forms, setForms] = useState<EngageForms | null>(null);
+  const [text, setText] = useState('');
+  const [open, setOpen] = useState(false);
+  /** Suggestion mise en avant au clavier (-1 : aucune). */
+  const [active, setActive] = useState(-1);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    api.engageForms(ctrl.signal).then(setForms, () => {});
+    return () => ctrl.abort();
+  }, []);
+
+  /** Villes avec leur nom affiché et tous les noms qui permettent de la trouver. */
+  const cities = useMemo(
+    () =>
+      (forms?.cities ?? []).map((c) => {
+        const label = i18n.city(c.name);
+        const names = [c.name, label, en.cities[c.name], de.cities[c.name]].filter((n): n is string => !!n);
+        return { ...c, label, keys: [...new Set(names.map(fold))] };
+      }),
+    [forms, i18n],
   );
-  const [helps, setHelps] = useState<Help[]>([]);
-  const [error, setError] = useState('');
 
-  const form = useForm(
-    { first_name: '', last_name: '', email: '', phone: '', country: '', city: '', message: '', consent: false },
-    { first_name: [required], last_name: [required], email: [required, email], country: [required], consent: [requiredTrue] },
-  );
+  const query = fold(text);
+  const suggestions = useMemo(() => {
+    if (!query) return [];
+    const starts = cities.filter((c) => c.keys.some((k) => k.startsWith(query)));
+    const contains = cities.filter((c) => !starts.includes(c) && c.keys.some((k) => k.includes(query)));
+    const byLabel = (a: (typeof cities)[number], b: (typeof cities)[number]) => i18n.compare(a.label, b.label);
+    return [...starts.sort(byLabel), ...contains.sort(byLabel)].slice(0, MAX_SUGGESTIONS);
+  }, [cities, query, i18n]);
 
-  const toggleHelp = (h: Help) => setHelps((list) => (list.includes(h) ? list.filter((x) => x !== h) : [...list, h]));
+  /** Ville reconnue dans le texte tapé (nom exact, dans l'une des langues). */
+  const match = query ? cities.find((c) => c.keys.includes(query)) : undefined;
+  const target = !query ? null : (match?.url ?? forms?.default_url ?? null);
+  const showList = open && suggestions.length > 0 && !(suggestions.length === 1 && suggestions[0] === match);
 
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    setError('');
-    if (form.invalid) {
-      form.touchAll();
-      setError(form.isInvalid('consent') ? f.errConsent : f.errRequired);
-      return;
+  const choose = (label: string) => {
+    setText(label);
+    setOpen(false);
+    setActive(-1);
+  };
+
+  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!suggestions.length) return;
+      setOpen(true);
+      const step = e.key === 'ArrowDown' ? 1 : -1;
+      // Parcours en boucle : … dernière suggestion → champ (-1) → première suggestion …
+      setActive((i) => {
+        const next = i + step;
+        return next >= suggestions.length ? -1 : next < -1 ? suggestions.length - 1 : next;
+      });
+    } else if (e.key === 'Enter' && showList && active >= 0 && active < suggestions.length) {
+      e.preventDefault(); // Entrée sur une suggestion : on la choisit, sans encore envoyer
+      choose(suggestions[active].label);
+    } else if (e.key === 'Escape' && showList) {
+      e.preventDefault();
+      setOpen(false);
+      setActive(-1);
     }
-    // TODO : envoyer { ...form.values, helps } (logique à définir).
+  };
+
+  const go = (e: FormEvent) => {
+    e.preventDefault();
+    // Formulaire Zetkin dans un nouvel onglet : le site reste ouvert
+    if (target) window.open(target, '_blank', 'noopener');
   };
 
   return (
-    <form onSubmit={submit} noValidate className="form-grid">
-      <div className="field">
-        <label htmlFor="eg-first">{f.firstName}</label>
-        <input id="eg-first" type="text" autoComplete="given-name" {...form.text('first_name')} />
-      </div>
-      <div className="field">
-        <label htmlFor="eg-last">{f.lastName}</label>
-        <input id="eg-last" type="text" autoComplete="family-name" {...form.text('last_name')} />
-      </div>
-      <div className="field">
-        <label htmlFor="eg-email">{f.email}</label>
-        <input id="eg-email" type="email" autoComplete="email" {...form.text('email')} />
-        {form.touched.email && form.isInvalid('email') && <span className="error">{f.invalidEmail}</span>}
-      </div>
-      <div className="field">
-        <label htmlFor="eg-phone">{f.phone}</label>
-        <input id="eg-phone" type="tel" autoComplete="tel" {...form.text('phone')} />
-      </div>
-      <div className="field">
-        <label htmlFor="eg-country">{f.country}</label>
-        <select id="eg-country" {...form.text('country')}>
-          <option value="" disabled>
-            {f.choose}
-          </option>
-          {countries.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.name}
-            </option>
-          ))}
-          <option value="XX">{i18n.d.common.otherCountry}</option>
-        </select>
-      </div>
-      <div className="field">
-        <label htmlFor="eg-city">{f.city}</label>
-        <input id="eg-city" type="text" autoComplete="address-level2" {...form.text('city')} />
-      </div>
-
-      <fieldset className="col-span-full m-0 grid grid-cols-2 gap-2.5 border-0 p-0 max-[600px]:grid-cols-1">
-        <legend className="mb-2.5 p-0 text-[15px] font-bold">{t.howTitle}</legend>
-        {HELPS.map((h) => (
-          <label key={h} className="check">
-            <input type="checkbox" checked={helps.includes(h)} onChange={() => toggleHelp(h)} />
-            <span>{t[h]}</span>
-          </label>
-        ))}
-      </fieldset>
-
-      <div className="field col-span-full">
-        <label htmlFor="eg-message">{t.message}</label>
-        <textarea id="eg-message" rows={3} {...form.text('message')} />
-      </div>
-
-      <div className="col-span-full">
-        <label className="check">
-          <input type="checkbox" {...form.check('consent')} />
-          <span>
-            {f.consent} (<Link to="/mentions-legales">{f.consentMore}</Link>). *
-          </span>
+    <form onSubmit={go} className="mt-8 flex flex-wrap items-end gap-3 rounded-site bg-lavande p-4">
+      <div className="field relative m-0 min-w-[220px] flex-1">
+        <label htmlFor="engage-city" className="font-bold text-violet">
+          {t.fromLabel}
         </label>
+        <input
+          id="engage-city"
+          type="text"
+          role="combobox"
+          autoComplete="off"
+          aria-autocomplete="list"
+          aria-expanded={showList}
+          aria-controls="engage-city-list"
+          aria-activedescendant={showList && active >= 0 && active < suggestions.length ? `engage-city-${active}` : undefined}
+          placeholder={t.cityPlaceholder}
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+            setOpen(true);
+            setActive(-1);
+          }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setOpen(false)}
+          onKeyDown={onKeyDown}
+        />
+        <ul
+          id="engage-city-list"
+          role="listbox"
+          aria-label={t.fromLabel}
+          hidden={!showList}
+          className="absolute top-[calc(100%+6px)] right-0 left-0 z-20 m-0 max-h-[320px] list-none overflow-auto rounded-xl bg-white p-1.5 shadow-[0_14px_34px_rgba(33,35,32,.2)]"
+        >
+          {suggestions.map((c, i) => (
+            <li
+              key={c.name}
+              id={`engage-city-${i}`}
+              role="option"
+              aria-selected={i === active}
+              className={`cursor-pointer rounded-lg px-3 py-2 text-[15px] font-semibold ${i === active ? 'bg-lavande text-violet' : 'text-noir hover:bg-lavande hover:text-violet'}`}
+              // mousedown (et non click) : le choix est pris avant que le champ perde le focus
+              onMouseDown={(e) => {
+                e.preventDefault();
+                choose(c.label);
+              }}
+              onMouseEnter={() => setActive(i)}
+            >
+              {c.label}
+            </li>
+          ))}
+        </ul>
       </div>
-      {error && (
-        <div className="col-span-full alert alert-err" role="alert">
-          {error}
-        </div>
-      )}
-      <div className="col-span-full">
-        <button className="btn btn-rouge" type="submit">
-          {t.submit}
-        </button>
-      </div>
+      <button className="btn btn-rouge" type="submit" disabled={!target}>
+        {t.submit}
+        <span aria-hidden="true">↗</span>
+        <span className="visually-hidden"> {t.newTab}</span>
+      </button>
     </form>
   );
 }

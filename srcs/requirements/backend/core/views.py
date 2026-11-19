@@ -12,9 +12,9 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .members import can_manage_members
-from .models import ActionGroup, FaqEntry, FriendSite, PollingStation, SocialLink
+from .models import ActionGroup, FaqEntry, FriendSite, PollingStation, SignupForm, SocialLink
 from .action_populaire import supporters_count
-from .zetkin import upcoming_events
+from .zetkin import CITIES, upcoming_events
 from .serializers import (
     ActionGroupSerializer,
     PollingStationSerializer,
@@ -25,6 +25,7 @@ from .serializers import (
     SocialLinkSerializer,
     countries_payload,
 )
+
 
 
 def user_payload(user):
@@ -152,6 +153,21 @@ class EventsView(APIView):
 
     def get(self, request):
         return Response(upcoming_events())
+
+
+class EngageFormsView(APIView):
+    """« Je m'engage » : villes proposées et formulaire Zetkin de chacune (admin → Formulaires « Je m'engage »)."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        forms = dict(SignupForm.objects.values_list("city", "url"))
+        default = forms.pop(SignupForm.DEFAULT, None)  # null : aucun formulaire par défaut dans l'admin
+        return Response({
+            "default_url": default,
+            "cities": [{"name": name, "url": forms.get(name) or default} for name in CITIES],
+        })
 
 
 class ActionGroupsView(APIView):

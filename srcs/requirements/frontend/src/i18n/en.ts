@@ -268,22 +268,6 @@ export const en: Dict = {
     close: 'Close',
   },
 
-  supporterForm: {
-    firstName: 'First name *',
-    lastName: 'Last name *',
-    email: 'Email *',
-    invalidEmail: 'Invalid email address.',
-    phone: 'Phone',
-    country: 'Country of residence *',
-    choose: 'Choose…',
-    city: 'City',
-    consent:
-      'I agree that my data may be used by the campaign team to contact me in connection with the 2027 presidential election',
-    consentMore: 'learn more',
-    errConsent: 'Please fill in the required fields (*) and tick the consent box.',
-    errRequired: 'Please fill in the required fields (*).',
-  },
-
   supportPage: {
     title: 'I support the campaign',
     lead: 'Follow us on social media and come to our events: every share and every person who shows up helps us win the 7th constituency.',
@@ -295,16 +279,10 @@ export const en: Dict = {
     engageEyebrow: 'Get involved',
     engageTitle: 'I get involved in the campaign',
     engageLead:
-      'Handing out leaflets, canvassing, organising a public meeting, helping at a polling station… Tell us how you want to take action near you.',
-    perks: ['Join an action group near you', 'Take part in actions on the ground', 'Stay informed about upcoming events'],
-    howTitle: 'How would you like to help?',
-    helpTracts: 'Hand out leaflets',
-    helpDoors: 'Go door to door',
-    helpSocial: 'Share on social media',
-    helpEvents: 'Organise a public meeting',
-    helpRegistration: 'Help people register to vote',
-    helpVote: 'Help at a polling station on election day',
-    message: 'A message or an idea? (optional)',
+      'Handing out leaflets, canvassing, organising a public meeting, helping at a polling station… Join the activist team near you.',
+    fromLabel: 'I’m from',
+    cityPlaceholder: 'Berlin, Munich, Vienna…',
+    newTab: '(opens in a new tab)',
     submit: 'Get involved',
   },
 

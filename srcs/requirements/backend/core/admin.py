@@ -9,7 +9,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from .action_populaire import import_status, start_import_in_background
-from .models import ActionGroup, ActionGroupLink, FaqEntry, FriendSite, PollingStation, SocialLink, Tracker, Visit
+from .models import ActionGroup, ActionGroupLink, FaqEntry, FriendSite, PollingStation, SignupForm, SocialLink, Tracker, Visit
 
 
 @admin.register(FriendSite)
@@ -227,6 +227,16 @@ class AccountAdmin(DjangoUserAdmin):
     def deactivate(self, request, queryset):
         n = queryset.exclude(pk=request.user.pk).update(is_active=False)
         self.message_user(request, f"{n} compte(s) désactivé(s).")
+
+
+@admin.register(SignupForm)
+class SignupFormAdmin(admin.ModelAdmin):
+    """Bouton « Je m'engage » : ville choisie → formulaire Zetkin. Sans ligne pour une ville : la ligne « Par défaut »."""
+
+    list_display = ["__str__", "url"]
+    list_display_links = ["__str__"]
+    list_editable = ["url"]
+    search_fields = ["city", "url"]
 
 
 @admin.register(Tracker)

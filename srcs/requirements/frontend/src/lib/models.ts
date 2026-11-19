@@ -42,6 +42,12 @@ export interface Tracker {
   last_visit: string | null;
 }
 
+/** « Je m'engage » : formulaire Zetkin de chaque ville, et formulaire par défaut (admin Django ; null s'il n'y en a pas). */
+export interface EngageForms {
+  default_url: string | null;
+  cities: { name: string; url: string | null }[];
+}
+
 /** Statistiques des visites (page « Trackers »). */
 export interface VisitStats {
   total: number;

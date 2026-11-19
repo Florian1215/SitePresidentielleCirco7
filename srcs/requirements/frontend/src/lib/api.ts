@@ -16,6 +16,7 @@ import type {
   Paginated,
   ReviewComment,
   ReviewCommentStatus,
+  EngageForms,
   Tracker,
   VisitStats,
   Signers,
@@ -222,6 +223,11 @@ export const api = {
       method: 'POST',
       body: { password },
     });
+  },
+
+  /** « Je m'engage » : formulaire Zetkin de chaque ville (page « Je soutiens »). */
+  engageForms(signal?: AbortSignal) {
+    return request<EngageForms>('/api/engage-forms/', { signal });
   },
 
   /** Page « Trackers » : liens de suivi et nombre de visites. */

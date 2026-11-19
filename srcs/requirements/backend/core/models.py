@@ -186,6 +186,26 @@ class FaqEntry(models.Model):
         return self.question_fr
 
 
+class SignupForm(models.Model):
+    """Formulaire Zetkin vers lequel le bouton « Je m'engage » (page « Je soutiens ») envoie les personnes d'une ville.
+    La ligne « Par défaut » (ville vide) sert pour « Autre ville » et pour les villes sans formulaire."""
+
+    DEFAULT = ""
+    city = models.CharField(
+        "ville", max_length=40, unique=True, blank=True,
+        choices=[(DEFAULT, "Par défaut (autre ville, ou ville sans formulaire)"), *AGENDA_CITY_CHOICES],
+    )
+    url = models.URLField("formulaire Zetkin", help_text="Ex. https://app.zetkin.org/o/1030/surveys/1234")
+
+    class Meta:
+        verbose_name = "formulaire « Je m'engage »"
+        verbose_name_plural = "formulaires « Je m'engage »"
+        ordering = ["city"]
+
+    def __str__(self):
+        return self.city or "Par défaut"
+
+
 TRACKER_LANGS = [("fr", "français"), ("en", "anglais"), ("de", "allemand")]
 
 

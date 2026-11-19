@@ -268,22 +268,6 @@ export const de: Dict = {
     close: 'Schließen',
   },
 
-  supporterForm: {
-    firstName: 'Vorname *',
-    lastName: 'Nachname *',
-    email: 'E-Mail *',
-    invalidEmail: 'Ungültige E-Mail-Adresse.',
-    phone: 'Telefon',
-    country: 'Wohnsitzland *',
-    choose: 'Bitte wählen…',
-    city: 'Stadt',
-    consent:
-      'Ich bin damit einverstanden, dass das Kampagnenteam meine Daten verwendet, um mich im Rahmen der Präsidentschaftswahl 2027 zu kontaktieren',
-    consentMore: 'mehr erfahren',
-    errConsent: 'Bitte füllen Sie die Pflichtfelder (*) aus und setzen Sie das Häkchen für die Einwilligung.',
-    errRequired: 'Bitte füllen Sie die Pflichtfelder (*) aus.',
-  },
-
   supportPage: {
     title: 'Ich unterstütze die Kampagne',
     lead: 'Folgt uns in den sozialen Netzwerken und kommt zu unseren Veranstaltungen: Jedes Teilen und jede Teilnahme hilft, den 7. Wahlkreis zu gewinnen.',
@@ -295,16 +279,10 @@ export const de: Dict = {
     engageEyebrow: 'Mitmachen',
     engageTitle: 'Ich mache bei der Kampagne mit',
     engageLead:
-      'Flyer verteilen, an Haustüren klingeln, eine öffentliche Versammlung organisieren, im Wahllokal helfen… Sag uns, wie du in deiner Nähe aktiv werden willst.',
-    perks: ['Einer Aktionsgruppe in deiner Nähe beitreten', 'An Aktionen vor Ort teilnehmen', 'Über Termine informiert bleiben'],
-    howTitle: 'Wie möchtest du helfen?',
-    helpTracts: 'Flyer verteilen',
-    helpDoors: 'Haustürgespräche führen',
-    helpSocial: 'In sozialen Netzwerken teilen',
-    helpEvents: 'Eine öffentliche Versammlung organisieren',
-    helpRegistration: 'Bei der Eintragung ins Wählerverzeichnis helfen',
-    helpVote: 'Am Wahltag im Wahllokal helfen',
-    message: 'Eine Nachricht, eine Idee? (optional)',
+      'Flyer verteilen, an Haustüren klingeln, eine öffentliche Versammlung organisieren, im Wahllokal helfen… Komm ins Aktivist·innen-Team in deiner Nähe.',
+    fromLabel: 'Ich komme aus',
+    cityPlaceholder: 'Berlin, München, Wien…',
+    newTab: '(öffnet sich in einem neuen Tab)',
     submit: 'Ich mache mit',
   },
 

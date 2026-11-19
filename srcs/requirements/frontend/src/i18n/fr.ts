@@ -275,22 +275,6 @@ export const fr = {
     close: 'Fermer',
   },
 
-  supporterForm: {
-    firstName: 'Prénom *',
-    lastName: 'Nom *',
-    email: 'E-mail *',
-    invalidEmail: 'Adresse e-mail invalide.',
-    phone: 'Téléphone',
-    country: 'Pays de résidence *',
-    choose: 'Choisir…',
-    city: 'Ville',
-    consent:
-      "J'accepte que mes données soient utilisées par l'équipe de campagne pour me recontacter dans le cadre de l'élection présidentielle 2027",
-    consentMore: 'en savoir plus',
-    errConsent: 'Merci de remplir les champs obligatoires (*) et de cocher la case de consentement.',
-    errRequired: 'Merci de remplir les champs obligatoires (*).',
-  },
-
   supportPage: {
     title: 'Je soutiens la campagne',
     lead: "N'hésitez pas à nous suivre sur les réseaux sociaux et à venir à nos événements : chaque partage, chaque présence compte pour faire gagner la 7e circonscription.",
@@ -302,20 +286,10 @@ export const fr = {
     engageEyebrow: "Je m'engage",
     engageTitle: "Je m'engage dans la campagne",
     engageLead:
-      'Tracter, faire du porte-à-porte, organiser une réunion publique, tenir un bureau de vote… Dites-nous comment vous voulez agir près de chez vous.',
-    perks: [
-      'Rejoindre un groupe d’action près de chez vous',
-      'Participer aux actions de terrain',
-      'Être tenu·e au courant des rendez-vous',
-    ],
-    howTitle: 'Comment voulez-vous aider ?',
-    helpTracts: 'Distribuer des tracts',
-    helpDoors: 'Faire du porte-à-porte',
-    helpSocial: 'Relayer sur les réseaux sociaux',
-    helpEvents: 'Organiser une réunion publique',
-    helpRegistration: "Aider à l'inscription sur les listes électorales",
-    helpVote: 'Tenir un bureau de vote le jour du scrutin',
-    message: 'Un message, une idée ? (facultatif)',
+      'Tracter, faire du porte-à-porte, organiser une réunion publique, tenir un bureau de vote… Rejoignez l’équipe militante près de chez vous.',
+    fromLabel: 'Je viens de',
+    cityPlaceholder: 'Berlin, Munich, Vienne…',
+    newTab: "(s'ouvre dans un nouvel onglet)",
     submit: "Je m'engage",
   },
 
