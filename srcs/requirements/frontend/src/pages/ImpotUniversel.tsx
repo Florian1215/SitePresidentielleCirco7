@@ -428,14 +428,9 @@ export default function ImpotUniversel() {
       {/* EN-TÊTE */}
       <section className="page-hero border-b-0 pb-[clamp(24px,4vw,40px)] text-center">
         <div className="site-container max-w-[760px]">
-          <span className="eyebrow">Impôt universel ciblé</span>
           <h1>
             Seriez-vous <span className="hl-rouge">concerné·e&nbsp;?</span>
           </h1>
-          <p className="lead mx-auto">
-            Ce n'est pas un impôt sur la nationalité : il vise l'évasion fiscale vers les pays où l'on paie beaucoup moins
-            d'impôts qu'en France. Vérifiez votre situation en 5 questions.
-          </p>
         </div>
       </section>
 
