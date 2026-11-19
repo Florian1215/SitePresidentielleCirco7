@@ -176,8 +176,9 @@ export default function Home() {
                     className={`group flex w-full flex-col overflow-hidden rounded-[14px] border border-(--bordure) bg-white text-noir no-underline shadow-site transition-[translate,rotate,box-shadow] duration-250 ease-bounce hover:-translate-y-1.5 hover:shadow-[0_22px_44px_rgba(33,35,32,0.16)] focus-visible:-translate-y-1.5 focus-visible:-rotate-[0.6deg] focus-visible:shadow-[0_22px_44px_rgba(33,35,32,0.16)] focus-visible:outline-4 focus-visible:outline-offset-3 focus-visible:outline-jaune motion-reduce:hover:translate-y-0 motion-reduce:hover:rotate-0 cat-${u.cat.color} ${i === 1 ? 'hover:rotate-[0.6deg]' : 'hover:-rotate-[0.6deg]'}`}
                     to={{ pathname: '/programme', hash: u.slug }}
                   >
-                    <div className="relative border-b border-(--bordure) bg-(--fond) pt-[22px] pr-[90px] pb-5 pl-6">
-                      <span className="absolute top-[18px] right-[18px] grid h-14 w-14 place-items-center rounded-full bg-white shadow-[0_0_0_3px_var(--bordure)] transition-[rotate,scale] duration-300 ease-bounce group-hover:-rotate-12 group-hover:scale-110 group-focus-visible:-rotate-12 group-focus-visible:scale-110">
+                    {/* Hauteur minimale : deux lignes de titre, pour que les en-têtes d'une même rangée soient alignés */}
+                    <div className="flex min-h-[calc(2*1.05*clamp(26px,2.6vw,32px)+36px)] items-center justify-between gap-4 border-b border-(--bordure) bg-(--fond) py-[18px] pr-[18px] pl-6">
+                      <span className="order-2 grid h-14 w-14 shrink-0 place-items-center rounded-full bg-white shadow-[0_0_0_3px_var(--bordure)] transition-[rotate,scale] duration-300 ease-bounce group-hover:-rotate-12 group-hover:scale-110 group-focus-visible:-rotate-12 group-focus-visible:scale-110">
                         <svg
                           className="h-[26px] w-[26px] fill-(--bordure)"
                           viewBox={icon.viewBox}
