@@ -147,51 +147,66 @@ export default function Circonscription() {
               </span>
             )
           }
-          renderTooltip={(p) => (
-            <>
-              <strong>{p.name}</strong>
-              <span>
-                {p.group.city ? p.group.city + ' · ' : ''}
-                {i18n.country(p.country)}
-              </span>
-              {/* La bulle est cliquable : lien Action populaire et réseaux sociaux du groupe */}
-              <div className="mt-2.5 flex flex-col items-stretch gap-1.5">
-                {p.group.links.map((link) => {
-                  const icon = FOOTER_ICONS[link.network] ?? FOOTER_ICONS['other'];
-                  return (
-                    <a
-                      key={link.url}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener"
-                      tabIndex={-1}
-                      style={{ background: networkColor(link.network) }}
-                      className="flex w-full items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-bold text-white no-underline hover:text-white hover:brightness-110"
-                    >
-                      <svg
-                        className="h-3.5 w-3.5 shrink-0 fill-current"
-                        viewBox={icon.viewBox}
-                        aria-hidden="true"
-                        focusable="false"
-                      >
-                        <path d={icon.d} />
-                      </svg>
-                      {i18n.f(t.followOn, { network: networkName(link.network) })}
-                    </a>
-                  );
-                })}
-                <a
-                  href={p.group.url}
-                  target="_blank"
-                  rel="noopener"
-                  tabIndex={-1}
-                  className="w-full rounded-full bg-jaune px-3 py-1.5 text-center text-[13px] font-bold text-noir no-underline hover:bg-white hover:text-noir"
+          renderTooltip={(p) => {
+            /**
+             * Beaucoup de réseaux : une rangée de pastilles rondes aux couleurs des réseaux (nom au survol),
+             * pour que la bulle reste assez basse pour s'afficher au-dessus du point.
+             */
+            const compact = p.group.links.length > 3;
+            return (
+              <>
+                <strong>{p.name}</strong>
+                <span>
+                  {p.group.city ? p.group.city + ' · ' : ''}
+                  {i18n.country(p.country)}
+                </span>
+                {/* La bulle est cliquable : lien Action populaire et réseaux sociaux du groupe */}
+                <div
+                  className={`mt-2.5 gap-1.5 ${compact ? 'flex max-w-[min(300px,calc(100vw-46px))] flex-wrap' : 'flex flex-col items-stretch'}`}
                 >
-                  {t.joinOnAp}
-                </a>
-              </div>
-            </>
-          )}
+                  {p.group.links.map((link) => {
+                    const icon = FOOTER_ICONS[link.network] ?? FOOTER_ICONS['other'];
+                    return (
+                      <a
+                        key={link.url}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener"
+                        tabIndex={-1}
+                        style={{ background: networkColor(link.network) }}
+                        title={compact ? i18n.f(t.followOn, { network: networkName(link.network) }) : undefined}
+                        aria-label={compact ? i18n.f(t.followOn, { network: networkName(link.network) }) : undefined}
+                        className={
+                          compact
+                            ? 'grid h-8 w-8 shrink-0 place-items-center rounded-full text-white no-underline hover:text-white hover:brightness-110'
+                            : 'flex w-full items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-bold text-white no-underline hover:text-white hover:brightness-110'
+                        }
+                      >
+                        <svg
+                          className={`${compact ? 'h-4 w-4' : 'h-3.5 w-3.5'} shrink-0 fill-current`}
+                          viewBox={icon.viewBox}
+                          aria-hidden="true"
+                          focusable="false"
+                        >
+                          <path d={icon.d} />
+                        </svg>
+                        {!compact && i18n.f(t.followOn, { network: networkName(link.network) })}
+                      </a>
+                    );
+                  })}
+                  <a
+                    href={p.group.url}
+                    target="_blank"
+                    rel="noopener"
+                    tabIndex={-1}
+                    className={`w-full rounded-full bg-jaune px-3 py-1.5 text-center text-[13px] font-bold text-noir no-underline hover:bg-white hover:text-noir ${compact ? 'mt-0.5' : ''}`}
+                  >
+                    {t.joinOnAp}
+                  </a>
+                </div>
+              </>
+            );
+          }}
           panelFooter={
             <>
               <p>

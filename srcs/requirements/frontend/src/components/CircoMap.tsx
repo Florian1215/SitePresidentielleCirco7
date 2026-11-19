@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { MouseEvent, PointerEvent, ReactNode } from 'react';
 import { MAP_COUNTRIES, MAP_EXTENT, MAP_VIEWBOX, project } from '../data/europe-map';
 import { COUNTRIES } from '../lib/campaign';
@@ -98,10 +99,96 @@ const COUNTRY = 'stroke-1 [vector-effect:non-scaling-stroke]';
 const ZOOM_BTN =
   'h-10 w-10 cursor-pointer border-0 bg-white font-texte leading-none font-bold text-violet not-first:border-t not-first:border-gris enabled:hover:bg-lavande disabled:cursor-default disabled:text-gris-moyen focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-jaune';
 
-/** Bulle d'information d'un point : purement informative, c'est le point qui est cliquable. */
-/** Bulle d'un point. « before » : zone invisible qui comble l'écart avec le point (bulle cliquable). */
+/**
+ * Bulle d'un point, posée par-dessus la page (elle peut déborder de la carte sans être coupée).
+ * « before » : zone invisible qui comble l'écart avec le point (bulle cliquable) ; « after » : la pointe,
+ * placée en --arrow-x pour rester sous le point quand la bulle est décalée près d'un bord de l'écran.
+ */
 const TOOLTIP =
-  "before:absolute before:inset-x-0 before:h-4 before:content-[''] absolute z-2 flex max-w-[260px] min-w-[180px] -translate-x-1/2 flex-col gap-0.5 rounded-[10px] bg-noir px-3.5 py-2.5 text-creme no-underline shadow-[0_10px_24px_rgba(0,0,0,0.25)] after:absolute after:left-1/2 after:h-3.5 after:w-3.5 after:-translate-x-1/2 after:rotate-45 after:bg-noir after:content-[''] max-[600px]:min-w-[150px] [&_em]:mt-1 [&_em]:text-[13px] [&_em]:font-bold [&_em]:text-jaune [&_em]:not-italic [&_span]:text-[13px] [&_span]:whitespace-pre-line [&_span]:opacity-80 [&_strong]:text-[15px] [&_strong]:leading-[1.25]";
+  "before:absolute before:inset-x-0 before:h-4 before:content-[''] fixed z-[60] flex max-w-[min(330px,calc(100vw-16px))] min-w-[180px] flex-col gap-0.5 rounded-[10px] bg-noir px-3.5 py-2.5 text-creme no-underline shadow-[0_10px_24px_rgba(0,0,0,0.25)] after:absolute after:left-(--arrow-x) after:h-3.5 after:w-3.5 after:-translate-x-1/2 after:rotate-45 after:bg-noir after:content-[''] max-[600px]:min-w-[150px] [&_em]:mt-1 [&_em]:text-[13px] [&_em]:font-bold [&_em]:text-jaune [&_em]:not-italic [&_span]:text-[13px] [&_span]:whitespace-pre-line [&_span]:opacity-80 [&_strong]:text-[15px] [&_strong]:leading-[1.25]";
+
+/** Écart entre le point et la bulle (px), et marge minimale avec les bords de l'écran. */
+const TIP_GAP = 16;
+const TIP_MARGIN = 8;
+
+/**
+ * Bulle flottante : au-dessus du point s'il y a la place à l'écran (sous le menu collant), sinon en dessous ;
+ * décalée horizontalement pour ne pas sortir de l'écran. Suit le défilement et le redimensionnement.
+ */
+function FloatingTooltip({
+  box,
+  leftPct,
+  topPct,
+  interactive,
+  onEnter,
+  onLeave,
+  children,
+}: {
+  /** Zone de la carte dans laquelle le point est placé (left/top en % de cette zone). */
+  box: HTMLElement;
+  leftPct: number;
+  topPct: number;
+  interactive: boolean;
+  onEnter?: () => void;
+  onLeave?: () => void;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ left: number; top: number; arrow: number; above: boolean } | null>(null);
+
+  useLayoutEffect(() => {
+    const place = () => {
+      const el = ref.current;
+      if (!el) return;
+      const r = box.getBoundingClientRect();
+      const ax = r.left + (leftPct / 100) * r.width;
+      const ay = r.top + (topPct / 100) * r.height;
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      // Haut de la zone utilisable : sous le menu collant du site
+      const header = document.querySelector('header.sticky');
+      const minTop = Math.max(TIP_MARGIN, (header?.getBoundingClientRect().bottom ?? 0) + TIP_MARGIN);
+      // Au-dessus du point dès que la bulle y tient ; sinon du côté où il y a le plus de place
+      const roomAbove = ay - TIP_GAP - minTop;
+      const roomBelow = window.innerHeight - TIP_MARGIN - (ay + TIP_GAP);
+      const above = h <= roomAbove || (h > roomBelow && roomAbove >= roomBelow);
+      const left = Math.min(Math.max(ax - w / 2, TIP_MARGIN), window.innerWidth - w - TIP_MARGIN);
+      setPos({
+        left,
+        top: above ? ay - TIP_GAP - h : ay + TIP_GAP,
+        arrow: Math.min(Math.max(ax - left, 14), w - 14),
+        above,
+      });
+    };
+    place();
+    window.addEventListener('scroll', place, { passive: true });
+    window.addEventListener('resize', place);
+    return () => {
+      window.removeEventListener('scroll', place);
+      window.removeEventListener('resize', place);
+    };
+  }, [box, leftPct, topPct, children]);
+
+  const above = pos?.above ?? true;
+  return createPortal(
+    <div
+      ref={ref}
+      className={`${TOOLTIP} ${interactive ? `pointer-events-auto ${above ? 'before:-bottom-4' : 'before:-top-4'}` : 'pointer-events-none'} ${above ? 'after:-bottom-[7px]' : 'after:-top-[7px]'}`}
+      style={{
+        left: pos?.left ?? 0,
+        top: pos?.top ?? 0,
+        visibility: pos ? 'visible' : 'hidden', // le temps de la mesurer
+        ['--arrow-x' as string]: `${pos?.arrow ?? 0}px`,
+      }}
+      aria-hidden="true"
+      onMouseEnter={interactive ? onEnter : undefined}
+      onMouseLeave={interactive ? onLeave : undefined}
+    >
+      {children}
+    </div>,
+    document.body,
+  );
+}
 
 /**
  * Carte des 16 pays de la circonscription avec des points cliquables, zoomable (boutons, Ctrl/⌘ + molette,
@@ -129,6 +216,8 @@ export function CircoMap<T extends MapPoint>({
   const [panelPx, setPanelPx] = useState(0);
   /** Hauteur occupée en haut par le titre posé sur la carte (0 sans titre ou sur mobile). */
   const titleRef = useRef<HTMLDivElement>(null);
+  /** Zone de la carte (sert à placer la bulle d'un point). */
+  const mapBoxRef = useRef<HTMLDivElement>(null);
   const [titlePx, setTitlePx] = useState(0);
   /** Vue choisie par l'utilisateur (zoom, déplacement) ; null = vue d'ensemble. */
   const [custom, setCustom] = useState<View | null>(null);
@@ -412,6 +501,7 @@ export function CircoMap<T extends MapPoint>({
         </div>
       )}
       <div
+        ref={mapBoxRef}
         className={`relative overflow-hidden bg-[#e6eef8] max-[960px]:h-[400px] ${title ? 'h-[clamp(600px,90vh,900px)]' : 'h-[clamp(520px,78vh,820px)]'}`}
       >
         <svg
@@ -475,16 +565,17 @@ export function CircoMap<T extends MapPoint>({
           ))}
         </svg>
 
-        {active && tooltipPos && (
-          <div
-            className={`${TOOLTIP} ${interactiveTooltip ? `pointer-events-auto ${tooltipPos.top < 25 ? 'before:-top-4' : 'before:-bottom-4'}` : 'pointer-events-none'} ${tooltipPos.top < 25 ? 'translate-y-4 after:-top-[7px]' : '-translate-y-[calc(100%+16px)] after:-bottom-[7px]'}`}
-            style={{ left: `${tooltipPos.left}%`, top: `${tooltipPos.top}%` }}
-            aria-hidden="true"
-            onMouseEnter={interactiveTooltip ? keepOpen : undefined}
-            onMouseLeave={interactiveTooltip ? () => leavePin(active) : undefined}
+        {active && tooltipPos && mapBoxRef.current && (
+          <FloatingTooltip
+            box={mapBoxRef.current}
+            leftPct={tooltipPos.left}
+            topPct={tooltipPos.top}
+            interactive={interactiveTooltip}
+            onEnter={keepOpen}
+            onLeave={() => leavePin(active)}
           >
             {renderTooltip(active.point)}
-          </div>
+          </FloatingTooltip>
         )}
 
         <div
