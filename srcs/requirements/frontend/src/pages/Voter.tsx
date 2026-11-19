@@ -144,13 +144,13 @@ export default function Voter() {
       <section className="section bg-white">
         <div className="site-container">
           <h2 className="mb-[clamp(32px,5vw,56px)] text-center">{t.stepsTitle}</h2>
-          <ol className="mx-auto my-0 grid max-w-[1000px] list-none grid-cols-3 gap-6 p-0 max-[900px]:grid-cols-1">
+          <ol className="mx-auto my-0 grid max-w-[1000px] list-none grid-cols-3 gap-6 p-0 max-[900px]:max-w-[460px] max-[900px]:grid-cols-1">
             {steps.map((s, i) => {
               const icon = STEP_ICONS[s.icon];
               return (
                 <li
                   key={s.url}
-                  className={`group flex flex-col rounded-site border-t-6 border-(--c) bg-(--c-fond) p-6 transition-[translate,rotate] duration-250 ease-bounce hover:-translate-y-1.5 motion-reduce:hover:translate-y-0 ${['hover:-rotate-1', 'hover:rotate-1', 'hover:-rotate-1'][i]} motion-reduce:hover:rotate-0 ${s.color}`}
+                  className={`group flex flex-col rounded-site border-t-6 max-[900px]:items-center max-[900px]:text-center border-(--c) bg-(--c-fond) p-6 transition-[translate,rotate] duration-250 ease-bounce hover:-translate-y-1.5 motion-reduce:hover:translate-y-0 ${['hover:-rotate-1', 'hover:rotate-1', 'hover:-rotate-1'][i]} motion-reduce:hover:rotate-0 ${s.color}`}
                 >
                   <span className="relative grid h-[72px] w-[72px] place-items-center rounded-full bg-white shadow-site transition-[rotate,scale] duration-300 ease-bounce group-hover:scale-110 group-hover:-rotate-12 motion-reduce:group-hover:scale-100 motion-reduce:group-hover:rotate-0">
                     <svg className="h-8 w-8 fill-(--c)" viewBox={icon.viewBox} aria-hidden="true" focusable="false">
@@ -165,7 +165,12 @@ export default function Voter() {
                   </span>
                   <h3 className="mt-4 mb-2 text-[clamp(20px,2.2vw,24px)] text-(--c)">{s.title}</h3>
                   <p className="mb-5 text-noir">{s.text}</p>
-                  <a href={s.url} target="_blank" rel="noopener" className="btn btn-sm mt-auto self-start bg-(--c)">
+                  <a
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener"
+                    className="btn btn-sm mt-auto self-start bg-(--c) max-[900px]:self-center"
+                  >
                     {s.cta}
                   </a>
                 </li>
