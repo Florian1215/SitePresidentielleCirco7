@@ -261,6 +261,20 @@ export const fr = {
     signup: 'Inscription :',
   },
 
+  calendarFeed: {
+    subscribe: "S'abonner à l'agenda",
+    subscribeCity: "S'abonner à l'agenda de {city}",
+    titleAll: "Tout l'agenda de la campagne",
+    titleCity: 'Agenda de {city}',
+    google: 'Google Agenda',
+    outlook: 'Outlook',
+    apple: 'Apple Calendrier, Thunderbird…',
+    copyLabel: "Autre application (Proton…) : copiez l'adresse du calendrier",
+    copy: 'Copier',
+    copied: '✓ Copié',
+    close: 'Fermer',
+  },
+
   supporterForm: {
     firstName: 'Prénom *',
     lastName: 'Nom *',

@@ -190,6 +190,9 @@ export interface ActionGroup {
   url: string;
   /** Réseaux sociaux du groupe (admin Django → Groupes d'action). */
   links: { network: string; url: string }[];
+  /** Ville de l'agenda auquel s'abonner pour ce groupe (null si aucune à proximité) et son identifiant d'adresse. */
+  calendar_city: string | null;
+  calendar_slug: string | null;
 }
 
 /** Événement de l'agenda, lu par le backend dans le calendrier Zetkin. Heures = heure locale du lieu. */

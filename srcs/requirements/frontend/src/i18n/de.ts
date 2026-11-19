@@ -254,6 +254,20 @@ export const de: Dict = {
     signup: 'Anmeldung:',
   },
 
+  calendarFeed: {
+    subscribe: 'Kalender abonnieren',
+    subscribeCity: 'Kalender für {city} abonnieren',
+    titleAll: 'Der gesamte Kampagnenkalender',
+    titleCity: 'Kalender für {city}',
+    google: 'Google Kalender',
+    outlook: 'Outlook',
+    apple: 'Apple Kalender, Thunderbird…',
+    copyLabel: 'Andere App (Proton…)? Kopieren Sie die Kalenderadresse',
+    copy: 'Kopieren',
+    copied: '✓ Kopiert',
+    close: 'Schließen',
+  },
+
   supporterForm: {
     firstName: 'Vorname *',
     lastName: 'Nachname *',

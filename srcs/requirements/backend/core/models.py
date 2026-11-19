@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from .zetkin import CITIES, nearest_city
+
 # Pays de la 7e circonscription des Français établis hors de France
 COUNTRIES = [
     ("DE", "Allemagne"),
@@ -21,6 +23,10 @@ COUNTRIES = [
     ("XK", "Kosovo"),
     ("XX", "Autre pays"),
 ]
+
+
+#: Villes reconnues dans l'agenda Zetkin (un calendrier par ville).
+AGENDA_CITY_CHOICES = sorted(((name, name) for name in CITIES), key=lambda c: c[0])
 
 
 class FriendSite(models.Model):
@@ -83,6 +89,10 @@ class ActionGroup(models.Model):
     latitude = models.FloatField("latitude")
     longitude = models.FloatField("longitude")
     url = models.URLField("lien Action populaire")
+    agenda_city = models.CharField(
+        "ville de l'agenda", max_length=40, blank=True, choices=AGENDA_CITY_CHOICES,
+        help_text="Calendrier proposé aux abonné·es de ce groupe. Vide : la ville la plus proche de sa position sur la carte.",
+    )
     ap_id = models.UUIDField(
         "identifiant Action populaire", unique=True, null=True, blank=True,
         help_text="Rempli par l'import automatique ; laisser vide pour un groupe ajouté à la main.",
@@ -97,6 +107,11 @@ class ActionGroup(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def calendar_city(self):
+        """Ville de l'agenda auquel s'abonner pour suivre ce groupe (None si aucune ville connue à proximité)."""
+        return self.agenda_city or nearest_city(self.latitude, self.longitude)
 
 
 

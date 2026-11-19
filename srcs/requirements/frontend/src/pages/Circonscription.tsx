@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArticleCard } from '../components/ArticleCard';
+import { CalendarIcon, CalendarSubscribeDialog } from '../components/CalendarSubscribe';
+import type { CalendarFeed } from '../components/CalendarSubscribe';
 import { CircoMap } from '../components/CircoMap';
 import type { MapLabels, MapPoint } from '../components/CircoMap';
 import { Photo } from '../components/Photo';
@@ -48,6 +50,9 @@ export default function Circonscription() {
   const t = i18n.d.circo;
 
   const [groups, setGroups] = useState<ActionGroup[]>([]);
+  /** Calendrier dont la fenêtre « S'abonner » est ouverte. */
+  const [feed, setFeed] = useState<CalendarFeed | null>(null);
+  const openFeed = (g: ActionGroup) => g.calendar_slug && setFeed({ city: g.calendar_city, slug: g.calendar_slug });
   useEffect(() => {
     let alive = true;
     api.actionGroups().then(
@@ -141,9 +146,20 @@ export default function Circonscription() {
           labels={labels}
           interactiveTooltip
           renderItemExtra={(p) =>
-            p.group.links.length > 0 && (
+            (p.group.links.length > 0 || p.group.calendar_slug) && (
               <span className="flex shrink-0 gap-1">
                 <SocialLinks group={p.group} className="text-violet hover:bg-violet hover:text-creme" />
+                {p.group.calendar_slug && p.group.calendar_city && (
+                  <button
+                    type="button"
+                    className="grid h-7 w-7 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-violet hover:bg-violet hover:text-creme"
+                    title={i18n.f(i18n.d.calendarFeed.subscribeCity, { city: i18n.city(p.group.calendar_city) })}
+                    aria-label={i18n.f(i18n.d.calendarFeed.subscribeCity, { city: i18n.city(p.group.calendar_city) })}
+                    onClick={() => openFeed(p.group)}
+                  >
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </span>
             )
           }
@@ -194,6 +210,17 @@ export default function Circonscription() {
                       </a>
                     );
                   })}
+                  {p.group.calendar_slug && p.group.calendar_city && (
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border-0 bg-violet px-3 py-1.5 [font-family:inherit] text-[13px] font-bold text-creme hover:bg-violet-vif"
+                      onClick={() => openFeed(p.group)}
+                    >
+                      <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+                      {i18n.f(i18n.d.calendarFeed.subscribeCity, { city: i18n.city(p.group.calendar_city) })}
+                    </button>
+                  )}
                   <a
                     href={p.group.url}
                     target="_blank"
@@ -219,6 +246,8 @@ export default function Circonscription() {
           }
         />
       </section>
+
+      <CalendarSubscribeDialog feed={feed} onClose={() => setFeed(null)} />
 
       {/* NOS ÉLU·ES */}
       <section className="section-sm" id="elus">

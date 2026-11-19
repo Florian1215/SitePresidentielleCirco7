@@ -49,12 +49,19 @@ def _distance_km(a, b):
     return 6371 * 2 * math.asin(math.sqrt(h))
 
 
+def nearest_city(lat, lon, max_km=35):
+    """Ville de CITIES la plus proche de ces coordonnées (à max_km au plus), sinon None."""
+    if lat is None or lon is None:
+        return None
+    name, dist = min(((n, _distance_km((lat, lon), c)) for n, c in CITIES.items()), key=lambda x: x[1])
+    return name if dist <= max_km else None
+
+
 def guess_city(title, location, lat, lon):
     """Ville de l'événement : d'après ses coordonnées, sinon le début du titre ; « En ligne » sans lieu."""
-    if lat is not None and lon is not None:
-        name, dist = min(((n, _distance_km((lat, lon), c)) for n, c in CITIES.items()), key=lambda x: x[1])
-        if dist <= 35:
-            return name
+    near = nearest_city(lat, lon)
+    if near:
+        return near
     prefix = re.split(r"\s[-–—:]\s", title, maxsplit=1)[0].strip().lower()
     prefix = re.sub(r"^[^\w]+", "", prefix)  # retire un éventuel émoji en tête
     for name in CITIES:

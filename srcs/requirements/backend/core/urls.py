@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import members, trackers, views
+from . import agenda, members, trackers, views
 
 urlpatterns = [
     path("auth/login/", views.LoginView.as_view(), name="login"),
@@ -17,6 +17,8 @@ urlpatterns = [
     path("track/", trackers.TrackView.as_view(), name="track"),
     path("countries/", views.CountriesView.as_view(), name="countries"),
     path("supporters-count/", views.SupportersCountView.as_view(), name="supporters-count"),
+    path("agenda.ics", agenda.AgendaFeedView.as_view(), name="agenda-feed"),
+    path("agenda/<slug:slug>.ics", agenda.CityAgendaFeedView.as_view(), name="agenda-city-feed"),
     path("events/", views.EventsView.as_view(), name="events"),
     path("action-groups/", views.ActionGroupsView.as_view(), name="action-groups"),
     path("polling-stations/", views.PollingStationsView.as_view(), name="polling-stations"),

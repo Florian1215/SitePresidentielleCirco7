@@ -82,10 +82,18 @@ class ActionGroupLinkSerializer(serializers.ModelSerializer):
 
 class ActionGroupSerializer(serializers.ModelSerializer):
     links = ActionGroupLinkSerializer(many=True, read_only=True)
+    #: Ville de l'agenda auquel s'abonner, et son identifiant dans l'adresse du calendrier (/api/agenda/<slug>.ics).
+    calendar_city = serializers.CharField(read_only=True, allow_null=True)
+    calendar_slug = serializers.SerializerMethodField()
 
     class Meta:
         model = ActionGroup
-        fields = ["id", "name", "city", "country", "latitude", "longitude", "url", "links"]
+        fields = ["id", "name", "city", "country", "latitude", "longitude", "url", "links", "calendar_city", "calendar_slug"]
+
+    def get_calendar_slug(self, obj):
+        from .agenda import city_slug
+
+        return city_slug(obj.calendar_city) if obj.calendar_city else None
 
 
 class FaqEntrySerializer(serializers.ModelSerializer):

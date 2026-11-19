@@ -42,18 +42,26 @@ class ActionGroupAdmin(admin.ModelAdmin):
     list_editable = ["is_active"]
     list_filter = ["country", "is_active"]
     search_fields = ["name", "city"]
-    readonly_fields = ["ap_id", "updated_at"]
+    readonly_fields = ["ap_id", "updated_at", "calendar_city_display"]
     fieldsets = [
         (None, {"fields": ["name", "city", "country", "url", "is_active"]}),
         ("Position sur la carte", {
             "fields": ["latitude", "longitude"],
             "description": "Coordonnées GPS (ex. Berlin : latitude 52.52, longitude 13.40).",
         }),
+        ("Agenda", {
+            "fields": ["agenda_city", "calendar_city_display"],
+            "description": "Calendrier des événements auquel on peut s'abonner depuis la fiche du groupe.",
+        }),
         ("Import automatique", {"fields": ["ap_id", "updated_at"], "classes": ["collapse"]}),
     ]
 
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related("links")
+
+    @admin.display(description="agenda proposé")
+    def calendar_city_display(self, obj):
+        return obj.calendar_city or "aucun (pas de ville de l'agenda à moins de 35 km)"
 
     @admin.display(description="réseaux")
     def networks(self, obj):
