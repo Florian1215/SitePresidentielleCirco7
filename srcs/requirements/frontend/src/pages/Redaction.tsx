@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { ApprovalPanel } from '../components/ApprovalPanel';
+import { TaxonomyPanels } from '../components/TaxonomyPanels';
 import { fallback } from '../components/ArticleCard';
 import { api, apiErrorMessage } from '../lib/api';
 import { useAuth } from '../lib/auth';
@@ -153,6 +154,8 @@ export default function Redaction() {
             ))}
           </ul>
         )}
+
+        <TaxonomyPanels />
       </div>
     </section>
   );

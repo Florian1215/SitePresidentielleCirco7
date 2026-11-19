@@ -17,7 +17,6 @@ const ArticleEditor = lazy(() => import('./pages/ArticleEditor'));
 const Soutenir = lazy(() => import('./pages/Soutenir'));
 const Redaction = lazy(() => import('./pages/Redaction'));
 const Members = lazy(() => import('./pages/Members'));
-const Taxonomy = lazy(() => import('./pages/Taxonomy'));
 const Legal = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.Legal })));
 const Login = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.Login })));
 const ResetPassword = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.ResetPassword })));
@@ -130,11 +129,7 @@ export function App() {
             />
             <Route
               path="/redaction/categories-auteurs"
-              element={
-                <RequireAdmin allowed={(a) => a.canManageTaxonomy}>
-                  <Taxonomy />
-                </RequireAdmin>
-              }
+              element={<Navigate to="/redaction/articles#categories-auteurs" replace />}
             />
             <Route path="/a-valider" element={<Navigate to="/redaction/articles?statut=a-valider" replace />} />
             <Route path="/blog/:slug" element={<ArticlePage />} />

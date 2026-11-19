@@ -78,8 +78,6 @@ export function Header() {
                   <CountBadge count={pending} label={`article${pending > 1 ? 's' : ''} à valider`} />
                 </Link>
               )}
-              {auth.canWrite && <Link to="/blog/ecrire">Écrire un article</Link>}
-              {auth.canManageTaxonomy && <Link to="/redaction/categories-auteurs">Catégories & auteurs</Link>}
               {auth.canManageMembers && (
                 <Link to="/redaction/membres" className="inline-flex items-center gap-1.5">
                   Membres

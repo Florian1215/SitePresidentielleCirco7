@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { api, apiErrorMessage } from '../lib/api';
 import { useAuth } from '../lib/auth';
-import { usePageTitle } from '../lib/title';
 
-/** Élément nommé géré sur cette page : catégorie ou signature collective. */
+/** Élément nommé géré ici : catégorie ou signature collective. */
 interface Item {
   id: number;
   name: string;
@@ -12,59 +11,56 @@ interface Item {
 }
 
 /**
- * Page « Catégories et auteurs » (administrateur·ices) : créer, renommer et supprimer
- * les catégories d'articles et les signatures collectives (Berlin Insoumise, Circo 7…).
+ * Bloc « Catégories et auteurs » de la page Articles (espace rédaction) : créer, renommer et supprimer
+ * les catégories d'articles et les signatures collectives (Berlin Insoumise, Circo 7…), selon les droits du compte.
  */
-export default function Taxonomy() {
-  usePageTitle('Catégories et auteurs — espace rédaction');
+export function TaxonomyPanels() {
   const auth = useAuth();
+  if (!auth.canManageTaxonomy) return null;
 
   return (
-    <section className="section-sm">
-      <div className="site-container">
-        <div className="mb-8">
-          <span className="eyebrow">Espace rédaction</span>
-          <h1 className="h2 m-0">Catégories et auteurs</h1>
-        </div>
-
-        <div className="grid grid-cols-2 items-start gap-8 max-[900px]:grid-cols-1">
-          {auth.hasPerm('blog.change_collectiveauthor') && (
-            <NamedList<Item>
-              title="Signatures collectives"
-              intro="Auteurs « généraux » proposés dans l'éditeur, pour signer les annonces communes."
-              addLabel="Nouvelle signature"
-              placeholder="Ex. : Berlin Insoumise"
-              empty="Aucune signature collective."
-              canAdd={auth.hasPerm('blog.add_collectiveauthor')}
-              canDelete={auth.hasPerm('blog.delete_collectiveauthor')}
-              deleteWarning={(n) =>
-                n
-                  ? `Elle sera retirée de ${n} article${n > 1 ? 's' : ''} (ceux qu'elle était seule à signer reviendront à leur créateur·ice).`
-                  : ''
-              }
-              load={() => api.collectiveAuthors()}
-              create={(name) => api.createCollectiveAuthor(name)}
-              rename={(item, name) => api.renameCollectiveAuthor(item.id, name)}
-              remove={(item) => api.deleteCollectiveAuthor(item.id)}
-            />
-          )}
-          {auth.hasPerm('blog.change_category') && (
-            <NamedList<Item & { slug: string }>
-              title="Catégories"
-              intro="Thèmes des articles, utilisés comme filtres sur la page Actualités."
-              addLabel="Nouvelle catégorie"
-              placeholder="Ex. : Europe"
-              empty="Aucune catégorie."
-              canAdd={auth.hasPerm('blog.add_category')}
-              canDelete={auth.hasPerm('blog.delete_category')}
-              deleteWarning={(n) => (n ? `${n} article${n > 1 ? 's' : ''} resteront sans catégorie.` : '')}
-              load={() => api.categories()}
-              create={(name) => api.createCategory(name)}
-              rename={(item, name) => api.renameCategory(item.slug, name)}
-              remove={(item) => api.deleteCategory(item.slug)}
-            />
-          )}
-        </div>
+    <section
+      id="categories-auteurs"
+      className="mt-[clamp(48px,7vw,80px)] scroll-mt-24 border-t border-gris pt-[clamp(32px,5vw,48px)]"
+    >
+      <h2 className="mb-6 text-[clamp(26px,3vw,34px)]">Catégories et auteurs</h2>
+      <div className="grid grid-cols-2 items-start gap-8 max-[900px]:grid-cols-1">
+        {auth.hasPerm('blog.change_collectiveauthor') && (
+          <NamedList<Item>
+            title="Signatures collectives"
+            intro="Auteurs « généraux » proposés dans l'éditeur, pour signer les annonces communes."
+            addLabel="Nouvelle signature"
+            placeholder="Ex. : Berlin Insoumise"
+            empty="Aucune signature collective."
+            canAdd={auth.hasPerm('blog.add_collectiveauthor')}
+            canDelete={auth.hasPerm('blog.delete_collectiveauthor')}
+            deleteWarning={(n) =>
+              n
+                ? `Elle sera retirée de ${n} article${n > 1 ? 's' : ''} (ceux qu'elle était seule à signer reviendront à leur créateur·ice).`
+                : ''
+            }
+            load={() => api.collectiveAuthors()}
+            create={(name) => api.createCollectiveAuthor(name)}
+            rename={(item, name) => api.renameCollectiveAuthor(item.id, name)}
+            remove={(item) => api.deleteCollectiveAuthor(item.id)}
+          />
+        )}
+        {auth.hasPerm('blog.change_category') && (
+          <NamedList<Item & { slug: string }>
+            title="Catégories"
+            intro="Thèmes des articles, utilisés comme filtres sur la page Actualités."
+            addLabel="Nouvelle catégorie"
+            placeholder="Ex. : Europe"
+            empty="Aucune catégorie."
+            canAdd={auth.hasPerm('blog.add_category')}
+            canDelete={auth.hasPerm('blog.delete_category')}
+            deleteWarning={(n) => (n ? `${n} article${n > 1 ? 's' : ''} resteront sans catégorie.` : '')}
+            load={() => api.categories()}
+            create={(name) => api.createCategory(name)}
+            rename={(item, name) => api.renameCategory(item.slug, name)}
+            remove={(item) => api.deleteCategory(item.slug)}
+          />
+        )}
       </div>
     </section>
   );
@@ -115,7 +111,7 @@ function NamedList<T extends Item>(props: {
   return (
     <div className="card-flat stack">
       <div>
-        <h2 className="m-0 text-[24px]">{props.title}</h2>
+        <h3 className="m-0 text-[24px]">{props.title}</h3>
         <p className="muted m-0 mt-1 text-[15px]">{props.intro}</p>
       </div>
 

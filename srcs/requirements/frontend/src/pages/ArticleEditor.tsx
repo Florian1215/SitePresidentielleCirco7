@@ -258,7 +258,7 @@ export default function ArticleEditor() {
                       ))}
                     </select>
                     {auth.canManageTaxonomy && (
-                      <Link to="/redaction/categories-auteurs" className="hint">
+                      <Link to="/redaction/articles#categories-auteurs" className="hint">
                         Gérer les catégories et les signatures collectives
                       </Link>
                     )}
