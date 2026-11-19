@@ -29,8 +29,8 @@ export const CAMPAIGN = {
     programmeNational: 'https://melenchon2027.fr/',
     /** Programme complet (livre « L'Avenir en commun ») */
     programmeComplet: 'https://melenchon2027.fr/programme/livre/',
-    // Bouton « Je soutiens » : renvoie vers le site national de la candidature
-    soutenir: 'https://melenchon2027.fr/',
+    // Bouton « Je soutiens » : lien de parrainage vers la page de soutien de la candidature
+    soutenir: 'https://jlm27.fr/p/Xs3CaJrHKO',
     actionPopulaire: 'https://actionpopulaire.fr/',
   },
 
