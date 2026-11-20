@@ -193,7 +193,8 @@ class SignupForm(models.Model):
     DEFAULT = ""
     city = models.CharField(
         "ville", max_length=40, unique=True, blank=True,
-        choices=[(DEFAULT, "Par défaut (autre ville, ou ville sans formulaire)"), *AGENDA_CITY_CHOICES],
+        help_text="Nom de la ville, en toutes lettres (ex. Berlin). Laisser vide pour le formulaire par défaut "
+        "(autre ville, ou ville sans formulaire).",
     )
     url = models.URLField("formulaire Zetkin", help_text="Ex. https://app.zetkin.org/o/1030/surveys/1234")
 
@@ -201,6 +202,13 @@ class SignupForm(models.Model):
         verbose_name = "formulaire « Je m'engage »"
         verbose_name_plural = "formulaires « Je m'engage »"
         ordering = ["city"]
+
+    def clean(self):
+        self.city = " ".join(self.city.split())  # espaces superflus : « Berlin » et « Berlin  » sont la même ville
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.city or "Par défaut"

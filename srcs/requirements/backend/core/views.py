@@ -164,9 +164,13 @@ class EngageFormsView(APIView):
     def get(self, request):
         forms = dict(SignupForm.objects.values_list("city", "url"))
         default = forms.pop(SignupForm.DEFAULT, None)  # null : aucun formulaire par défaut dans l'admin
+        # Villes de l'agenda, plus celles saisies librement dans l'admin (même nom à la casse près = même ville)
+        by_key = {name.casefold(): url for name, url in forms.items()}
+        known = {name.casefold() for name in CITIES}
+        names = [*CITIES, *(name for name in forms if name.casefold() not in known)]
         return Response({
             "default_url": default,
-            "cities": [{"name": name, "url": forms.get(name) or default} for name in CITIES],
+            "cities": [{"name": name, "url": by_key.get(name.casefold()) or default} for name in names],
         })
 
 
