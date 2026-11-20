@@ -235,6 +235,7 @@ export const en: Dict = {
   },
 
   article: {
+    more: 'More articles',
     back: '← All news',
     by: 'By',
     readMore: 'Read more →',

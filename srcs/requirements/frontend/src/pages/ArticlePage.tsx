@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { ApprovalPanel } from '../components/ApprovalPanel';
+import { ArticleCard } from '../components/ArticleCard';
 import { CommentCount } from '../components/CommentCount';
 import { ReviewComments } from '../components/ReviewComments';
 import { api, apiErrorMessage } from '../lib/api';
@@ -20,6 +21,7 @@ export default function ArticlePage() {
   const [notFound, setNotFound] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [others, setOthers] = useState<Article[]>([]);
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -28,6 +30,16 @@ export default function ArticlePage() {
     api.article(slug, ctrl.signal).then(setArticle, (err) => {
       if ((err as Error)?.name !== 'AbortError') setNotFound(true);
     });
+    return () => ctrl.abort();
+  }, [slug]);
+
+  // « Lire aussi » : les articles publiés les plus récents, sans l'article affiché
+  useEffect(() => {
+    const ctrl = new AbortController();
+    api.articles({ status: 'published' }, ctrl.signal).then(
+      (res) => setOthers(res.results.filter((o) => o.slug !== slug).slice(0, 3)),
+      () => setOthers([]),
+    );
     return () => ctrl.abort();
   }, [slug]);
 
@@ -153,6 +165,20 @@ export default function ArticlePage() {
             )}
           </div>
         </div>
+        {others.length > 0 && (
+          <section className="section-sm bg-gris-clair" aria-labelledby="autres-articles">
+            <div className="site-container">
+              <h2 id="autres-articles" className="mb-6">
+                {i18n.d.article.more}
+              </h2>
+              <div className="grid grid-3">
+                {others.map((o) => (
+                  <ArticleCard key={o.id} article={o} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
       </article>
     );
   }

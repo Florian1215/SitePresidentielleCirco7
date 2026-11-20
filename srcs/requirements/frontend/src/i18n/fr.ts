@@ -242,6 +242,7 @@ export const fr = {
   },
 
   article: {
+    more: 'Lire aussi',
     back: '← Toutes les actualités',
     by: 'Par',
     readMore: 'Lire la suite →',
