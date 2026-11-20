@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, apiErrorMessage } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useI18n } from '../lib/i18n';
@@ -276,21 +276,6 @@ function MemberRow({
           {showGroup && ` · ${m.action_group ? m.action_group.name : 'aucun groupe d’action'}`}
           {m.last_login && ` · dernière connexion le ${i18n.date(m.last_login)}`}
         </p>
-        {m.editable && m.status === 'active' && !resetLink && (
-          <button
-            type="button"
-            className="mt-1 grid h-8 w-8 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-violet hover:bg-lavande focus-visible:outline-3 focus-visible:outline-jaune disabled:opacity-50"
-            disabled={busy}
-            onClick={createResetLink}
-            title="Réinitialiser le mot de passe"
-            aria-label={`Réinitialiser le mot de passe de ${fullName(m)}`}
-          >
-            {/* Clé (Font Awesome, licence CC BY 4.0) */}
-            <svg className="h-4 w-4 fill-current" viewBox="0 0 512 512" aria-hidden="true" focusable="false">
-              <path d="M336 352c97.2 0 176-78.8 176-176S433.2 0 336 0S160 78.8 160 176c0 18.7 2.9 36.8 8.3 53.7L7 391c-4.5 4.5-7 10.6-7 17v80c0 13.3 10.7 24 24 24h80c13.3 0 24-10.7 24-24V448h40c13.3 0 24-10.7 24-24V384h40c6.4 0 12.5-2.5 17-7l33.3-33.3c16.9 5.4 35 8.3 53.7 8.3zM376 96a40 40 0 1 1 0 80 40 40 0 1 1 0-80z" />
-            </svg>
-          </button>
-        )}
       </div>
 
       <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 max-[700px]:w-full max-[700px]:justify-start">
@@ -299,7 +284,7 @@ function MemberRow({
             {m.is_superuser ? 'Super-admin' : 'Staff'}
           </span>
         )}
-        <span className={badge.className}>{badge.label}</span>
+        {m.status !== 'active' && <span className={badge.className}>{badge.label}</span>}
         {m.status === 'pending' ? (
           m.editable && (
             <div className="flex flex-wrap items-center gap-2">
@@ -384,29 +369,31 @@ function MemberRow({
                 >
                   Rétablir l'accès
                 </button>
-              ) : confirming === 'revoke' ? (
-                <>
-                  <span className="text-[14px] font-bold text-rouge">Retirer l'accès ?</span>
+              ) : (
+                <span className="flex items-center gap-1">
+                  {!resetLink && (
+                    <button
+                      type="button"
+                      className={ICON_BTN + ' text-violet hover:bg-lavande'}
+                      disabled={busy}
+                      onClick={createResetLink}
+                      title="Réinitialiser le mot de passe"
+                      aria-label={`Réinitialiser le mot de passe de ${fullName(m)}`}
+                    >
+                      <KeyIcon />
+                    </button>
+                  )}
                   <button
                     type="button"
-                    className="btn btn-rouge btn-sm"
+                    className={ICON_BTN + ' text-rouge hover:bg-rouge/10'}
                     disabled={busy}
-                    onClick={() => run(() => api.memberAction(m.id, 'revoke'))}
+                    onClick={() => setConfirming('revoke')}
+                    title="Retirer l'accès"
+                    aria-label={`Retirer l'accès de ${fullName(m)}`}
                   >
-                    Oui
+                    <RevokeIcon />
                   </button>
-                  <button type="button" className="btn btn-outline btn-sm" onClick={() => setConfirming(null)}>
-                    Non
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  className="btn-link text-[14px] font-bold text-rouge"
-                  onClick={() => setConfirming('revoke')}
-                >
-                  Retirer l'accès
-                </button>
+                </span>
               ))}
           </div>
         )}
@@ -439,11 +426,104 @@ function MemberRow({
         </div>
       )}
 
+      <RevokeDialog
+        member={confirming === 'revoke' ? m : null}
+        busy={busy}
+        onConfirm={() => run(() => api.memberAction(m.id, 'revoke'))}
+        onClose={() => setConfirming(null)}
+      />
+
       {error && (
         <div className="alert alert-err m-0 w-full" role="alert">
           {error}
         </div>
       )}
     </div>
+  );
+}
+
+const ICON_BTN =
+  'grid h-8 w-8 cursor-pointer place-items-center rounded-full border-0 bg-transparent focus-visible:outline-3 focus-visible:outline-jaune disabled:opacity-50';
+
+/** Clé (Font Awesome, licence CC BY 4.0). */
+function KeyIcon() {
+  return (
+    <svg className="h-4 w-4 fill-current" viewBox="0 0 512 512" aria-hidden="true" focusable="false">
+      <path d="M336 352c97.2 0 176-78.8 176-176S433.2 0 336 0S160 78.8 160 176c0 18.7 2.9 36.8 8.3 53.7L7 391c-4.5 4.5-7 10.6-7 17v80c0 13.3 10.7 24 24 24h80c13.3 0 24-10.7 24-24V448h40c13.3 0 24-10.7 24-24V384h40c6.4 0 12.5-2.5 17-7l33.3-33.3c16.9 5.4 35 8.3 53.7 8.3zM376 96a40 40 0 1 1 0 80 40 40 0 1 1 0-80z" />
+    </svg>
+  );
+}
+
+/** Sens interdit : retirer l'accès. */
+function RevokeIcon() {
+  return (
+    <svg
+      className="h-[18px] w-[18px]"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M5.7 5.7l12.6 12.6" />
+    </svg>
+  );
+}
+
+/** Fenêtre de confirmation « Retirer l'accès » ; `member` null = fermée. */
+function RevokeDialog({
+  member,
+  busy,
+  onConfirm,
+  onClose,
+}: {
+  member: Member | null;
+  busy: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  const dialog = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const d = dialog.current;
+    if (!d) return;
+    if (member && !d.open) d.showModal();
+    else if (!member && d.open) d.close();
+  }, [member]);
+
+  return (
+    <dialog
+      ref={dialog}
+      className="m-auto w-[min(440px,calc(100vw-24px))] max-w-none rounded-site border-0 bg-creme p-0 shadow-site backdrop:bg-noir/60"
+      aria-labelledby="revoke-title"
+      onClose={onClose}
+      onClick={(e) => {
+        // Clic sur le fond (en dehors de la fenêtre) : fermeture
+        if (e.target === dialog.current) dialog.current?.close();
+      }}
+    >
+      {member && (
+        <div className="grid gap-4 p-[clamp(18px,4vw,28px)]">
+          <h2 id="revoke-title" className="m-0 text-[24px]">
+            Retirer l’accès de {fullName(member)} ?
+          </h2>
+          <p className="m-0">
+            Ce compte sera déconnecté immédiatement et ne pourra plus se connecter. Ses articles restent en ligne, et
+            vous pourrez rétablir l’accès à tout moment.
+          </p>
+          <div className="flex flex-wrap justify-end gap-2">
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => dialog.current?.close()}>
+              Annuler
+            </button>
+            <button type="button" className="btn btn-rouge btn-sm" disabled={busy} onClick={onConfirm}>
+              Retirer l’accès
+            </button>
+          </div>
+        </div>
+      )}
+    </dialog>
   );
 }
