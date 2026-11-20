@@ -51,19 +51,14 @@ class SocialLink(models.Model):
 
     NETWORKS = [
         ("bluesky", "Bluesky"),
-        ("discord", "Discord"),
         ("facebook", "Facebook"),
         ("instagram", "Instagram"),
-        ("linkedin", "LinkedIn"),
-        ("mastodon", "Mastodon"),
         ("telegram", "Telegram"),
-        ("threads", "Threads"),
         ("tiktok", "TikTok"),
         ("twitch", "Twitch"),
         ("whatsapp", "WhatsApp"),
         ("x", "X (Twitter)"),
         ("youtube", "YouTube"),
-        ("other", "Autre"),
     ]
 
     network = models.CharField("réseau", max_length=20, choices=NETWORKS)
