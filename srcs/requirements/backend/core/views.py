@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from .members import can_manage_members
+from .members import can_grant_admin, can_manage_members, is_site_admin
 from .models import ActionGroup, FaqEntry, FriendSite, PollingStation, SignupForm, SocialLink
 from .action_populaire import supporters_count
 from .zetkin import CITIES, upcoming_events
@@ -36,6 +36,10 @@ def user_payload(user):
         "last_name": user.last_name,
         "is_staff": user.is_staff,
         "is_superuser": user.is_superuser,
+        # Admin du site : publication directe des articles (sans accès à /admin s'il ou elle n'est pas staff)
+        "is_admin": is_site_admin(user),
+        # Nommer ou retirer des admins du site : membres du staff seulement
+        "can_grant_admin": can_grant_admin(user),
         "can_manage_members": can_manage_members(user),
         "permissions": sorted(user.get_all_permissions()),
     }

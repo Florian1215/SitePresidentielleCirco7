@@ -1,13 +1,13 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
+from django.contrib.admin.forms import AdminAuthenticationForm
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import Group
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpResponseNotAllowed, JsonResponse
-from django.urls import path, reverse
-from django.utils.html import format_html
-from django.utils.safestring import mark_safe
+from django.urls import path
 
+from .members import can_grant_admin, is_editable, is_site_admin, member_status
 from .action_populaire import import_status, start_import_in_background
 from .models import ActionGroup, ActionGroupLink, FaqEntry, FriendSite, PollingStation, SignupForm, SocialLink, Tracker, Visit
 
@@ -156,64 +156,63 @@ class PendingFilter(admin.SimpleListFilter):
         return queryset
 
 
+# ---------- Accès à /admin : membres du staff et admins du site ----------
+
+
+class SiteAdminAuthenticationForm(AdminAuthenticationForm):
+    """Connexion à /admin : en plus du staff, les admins du site (groupe « Administrateur·ices »)."""
+
+    def confirm_login_allowed(self, user):
+        if not (user.is_active and (user.is_staff or is_site_admin(user))):
+            raise ValidationError(self.error_messages["invalid_login"], code="invalid_login",
+                                  params={"username": self.username_field.verbose_name})
+
+
+def has_admin_access(request):
+    user = request.user
+    return user.is_active and (user.is_staff or is_site_admin(user))
+
+
+admin.site.login_form = SiteAdminAuthenticationForm
+admin.site.has_permission = has_admin_access
+
 admin.site.unregister(User)
 
 
 @admin.register(User)
 class AccountAdmin(DjangoUserAdmin):
-    list_display = ["username", "first_name", "last_name", "can_write", "is_staff", "date_joined"]
-    list_filter = [PendingFilter, "is_staff", "groups"]
+    list_display = ["username", "last_name", "first_name", "member_status", "is_staff", "date_joined"]
+    list_display_links = ["username"]
+    list_filter = [PendingFilter, "is_active", "is_staff"]
     ordering = ["-date_joined"]
     actions = ["approve_writers", "deactivate"]
 
-    class Media:
-        js = ["core/admin/writer-toggle.js"]
+    def get_readonly_fields(self, request, obj=None):
+        """Staff et super-utilisateur·ice : décidés par les super-utilisateur·ices seulement.
+        Groupes (dont « Administrateur·ices ») : par les membres du staff seulement, comme sur la page « Membres »."""
+        readonly = list(super().get_readonly_fields(request, obj))
+        if not request.user.is_superuser:
+            readonly += ["is_staff", "is_superuser", "user_permissions"]
+            if not can_grant_admin(request.user):
+                readonly.append("groups")
+        return readonly
 
-    @admin.display(description="peut écrire")
-    def can_write(self, obj):
-        """Case à cocher : un clic donne (ou retire) le droit d'écrire, en validant le compte au passage."""
-        in_group = any(g.name == WRITERS_GROUP for g in obj.groups.all())
-        allowed = obj.is_active and obj.has_perm("blog.add_article")
-        # Droit venant d'ailleurs (super-utilisateur·ice, groupe Éditeur·ices…) : non modifiable ici.
-        locked = allowed and not in_group
-        return format_html(
-            '<input type="checkbox" class="writer-toggle" style="width:20px;height:20px;cursor:pointer;margin:0" data-url="{}" aria-label="Peut écrire : {}"{}{}{}>',
-            reverse("admin:core_account_toggle_writer", args=[obj.pk]),
-            obj.get_full_name() or obj.get_username(),
-            mark_safe(" checked") if allowed else "",
-            mark_safe(" disabled") if locked else "",
-            mark_safe(' title="Droit donné par un autre groupe ou le statut super-utilisateur"') if locked else "",
-        )
+    def has_change_permission(self, request, obj=None):
+        allowed = super().has_change_permission(request, obj)
+        if obj is not None and allowed and obj.pk != request.user.pk:
+            return is_editable(obj, request.user)
+        return allowed
 
-    def get_queryset(self, request):
-        return super().get_queryset(request).prefetch_related("groups")
+    def has_delete_permission(self, request, obj=None):
+        allowed = super().has_delete_permission(request, obj)
+        if obj is not None and allowed:
+            return obj.pk != request.user.pk and is_editable(obj, request.user)
+        return allowed
 
-    def get_urls(self):
-        return [
-            path(
-                "<int:pk>/toggle-writer/",
-                self.admin_site.admin_view(self.toggle_writer),
-                name="core_account_toggle_writer",
-            ),
-            *super().get_urls(),
-        ]
-
-    def toggle_writer(self, request, pk):
-        if request.method != "POST":
-            return HttpResponseNotAllowed(["POST"])
-        user = self.get_object(request, pk)
-        if user is None or not self.has_change_permission(request, user):
-            raise PermissionDenied
-        group, _ = Group.objects.get_or_create(name=WRITERS_GROUP)
-        if request.POST.get("allowed") == "1":
-            user.groups.add(group)
-            if not user.is_active:
-                user.is_active = True
-                user.save(update_fields=["is_active"])
-        else:
-            user.groups.remove(group)
-        user = User.objects.get(pk=user.pk)  # recharge (cache des permissions)
-        return JsonResponse({"allowed": user.is_active and user.has_perm("blog.add_article")})
+    @admin.display(description="statut", ordering="is_active")
+    def member_status(self, obj):
+        """Comme sur la page « Membres » du site : demande en attente, compte actif ou accès retiré."""
+        return {"pending": "En attente", "active": "Actif", "revoked": "Accès retiré"}[member_status(obj)]
 
     @admin.action(description="Valider : activer le compte et autoriser à écrire des articles")
     def approve_writers(self, request, queryset):

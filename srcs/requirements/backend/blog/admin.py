@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.db.models import Q
 
+from .permissions import can_publish_now
 from .models import Article, ArticleApproval, ArticleComment, ArticleImage, Category, CollectiveAuthor
 from .widgets import RichTextWidget
 
@@ -57,10 +58,10 @@ class ArticleAdmin(admin.ModelAdmin):
         return qs.filter(pk__in=Article.objects.filter(Q(author=request.user) | Q(authors=request.user)).values("pk"))
 
     def get_readonly_fields(self, request, obj=None):
-        # La publication passe par 2 validations sur le site ; seul·es les super-utilisateur·ices
+        # La publication passe par 2 validations sur le site ; seul·es les admins du site
         # peuvent changer le statut ici (et donc publier directement).
         readonly = ["published_at"]
-        if not request.user.is_superuser:
+        if not can_publish_now(request.user):
             readonly.append("status")
         if not request.user.has_perm("blog.manage_all_articles"):
             readonly.append("author")
@@ -106,7 +107,7 @@ class ArticleAdmin(admin.ModelAdmin):
         self.message_user(request, f"{n} article(s) publié(s).")
 
     def has_publish_now_permission(self, request):
-        return request.user.is_superuser
+        return can_publish_now(request.user)
 
     @admin.action(description="Repasser en brouillon", permissions=["publish"])
     def unpublish(self, request, queryset):

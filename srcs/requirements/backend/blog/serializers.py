@@ -4,6 +4,8 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework import serializers
 
+from core.members import ADMINS_GROUP
+
 from .models import Article, ArticleComment, Category, CollectiveAuthor
 from .permissions import can_publish_now
 
@@ -13,7 +15,8 @@ User = get_user_model()
 def signers():
     """Comptes actifs pouvant signer un article : ceux qui ont le droit d'écrire."""
     can_write = Q(groups__permissions__codename="add_article") | Q(user_permissions__codename="add_article")
-    return User.objects.filter(Q(is_superuser=True) | can_write, is_active=True).distinct()
+    admins = Q(is_superuser=True) | Q(groups__name=ADMINS_GROUP)
+    return User.objects.filter(admins | can_write, is_active=True).distinct()
 
 
 def display_name(user):

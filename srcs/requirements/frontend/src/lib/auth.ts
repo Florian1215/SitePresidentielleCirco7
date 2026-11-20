@@ -105,8 +105,10 @@ export function useAuth() {
     /** Valider les articles « À valider » (relecteur·ices, rédacteur·ices, admins). */
     canReview: hasPerm(state.user, 'blog.review_article'),
     canPublish: hasPerm(state.user, 'blog.publish_article'),
-    /** Administrateur·ice principal·e : publication directe des articles. */
-    isSuperAdmin: state.user?.is_superuser ?? false,
+    /** Admin du site : publication directe des articles. */
+    isSuperAdmin: state.user?.is_admin ?? false,
+    /** Membre du staff : nomme ou retire les admins du site. */
+    canGrantAdmin: state.user?.can_grant_admin ?? false,
     canManageMembers: state.user?.can_manage_members ?? false,
     /** Page « Catégories et auteurs ». */
     canManageTaxonomy: hasPerm(state.user, 'blog.change_category') || hasPerm(state.user, 'blog.change_collectiveauthor'),

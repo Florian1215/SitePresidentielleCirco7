@@ -19,14 +19,30 @@ WRITERS_GROUP = "Rédacteur·ices"
 REVIEWERS_GROUP = "Relecteur·ices"
 #: Ancien rôle (modifier les articles des autres), encore affiché pour les comptes qui l'ont.
 EDITORS_GROUP = "Éditeur·ices"
-#: Rôle → groupe Django. « admin » = super-utilisateur·ice (tous les droits, y compris gérer les membres).
-ROLE_GROUPS = {"writer": WRITERS_GROUP, "reviewer": REVIEWERS_GROUP}
+#: Admins du site : tous les droits sur le site (articles, publication directe, membres, catégories, trackers…) et
+#: accès à /admin, mais sans pouvoir nommer d'admins ni de staff (réservé au staff et aux super-utilisateur·ices).
+ADMINS_GROUP = "Administrateur·ices"
+#: Rôle → groupe Django.
+ROLE_GROUPS = {"admin": ADMINS_GROUP, "writer": WRITERS_GROUP, "reviewer": REVIEWERS_GROUP}
 #: Rôles attribuables depuis la page « Membres ».
 ROLES = ("admin", "writer", "reviewer")
 
 
+def is_site_admin(user):
+    """Admin du site (groupe « Administrateur·ices ») ou super-utilisateur·ice."""
+    if not (user and user.is_authenticated and user.is_active):
+        return False
+    return user.is_superuser or any(g.name == ADMINS_GROUP for g in user.groups.all())
+
+
+def can_grant_admin(user):
+    """Seul·es les membres du staff (accès à /admin) nomment ou retirent les admins du site."""
+    return bool(user and user.is_authenticated and user.is_active and user.is_staff)
+
+
 def can_manage_members(user):
-    return bool(user and user.is_authenticated and (user.is_superuser or user.has_perm("auth.change_user")))
+    return bool(user and user.is_authenticated and (
+        is_site_admin(user) or can_grant_admin(user) or user.has_perm("auth.change_user")))
 
 
 class CanManageMembers(BasePermission):
@@ -44,9 +60,9 @@ def member_status(user):
 
 
 def member_role(user):
-    if user.is_superuser:
-        return "admin"
     names = {g.name for g in user.groups.all()}
+    if user.is_superuser or ADMINS_GROUP in names:
+        return "admin"
     if EDITORS_GROUP in names:
         return "editor"
     if WRITERS_GROUP in names:
@@ -65,32 +81,40 @@ def member_payload(user, me):
         "status": member_status(user),
         "role": member_role(user),
         "is_staff": user.is_staff,
+        "is_superuser": user.is_superuser,
         "date_joined": user.date_joined,
         "last_login": user.last_login,
         "is_self": user.pk == me.pk,
-        # On ne se modifie pas soi-même, et seul·e un·e super-utilisateur·ice touche aux autres.
-        "editable": user.pk != me.pk and (me.is_superuser or not user.is_superuser),
+        "editable": is_editable(user, me),
     }
+
+
+def is_editable(user, me):
+    """On ne se modifie pas soi-même ; seul le staff touche aux admins et au staff ;
+    seul·e un·e super-utilisateur·ice touche aux super-utilisateur·ices."""
+    if user.pk == me.pk:
+        return False
+    if user.is_superuser and not me.is_superuser:
+        return False
+    if (user.is_staff or member_role(user) == "admin") and not can_grant_admin(me):
+        return False
+    return True
 
 
 def check_role(role, me):
     """Message d'erreur si `me` ne peut pas attribuer ce rôle, sinon None."""
     if role not in ROLES:
         return "Rôle inconnu."
-    if role == "admin" and not me.is_superuser:
-        return "Seul·es les administrateur·ices peuvent nommer un·e administrateur·ice."
+    if role == "admin" and not can_grant_admin(me):
+        return "Seul·es les membres du staff peuvent nommer un·e administrateur·ice."
     return None
 
 
 def set_role(user, role):
-    """Un seul rôle à la fois : on retire les autres groupes de rôle (et le statut d'admin) avant d'appliquer le nouveau."""
+    """Un seul rôle à la fois : on retire les autres groupes de rôle avant d'appliquer le nouveau.
+    Le statut staff / super-utilisateur·ice (accès à /admin) ne se gère que dans l'administration Django."""
     groups = [Group.objects.get_or_create(name=name)[0] for name in (*ROLE_GROUPS.values(), EDITORS_GROUP)]
     user.groups.remove(*groups)
-    is_admin = role == "admin"
-    if user.is_superuser != is_admin:
-        user.is_superuser = is_admin
-        user.is_staff = is_admin  # accès à l'administration Django
-        user.save(update_fields=["is_superuser", "is_staff"])
     if role in ROLE_GROUPS:
         user.groups.add(Group.objects.get(name=ROLE_GROUPS[role]))
 
