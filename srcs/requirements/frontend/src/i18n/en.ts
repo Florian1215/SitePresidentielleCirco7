@@ -297,7 +297,7 @@ export const en: Dict = {
     host: 'OVH SAS, 2 rue Kellermann, 59100 Roubaix, France (ovhcloud.com)',
     dataTitle: 'Personal data',
     data1:
-      'The information entered in the “Get involved” form (“I support” page) is intended for the campaign team, on the basis of your consent, for the sole purpose of contacting you in connection with the 2027 presidential election (taking part in the campaign, events, election reminders). The first name, last name and password (never stored in plain text) entered when creating an editor account are used only to manage access to the editors’ area.',
+      'The first name, last name and password (never stored in plain text) entered when creating an editor account are used only to manage access to the editors’ area.',
     data2:
       'It is neither sold nor passed on to third parties and is kept at the latest until the end of the 2027 presidential campaign. This data may reveal a political opinion and therefore benefits from enhanced protection under the GDPR.',
     data3:

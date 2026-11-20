@@ -304,7 +304,7 @@ export const fr = {
     host: 'OVH SAS, 2 rue Kellermann, 59100 Roubaix, France (ovhcloud.com)',
     dataTitle: 'Données personnelles',
     data1:
-      "Les informations saisies dans le formulaire « Je m'engage » (page « Je soutiens ») sont destinées à l'équipe de campagne, sur la base de votre consentement, dans le seul but de vous recontacter dans le cadre de l'élection présidentielle 2027 (participation à la campagne, rendez-vous, rappels électoraux). Les prénom, nom et mot de passe (jamais enregistré en clair) saisis lors de la création d'un compte rédacteur·ice servent uniquement à gérer l'accès à l'espace de rédaction.",
+      "Les prénom, nom et mot de passe (jamais enregistré en clair) saisis lors de la création d'un compte rédacteur·ice servent uniquement à gérer l'accès à l'espace de rédaction.",
     data2:
       "Elles ne sont ni vendues ni cédées à des tiers et sont conservées au plus tard jusqu'à la fin de la campagne présidentielle 2027. Ces données peuvent révéler une opinion politique : elles bénéficient à ce titre d'une protection renforcée au sens du RGPD.",
     data3:
