@@ -181,6 +181,24 @@ class FaqEntry(models.Model):
         return self.question_fr
 
 
+class MemberProfile(models.Model):
+    """Informations d'un compte du site en plus de celles de Django : son groupe d'action (choisi à l'inscription)."""
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile",
+                                verbose_name="compte")
+    action_group = models.ForeignKey(
+        ActionGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name="members",
+        verbose_name="groupe d'action", help_text="Vide : membre d'aucun groupe d'action.",
+    )
+
+    class Meta:
+        verbose_name = "profil"
+        verbose_name_plural = "profils"
+
+    def __str__(self):
+        return str(self.user)
+
+
 class SignupForm(models.Model):
     """Formulaire Zetkin vers lequel le bouton « Je m'engage » (page « Je soutiens ») envoie les personnes d'une ville.
     La ligne « Par défaut » (ville vide) sert pour « Autre ville » et pour les villes sans formulaire."""

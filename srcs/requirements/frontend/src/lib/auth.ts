@@ -82,8 +82,8 @@ export async function login(credentials: Credentials) {
   return user;
 }
 
-/** Demande de compte : il reste en attente jusqu'à sa validation par un·e admin. */
-export function register(credentials: Credentials) {
+/** Demande de compte : il reste en attente jusqu'à sa validation par un·e admin. `action_group` : obligatoire. */
+export function register(credentials: Credentials & { action_group: number }) {
   return request<{ detail: string }>('/api/auth/register/', { method: 'POST', body: { ...credentials } });
 }
 

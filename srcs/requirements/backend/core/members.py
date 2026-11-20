@@ -86,7 +86,18 @@ def member_payload(user, me):
         "last_login": user.last_login,
         "is_self": user.pk == me.pk,
         "editable": is_editable(user, me),
+        "action_group": member_action_group(user),
     }
+
+
+def member_action_group(user):
+    profile = getattr(user, "profile", None)  # comptes créés avant les profils : aucun
+    group = profile.action_group if profile else None
+    return {"id": group.id, "name": group.name, "city": group.city, "country": group.country} if group else None
+
+
+#: Chargement des comptes avec leurs rôles et leur groupe d'action
+MEMBERS_QS = User.objects.select_related("profile__action_group").prefetch_related("groups")
 
 
 def is_editable(user, me):
@@ -123,7 +134,7 @@ class MembersView(APIView):
     permission_classes = [IsAuthenticated, CanManageMembers]
 
     def get(self, request):
-        users = User.objects.prefetch_related("groups").order_by("-date_joined")
+        users = MEMBERS_QS.order_by("-date_joined")
         return Response([member_payload(u, request.user) for u in users])
 
 
@@ -133,13 +144,13 @@ class MemberView(APIView):
     permission_classes = [IsAuthenticated, CanManageMembers]
 
     def _get(self, request, pk):
-        user = get_object_or_404(User.objects.prefetch_related("groups"), pk=pk)
+        user = get_object_or_404(MEMBERS_QS, pk=pk)
         if not member_payload(user, request.user)["editable"]:
             return None
         return user
 
     def _ok(self, request, pk):
-        user = User.objects.prefetch_related("groups").get(pk=pk)
+        user = MEMBERS_QS.get(pk=pk)
         return Response(member_payload(user, request.user))
 
     def _forbidden(self):
@@ -200,7 +211,7 @@ class MemberResetLinkView(APIView):
     permission_classes = [IsAuthenticated, CanManageMembers]
 
     def post(self, request, pk):
-        user = get_object_or_404(User.objects.prefetch_related("groups"), pk=pk)
+        user = get_object_or_404(MEMBERS_QS, pk=pk)
         if not member_payload(user, request.user)["editable"]:
             return Response({"detail": "Vous ne pouvez pas modifier ce compte."}, status=status.HTTP_403_FORBIDDEN)
         if not user.is_active:

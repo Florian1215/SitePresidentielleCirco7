@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.text import slugify
 from rest_framework import serializers
 
-from .models import COUNTRIES, ActionGroup, ActionGroupLink, FaqEntry, FriendSite, PollingStation, SocialLink
+from .models import COUNTRIES, ActionGroup, ActionGroupLink, FaqEntry, FriendSite, MemberProfile, PollingStation, SocialLink
 
 User = get_user_model()
 
@@ -43,6 +43,11 @@ class RegisterSerializer(serializers.Serializer):
     first_name = serializers.CharField(max_length=150)
     last_name = serializers.CharField(max_length=150)
     password = serializers.CharField(trim_whitespace=False, write_only=True)
+    #: Groupe d'action dont la personne fait partie (obligatoire)
+    action_group = serializers.PrimaryKeyRelatedField(
+        queryset=ActionGroup.objects.filter(is_active=True),
+        error_messages={"required": "Choisissez votre groupe d'action.", "null": "Choisissez votre groupe d'action."},
+    )
 
     def validate(self, attrs):
         attrs["first_name"] = " ".join(attrs["first_name"].split())
@@ -71,6 +76,7 @@ class RegisterSerializer(serializers.Serializer):
         )
         user.set_password(validated_data["password"])
         user.save()
+        MemberProfile.objects.create(user=user, action_group=validated_data["action_group"])
         return user
 
 

@@ -26,6 +26,8 @@ export interface Member {
   username: string;
   status: MemberStatus;
   role: MemberRole;
+  /** Groupe d'action choisi à l'inscription (null : aucun). */
+  action_group: { id: number; name: string; city: string; country: string } | null;
   /** Accès à l'administration Django (/admin), géré seulement depuis /admin. */
   is_staff: boolean;
   is_superuser: boolean;

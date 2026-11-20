@@ -9,7 +9,7 @@ from django.urls import path
 
 from .members import can_grant_admin, is_editable, is_site_admin, member_status
 from .action_populaire import import_status, start_import_in_background
-from .models import ActionGroup, ActionGroupLink, FaqEntry, FriendSite, PollingStation, SignupForm, SocialLink, Tracker, Visit
+from .models import ActionGroup, ActionGroupLink, FaqEntry, FriendSite, MemberProfile, PollingStation, SignupForm, SocialLink, Tracker, Visit
 
 
 @admin.register(FriendSite)
@@ -179,11 +179,19 @@ admin.site.has_permission = has_admin_access
 admin.site.unregister(User)
 
 
+class MemberProfileInline(admin.StackedInline):
+    model = MemberProfile
+    can_delete = False
+    autocomplete_fields = ["action_group"]
+    verbose_name_plural = "groupe d'action"
+
+
 @admin.register(User)
 class AccountAdmin(DjangoUserAdmin):
     list_display = ["username", "last_name", "first_name", "member_status", "is_staff", "date_joined"]
     list_display_links = ["username"]
-    list_filter = [PendingFilter, "is_active", "is_staff"]
+    list_filter = [PendingFilter, "is_active", "is_staff", "profile__action_group"]
+    inlines = [MemberProfileInline]
     ordering = ["-date_joined"]
     actions = ["approve_writers", "deactivate"]
 

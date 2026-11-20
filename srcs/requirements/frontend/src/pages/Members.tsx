@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api, apiErrorMessage } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useI18n } from '../lib/i18n';
@@ -45,6 +45,7 @@ const fold = (s: string) =>
  */
 export default function Members() {
   usePageTitle('Membres — espace rédaction');
+  const i18n = useI18n();
   const [query, setQuery] = useState('');
   const [members, setMembers] = useState<Member[] | null>(null);
   const [error, setError] = useState(false);
@@ -62,6 +63,22 @@ export default function Members() {
   const shown = (members ?? [])
     .filter((m) => !q || fold(`${fullName(m)} ${m.username}`).includes(q))
     .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
+
+  /** Demandes en attente : tout en haut, hors des groupes d'action. */
+  const pending = shown.filter((m) => m.status === 'pending');
+
+  /** Autres membres rangés par groupe d'action (ordre alphabétique), ceux sans groupe à la fin. */
+  const sections = useMemo(() => {
+    const byGroup = new Map<number | null, Member[]>();
+    for (const m of shown) {
+      if (m.status === 'pending') continue;
+      const key = m.action_group?.id ?? null;
+      byGroup.set(key, [...(byGroup.get(key) ?? []), m]);
+    }
+    return [...byGroup.values()]
+      .map((list) => ({ group: list[0].action_group, list }))
+      .sort((a, b) => (!a.group ? 1 : !b.group ? -1 : i18n.compare(a.group.name, b.group.name)));
+  }, [shown, i18n]);
 
   const replace = (updated: Member) => {
     setMembers((list) => list?.map((m) => (m.id === updated.id ? updated : m)) ?? null);
@@ -97,20 +114,82 @@ export default function Members() {
         ) : !shown.length ? (
           <p className="m-0 font-bold">Aucun membre trouvé.</p>
         ) : (
-          <ul className="m-0 list-none divide-y divide-gris overflow-hidden rounded-site border border-gris bg-white p-0">
-            {shown.map((m) => (
-              <li key={m.id}>
-                <MemberRow member={m} onChange={replace} onRemoved={() => removed(m.id)} />
-              </li>
-            ))}
-          </ul>
+          <div className="stack gap-8!">
+            {pending.length > 0 && (
+              <section aria-labelledby="demandes">
+                <h2 id="demandes" className="mb-3 flex flex-wrap items-baseline gap-x-3 text-[22px]">
+                  Demandes en attente
+                  <span className="text-[14px] font-normal text-texte">{pending.length}</span>
+                </h2>
+                <MemberList list={pending} onChange={replace} onRemoved={removed} showGroup />
+              </section>
+            )}
+            {sections.length > 0 && (
+              <div className="stack gap-5!">
+                {sections.map(({ group, list }) => (
+                  // Fermé par défaut ; ouvert pendant une recherche pour montrer les résultats
+                  <details key={`${group?.id ?? 'aucun'}-${q ? 'q' : ''}`} open={!!q} className="group/ga">
+                    <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-3 border-b-2 border-violet py-2 [&::-webkit-details-marker]:hidden">
+                      <span
+                        className="inline-block w-4 text-[18px] text-rouge transition-transform duration-150 group-open/ga:rotate-90"
+                        aria-hidden="true"
+                      >
+                        ▸
+                      </span>
+                      <h2 className="m-0 inline text-[24px]">{group ? group.name : 'Sans groupe d’action'}</h2>
+                      <span className="text-[14px] font-normal text-texte">
+                        {group && [group.city, i18n.country(group.country)].filter(Boolean).join(', ') + ' · '}
+                        {list.length} membre{list.length > 1 ? 's' : ''}
+                      </span>
+                    </summary>
+                    <div className="mt-3 pl-6 max-[700px]:pl-3">
+                      <MemberList list={list} onChange={replace} onRemoved={removed} />
+                    </div>
+                  </details>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </section>
   );
 }
 
-function MemberRow({ member: m, onChange, onRemoved }: { member: Member; onChange: (m: Member) => void; onRemoved: () => void }) {
+function MemberList({
+  list,
+  onChange,
+  onRemoved,
+  showGroup = false,
+}: {
+  list: Member[];
+  onChange: (m: Member) => void;
+  onRemoved: (id: number) => void;
+  showGroup?: boolean;
+}) {
+  return (
+    <ul className="m-0 list-none divide-y divide-gris overflow-hidden rounded-site border border-gris bg-white p-0">
+      {list.map((m) => (
+        <li key={m.id}>
+          <MemberRow member={m} onChange={onChange} onRemoved={() => onRemoved(m.id)} showGroup={showGroup} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function MemberRow({
+  member: m,
+  onChange,
+  onRemoved,
+  showGroup,
+}: {
+  member: Member;
+  onChange: (m: Member) => void;
+  onRemoved: () => void;
+  /** Afficher le groupe d'action (demandes en attente, hors des sections par groupe). */
+  showGroup: boolean;
+}) {
   const i18n = useI18n();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -194,6 +273,7 @@ function MemberRow({ member: m, onChange, onRemoved }: { member: Member; onChang
         </p>
         <p className="m-0 mt-1 text-[13px] text-texte">
           {m.username} · {m.status === 'pending' ? 'demande du' : 'compte créé le'} {i18n.date(m.date_joined)}
+          {showGroup && ` · ${m.action_group ? m.action_group.name : 'aucun groupe d’action'}`}
           {m.last_login && ` · dernière connexion le ${i18n.date(m.last_login)}`}
         </p>
         {m.editable && m.status === 'active' && !resetLink && (

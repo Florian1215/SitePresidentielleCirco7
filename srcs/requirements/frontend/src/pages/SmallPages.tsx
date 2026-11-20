@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { api, apiErrorMessage } from '../lib/api';
 import { hasPerm, login, logout, register, useAuth } from '../lib/auth';
 import { CAMPAIGN } from '../lib/campaign';
 import { useI18n } from '../lib/i18n';
+import type { ActionGroup } from '../lib/models';
 import { usePageTitle } from '../lib/title';
 
 /** Mentions légales. */
@@ -87,6 +88,28 @@ export function Login() {
   const [requested, setRequested] = useState(false);
   /** La personne a tenté de demander un compte : on signale alors un mot de passe trop faible. */
   const [triedRegister, setTriedRegister] = useState(false);
+  /** Groupe d'action choisi à l'inscription (obligatoire) : son id, ou '' tant qu'aucun n'est choisi. */
+  const [group, setGroup] = useState('');
+  const [groups, setGroups] = useState<ActionGroup[] | null>(null);
+  const i18n = useI18n();
+
+  // Liste des groupes d'action, chargée à la première ouverture de l'onglet « Créer un compte »
+  useEffect(() => {
+    if (mode !== 'register' || groups) return;
+    api.actionGroups().then(setGroups, () => setGroups([]));
+  }, [mode, groups]);
+
+  /** Groupes d'action rangés par pays (dans l'ordre alphabétique des pays, puis des groupes). */
+  const groupsByCountry = useMemo(() => {
+    const byCountry = new Map<string, ActionGroup[]>();
+    for (const g of groups ?? []) byCountry.set(g.country, [...(byCountry.get(g.country) ?? []), g]);
+    return [...byCountry]
+      .map(([code, list]) => ({
+        country: i18n.country(code),
+        list: list.sort((a, b) => i18n.compare(a.name, b.name)),
+      }))
+      .sort((a, b) => i18n.compare(a.country, b.country));
+  }, [groups, i18n]);
 
   const switchMode = (m: Mode) => {
     setMode(m);
@@ -100,7 +123,8 @@ export function Login() {
   /** Mêmes règles que le serveur : au moins 8 caractères, pas uniquement des chiffres. */
   const weakPassword = password.length < 8 || /^\d+$/.test(password);
   const showWeak = mode === 'register' && triedRegister && weakPassword;
-  const ready = !!firstName.trim() && !!lastName.trim() && !!password && (mode === 'login' || password === password2);
+  const ready =
+    !!firstName.trim() && !!lastName.trim() && !!password && (mode === 'login' || (password === password2 && !!group));
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -114,7 +138,7 @@ export function Login() {
     const credentials = { first_name: firstName.trim(), last_name: lastName.trim(), password };
     try {
       if (mode === 'register') {
-        await register(credentials);
+        await register({ ...credentials, action_group: Number(group) });
         setSending(false);
         setRequested(true);
         setPassword('');
@@ -253,6 +277,26 @@ export function Login() {
                 />
               </div>
             </div>
+            {!isLogin && (
+              <div className="field">
+                <label htmlFor="lg-group">Groupe d'action</label>
+                <select id="lg-group" value={group} onChange={(e) => setGroup(e.target.value)} disabled={groups === null}>
+                  <option value="" disabled>
+                    {groups === null ? 'Chargement…' : 'Choisir votre groupe d’action'}
+                  </option>
+                  {groupsByCountry.map(({ country, list }) => (
+                    <optgroup key={country} label={country}>
+                      {list.map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.name}
+                          {g.city && !g.name.includes(g.city) ? ` (${g.city})` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="field">
               <label htmlFor="lg-pass">Mot de passe</label>
               <input
