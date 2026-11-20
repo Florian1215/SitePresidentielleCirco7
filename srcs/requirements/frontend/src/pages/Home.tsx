@@ -88,7 +88,7 @@ export default function Home() {
           <div className="hero-copy">
             <span className="eyebrow">{i18n.f(t.eyebrow, { circo: i18n.d.common.circo })}</span>
             <h1>
-              {t.titleA} <span className="hl-violet">{t.titleHl}</span> {t.titleB}
+              {t.titleA} <span className="hl-rouge">{t.titleHl}</span> {t.titleB}
             </h1>
             <p className="lead mt-2 mb-8 max-w-[560px]">
               {t.leadA} <span className="hl">{t.leadHl}</span>.
