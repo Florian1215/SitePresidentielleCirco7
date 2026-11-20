@@ -4,8 +4,11 @@ export interface User {
   first_name: string;
   last_name: string;
   is_staff: boolean;
-  /** Administrateur·ice principal·e : publie directement, sans validations. */
   is_superuser: boolean;
+  /** Admin du site : tous les droits sur le site, publie directement, sans validations. */
+  is_admin: boolean;
+  /** Membre du staff : peut nommer ou retirer des admins du site. */
+  can_grant_admin: boolean;
   /** Accès à la page « Membres ». */
   can_manage_members: boolean;
   permissions: string[];
@@ -23,7 +26,9 @@ export interface Member {
   username: string;
   status: MemberStatus;
   role: MemberRole;
+  /** Accès à l'administration Django (/admin), géré seulement depuis /admin. */
   is_staff: boolean;
+  is_superuser: boolean;
   date_joined: string;
   last_login: string | null;
   is_self: boolean;

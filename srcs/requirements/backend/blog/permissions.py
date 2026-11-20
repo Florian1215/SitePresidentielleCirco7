@@ -8,11 +8,13 @@ from rest_framework.permissions import SAFE_METHODS, BasePermission
 #   blog.manage_all_articles  -> modifier / supprimer les articles des autres
 #   blog.review_article       -> valider les articles « À valider » (relecteur·ices et rédacteur·ices)
 # Les co-auteur·ices d'un article (champ « signé par ») ont les mêmes droits que son créateur·ice.
-# Les super-utilisateur·ices (administrateur·ices principaux) peuvent publier directement, sans validations.
+# Les admins du site (et les super-utilisateur·ices) peuvent publier directement, sans validations.
 
 
 def can_publish_now(user):
-    return bool(user and user.is_authenticated and user.is_superuser)
+    from core.members import is_site_admin
+
+    return is_site_admin(user)
 
 
 def can_manage_all(user):

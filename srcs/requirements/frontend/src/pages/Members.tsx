@@ -8,7 +8,7 @@ import { usePageTitle } from '../lib/title';
 
 /** Les trois droits attribuables. */
 const ROLES: { value: MemberRole; label: string; hint: string }[] = [
-  { value: 'admin', label: 'Admin', hint: 'tous les droits : articles, publication directe, membres, catégories' },
+  { value: 'admin', label: 'Admin', hint: 'tous les droits sur le site : articles, publication directe, membres, catégories (sans accès à /admin)' },
   { value: 'writer', label: 'Rédacteur·ice', hint: 'écrit des articles et valide ceux des autres' },
   { value: 'reviewer', label: 'Relecteur·ice', hint: 'valide seulement les articles des autres' },
 ];
@@ -115,8 +115,8 @@ function MemberRow({ member: m, onChange, onRemoved }: { member: Member; onChang
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [confirming, setConfirming] = useState<'refuse' | 'revoke' | 'admin' | null>(null);
-  /** Seul·es les admins peuvent nommer un·e admin. */
-  const canGrantAdmin = useAuth().isSuperAdmin;
+  /** Seul·es les membres du staff peuvent nommer un·e admin. */
+  const canGrantAdmin = useAuth().canGrantAdmin;
   /** Rôle donné à l'acceptation d'une demande. */
   const [acceptRole, setAcceptRole] = useState<MemberRole>('writer');
   const badge = STATUS_BADGE[m.status];
@@ -214,6 +214,11 @@ function MemberRow({ member: m, onChange, onRemoved }: { member: Member; onChang
       </div>
 
       <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 max-[700px]:w-full max-[700px]:justify-start">
+        {m.is_staff && (
+          <span className="badge" title="Accès à l'administration Django (/admin)">
+            {m.is_superuser ? 'Super-admin' : 'Staff'}
+          </span>
+        )}
         <span className={badge.className}>{badge.label}</span>
         {m.status === 'pending' ? (
           m.editable && (
