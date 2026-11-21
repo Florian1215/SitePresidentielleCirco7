@@ -154,9 +154,12 @@ export default function Home() {
               </span>
             </div>
           ))}
-          <Link to="/inscription-listes-electorales" className="btn btn-creme max-[700px]:mx-auto">
-            {t.checkRegistration}
-          </Link>
+          {/* Sur mobile, le bouton passe sur sa propre ligne, centré sous les deux dates */}
+          <div className="max-[700px]:flex max-[700px]:w-full max-[700px]:justify-center">
+            <Link to="/inscription-listes-electorales" className="btn btn-creme">
+              {t.checkRegistration}
+            </Link>
+          </div>
         </div>
       </section>
 
