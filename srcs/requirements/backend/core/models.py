@@ -53,6 +53,7 @@ class SocialLink(models.Model):
         ("bluesky", "Bluesky"),
         ("facebook", "Facebook"),
         ("instagram", "Instagram"),
+        ("linktree", "Linktree"),
         ("telegram", "Telegram"),
         ("tiktok", "TikTok"),
         ("twitch", "Twitch"),

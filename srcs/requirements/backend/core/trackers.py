@@ -59,6 +59,7 @@ KNOWN_SOURCES = [
     (r"(^|\.)(youtube\.com|youtu\.be)$|^youtube$", "YouTube"),
     (r"(^|\.)tiktok\.com$|^tiktok$", "TikTok"),
     (r"(^|\.)reddit\.com$|^reddit$", "Reddit"),
+    (r"(^|\.)(linktr\.ee|linktree\.com)$|^linktree$", "Linktree"),
     (r"(^|\.)(whatsapp\.com|wa\.me)$|^whatsapp$", "WhatsApp"),
     (r"(^|\.)(t\.me|telegram\.org|telegram\.me)$|^telegram$", "Telegram"),
     (r"(^|\.)signal\.(org|me)$|^signal$", "Signal"),
