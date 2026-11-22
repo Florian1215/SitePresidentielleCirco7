@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router';
-import { logout, useAuth } from '../lib/auth';
+import { logout, openAdmin, useAuth } from '../lib/auth';
 import { refreshPending, refreshPendingMembers, usePendingCount, usePendingMembersCount } from '../lib/pending';
 import { useI18n } from '../lib/i18n';
 import { LangSwitch } from './LangSwitch';
@@ -85,7 +85,18 @@ export function Header() {
                 </Link>
               )}
               {auth.canManageMembers && <Link to="/redaction/trackers">Trackers</Link>}
-              {(user.is_staff || user.is_admin) && <a href="/admin/">Administration</a>}
+              {(user.is_staff || user.is_admin) && (
+                <a
+                  href="/admin/"
+                  onClick={(e) => {
+                    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // nouvel onglet : lien normal
+                    e.preventDefault();
+                    openAdmin();
+                  }}
+                >
+                  Administration
+                </a>
+              )}
               <button type="button" className="btn-link font-medium text-creme no-underline hover:underline" onClick={onLogout}>
                 Déconnexion
               </button>

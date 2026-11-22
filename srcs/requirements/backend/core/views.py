@@ -1,4 +1,4 @@
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, login as session_login, logout as session_logout
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -82,6 +82,25 @@ class LogoutView(APIView):
 
     def post(self, request):
         Token.objects.filter(user=request.user).delete()
+        session_logout(request._request)  # ferme aussi la session de /admin ouverte depuis le site
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AdminSessionView(APIView):
+    """Lien « Administration » du site : ouvre la session Django de /admin à partir du jeton du site,
+    pour ne pas avoir à se reconnecter. Réservé à qui a accès à /admin (staff ou admins du site).
+
+    Sans risque CSRF : l'authentification se fait par l'en-tête Authorization, pas par un cookie.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from .admin import has_admin_access
+
+        if not has_admin_access(request):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        session_login(request._request, request.user, backend="django.contrib.auth.backends.ModelBackend")
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

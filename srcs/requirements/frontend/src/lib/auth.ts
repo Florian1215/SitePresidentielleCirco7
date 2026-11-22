@@ -96,6 +96,19 @@ export async function logout() {
   clearAuth();
 }
 
+/**
+ * Lien « Administration » : ouvre la session Django de /admin avec le jeton du site (pas de seconde connexion),
+ * puis y va. En cas d'échec, /admin affiche simplement sa page de connexion.
+ */
+export async function openAdmin() {
+  try {
+    await request('/api/auth/admin-session/', { method: 'POST', body: {} });
+  } catch {
+    /* ignore */
+  }
+  window.location.href = '/admin/';
+}
+
 export function useAuth() {
   const state = useStore(authStore);
   return {
