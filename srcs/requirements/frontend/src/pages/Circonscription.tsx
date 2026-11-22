@@ -170,10 +170,10 @@ export default function Circonscription() {
             /**
              * Tous les réseaux du groupe, en pastilles rondes aux couleurs des réseaux (nom au survol), pour que
              * la bulle reste assez basse pour s'afficher au-dessus du point.
-             * Linktree (page qui regroupe tous les liens du groupe) : en texte, en premier.
+             * Linktree (page qui regroupe tous les liens du groupe) : en texte, sous les pastilles.
              */
             const isLinktree = (network: string) => network === 'linktree';
-            const links = [...p.group.links].sort((a, b) => Number(isLinktree(b.network)) - Number(isLinktree(a.network)));
+            const links = [...p.group.links].sort((a, b) => Number(isLinktree(a.network)) - Number(isLinktree(b.network)));
             return (
               <>
                 <strong>{p.name}</strong>
