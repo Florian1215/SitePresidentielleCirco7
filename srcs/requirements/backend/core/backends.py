@@ -29,3 +29,8 @@ class SiteAdminBackend(BaseBackend):
                 perms.update(EXTRA_PERMS)
             user_obj._site_admin_perm_cache = perms
         return user_obj._site_admin_perm_cache
+
+    def has_module_perms(self, user_obj, app_label):
+        """Sans cette méthode (absente de BaseBackend), Django ignore ce backend pour l'accès aux applications :
+        l'index de /admin et les pages des modèles restaient vides / interdits aux admins du site."""
+        return any(perm.split(".", 1)[0] == app_label for perm in self.get_all_permissions(user_obj))
