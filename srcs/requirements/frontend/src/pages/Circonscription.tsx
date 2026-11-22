@@ -47,6 +47,19 @@ function SocialLinks({ group, className, tabIndex }: { group: ActionGroup; class
   });
 }
 
+/** Boutons texte de la bulle de la carte (Linktree, Action populaire) : pleine largeur, texte centré. */
+const TOOLTIP_TEXT_LINK =
+  'flex w-full items-center justify-center gap-2 rounded-full px-3 py-1.5 text-center text-[13px] font-bold no-underline';
+
+function TooltipIcon({ network }: { network: string }) {
+  const icon = FOOTER_ICONS[network] ?? FOOTER_ICONS['other'];
+  return (
+    <svg className="h-4 w-4 shrink-0 fill-current" viewBox={icon.viewBox} aria-hidden="true" focusable="false">
+      <path d={icon.d} />
+    </svg>
+  );
+}
+
 export default function Circonscription() {
   usePageTitle('circonscription');
   const i18n = useI18n();
@@ -170,10 +183,11 @@ export default function Circonscription() {
             /**
              * Tous les réseaux du groupe, en pastilles rondes aux couleurs des réseaux (nom au survol), pour que
              * la bulle reste assez basse pour s'afficher au-dessus du point.
-             * Linktree (page qui regroupe tous les liens du groupe) : en texte, sous les pastilles.
+             * L'agenda : dernière pastille. Puis, en texte : Linktree (page qui regroupe tous les liens du groupe)
+             * et Action populaire.
              */
-            const isLinktree = (network: string) => network === 'linktree';
-            const links = [...p.group.links].sort((a, b) => Number(isLinktree(a.network)) - Number(isLinktree(b.network)));
+            const isLinktree = (link: ActionGroup['links'][number]) => link.network === 'linktree';
+            const linktree = p.group.links.filter(isLinktree);
             return (
               <>
                 <strong>{p.name}</strong>
@@ -182,57 +196,61 @@ export default function Circonscription() {
                   {i18n.country(p.country)}
                 </span>
                 {/* La bulle est cliquable : lien Action populaire et réseaux sociaux du groupe */}
-                <div className="mt-2.5 flex max-w-[min(300px,calc(100vw-46px))] flex-wrap gap-1.5">
-                  {links.map((link) => {
-                    const icon = FOOTER_ICONS[link.network] ?? FOOTER_ICONS['other'];
-                    const asText = isLinktree(link.network);
-                    const label = i18n.f(isLinktree(link.network) ? t.allLinks : t.followOn, { network: networkName(link.network) });
-                    return (
-                      <a
-                        key={link.url}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener"
-                        tabIndex={-1}
-                        style={{ background: networkColor(link.network) }}
-                        title={asText ? undefined : label}
-                        aria-label={asText ? undefined : label}
-                        className={
-                          asText
-                            ? 'flex w-full items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-bold text-white no-underline hover:text-white hover:brightness-110'
-                            : 'grid h-8 w-8 shrink-0 place-items-center rounded-full text-white no-underline hover:text-white hover:brightness-110'
-                        }
-                      >
-                        <svg
-                          className={`${asText ? 'h-3.5 w-3.5' : 'h-4 w-4'} shrink-0 fill-current`}
-                          viewBox={icon.viewBox}
-                          aria-hidden="true"
-                          focusable="false"
+                <div className="mt-2.5 flex max-w-[min(230px,calc(100vw-46px))] flex-wrap gap-1.5">
+                  {p.group.links
+                    .filter((link) => !isLinktree(link))
+                    .map((link) => {
+                      const label = i18n.f(t.followOn, { network: networkName(link.network) });
+                      return (
+                        <a
+                          key={link.url}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener"
+                          tabIndex={-1}
+                          style={{ background: networkColor(link.network) }}
+                          title={label}
+                          aria-label={label}
+                          className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-white no-underline hover:text-white hover:brightness-110"
                         >
-                          <path d={icon.d} />
-                        </svg>
-                        {asText && label}
-                      </a>
-                    );
-                  })}
+                          <TooltipIcon network={link.network} />
+                        </a>
+                      );
+                    })}
                   {p.group.calendar_slug && p.group.calendar_city && (
                     <button
                       type="button"
                       tabIndex={-1}
-                      className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border-0 bg-violet px-3 py-1.5 [font-family:inherit] text-[13px] font-bold text-creme hover:bg-violet-vif"
+                      className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-violet text-creme hover:bg-violet-vif"
+                      title={i18n.f(i18n.d.calendarFeed.subscribeCity, { city: i18n.city(p.group.calendar_city) })}
+                      aria-label={i18n.f(i18n.d.calendarFeed.subscribeCity, { city: i18n.city(p.group.calendar_city) })}
                       onClick={() => openFeed(p.group)}
                     >
-                      <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
-                      {i18n.f(i18n.d.calendarFeed.subscribeCity, { city: i18n.city(p.group.calendar_city) })}
+                      <CalendarIcon className="h-4 w-4" />
                     </button>
                   )}
+                  {linktree.map((link) => (
+                    <a
+                      key={link.url}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener"
+                      tabIndex={-1}
+                      style={{ background: networkColor(link.network) }}
+                      className={`${TOOLTIP_TEXT_LINK} text-white hover:text-white hover:brightness-110`}
+                    >
+                      <TooltipIcon network={link.network} />
+                      {i18n.f(t.allLinks, { network: networkName(link.network) })}
+                    </a>
+                  ))}
                   <a
                     href={p.group.url}
                     target="_blank"
                     rel="noopener"
                     tabIndex={-1}
-                    className={`w-full rounded-full bg-jaune px-3 py-1.5 text-center text-[13px] font-bold text-noir no-underline hover:bg-white hover:text-noir ${links.some((link) => !isLinktree(link.network)) ? 'mt-0.5' : ''}`}
+                    className={`${TOOLTIP_TEXT_LINK} bg-jaune text-noir hover:bg-white hover:text-noir`}
                   >
+                    <TooltipIcon network="actionpopulaire" />
                     {t.joinOnAp}
                   </a>
                 </div>
