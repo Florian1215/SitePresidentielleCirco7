@@ -47,9 +47,8 @@ function SocialLinks({ group, className, tabIndex }: { group: ActionGroup; class
   });
 }
 
-/** Boutons texte de la bulle de la carte (Linktree, Action populaire) : sur une ligne, centrés ; ils donnent sa largeur à la bulle. */
 const TOOLTIP_TEXT_LINK =
-  'flex w-full items-center justify-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-bold whitespace-nowrap no-underline';
+  'flex w-full items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-bold whitespace-nowrap no-underline';
 
 function TooltipIcon({ network }: { network: string }) {
   const icon = FOOTER_ICONS[network] ?? FOOTER_ICONS['other'];
