@@ -47,9 +47,9 @@ function SocialLinks({ group, className, tabIndex }: { group: ActionGroup; class
   });
 }
 
-/** Boutons texte de la bulle de la carte (Linktree, Action populaire) : pleine largeur, texte centré. */
+/** Boutons texte de la bulle de la carte (Linktree, Action populaire) : sur une ligne, centrés ; ils donnent sa largeur à la bulle. */
 const TOOLTIP_TEXT_LINK =
-  'flex w-full items-center justify-center gap-2 rounded-full px-3 py-1.5 text-center text-[13px] font-bold no-underline';
+  'flex w-full items-center justify-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-bold whitespace-nowrap no-underline';
 
 function TooltipIcon({ network }: { network: string }) {
   const icon = FOOTER_ICONS[network] ?? FOOTER_ICONS['other'];
@@ -196,39 +196,43 @@ export default function Circonscription() {
                   {i18n.country(p.country)}
                 </span>
                 {/* La bulle est cliquable : lien Action populaire et réseaux sociaux du groupe */}
-                <div className="mt-2.5 flex max-w-[min(230px,calc(100vw-46px))] flex-wrap gap-1.5">
-                  {p.group.links
-                    .filter((link) => !isLinktree(link))
-                    .map((link) => {
-                      const label = i18n.f(t.followOn, { network: networkName(link.network) });
-                      return (
-                        <a
-                          key={link.url}
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener"
-                          tabIndex={-1}
-                          style={{ background: networkColor(link.network) }}
-                          title={label}
-                          aria-label={label}
-                          className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-white no-underline hover:text-white hover:brightness-110"
-                        >
-                          <TooltipIcon network={link.network} />
-                        </a>
-                      );
-                    })}
-                  {p.group.calendar_slug && p.group.calendar_city && (
-                    <button
-                      type="button"
-                      tabIndex={-1}
-                      className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-violet text-creme hover:bg-violet-vif"
-                      title={i18n.f(i18n.d.calendarFeed.subscribeCity, { city: i18n.city(p.group.calendar_city) })}
-                      aria-label={i18n.f(i18n.d.calendarFeed.subscribeCity, { city: i18n.city(p.group.calendar_city) })}
-                      onClick={() => openFeed(p.group)}
-                    >
-                      <CalendarIcon className="h-4 w-4" />
-                    </button>
-                  )}
+                <div className="mt-2.5 flex flex-col gap-1.5">
+                  {/* Pastilles : w-0 + min-w-full, elles passent à la ligne sans élargir la bulle, dont la largeur
+                      est celle du plus long bouton texte (jamais coupé) */}
+                  <div className="flex w-0 min-w-full flex-wrap gap-1.5">
+                    {p.group.links
+                      .filter((link) => !isLinktree(link))
+                      .map((link) => {
+                        const label = i18n.f(t.followOn, { network: networkName(link.network) });
+                        return (
+                          <a
+                            key={link.url}
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener"
+                            tabIndex={-1}
+                            style={{ background: networkColor(link.network) }}
+                            title={label}
+                            aria-label={label}
+                            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-white no-underline hover:text-white hover:brightness-110"
+                          >
+                            <TooltipIcon network={link.network} />
+                          </a>
+                        );
+                      })}
+                    {p.group.calendar_slug && p.group.calendar_city && (
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-violet text-creme hover:bg-violet-vif"
+                        title={i18n.f(i18n.d.calendarFeed.subscribeCity, { city: i18n.city(p.group.calendar_city) })}
+                        aria-label={i18n.f(i18n.d.calendarFeed.subscribeCity, { city: i18n.city(p.group.calendar_city) })}
+                        onClick={() => openFeed(p.group)}
+                      >
+                        <CalendarIcon className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                   {linktree.map((link) => (
                     <a
                       key={link.url}
