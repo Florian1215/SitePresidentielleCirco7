@@ -83,7 +83,7 @@ class RegisterSerializer(serializers.Serializer):
 class ActionGroupLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = ActionGroupLink
-        fields = ["network", "url"]
+        fields = ["network", "url", "show_in_list"]
 
 
 class ActionGroupSerializer(serializers.ModelSerializer):

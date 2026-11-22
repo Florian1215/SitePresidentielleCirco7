@@ -5,7 +5,7 @@ export const NETWORK_COLORS: Record<string, string> = {
   facebook: '#1877f2',
   instagram: '#d62976',
   linkedin: '#0a66c2',
-  linktree: '#43e55e',
+  linktree: '#254f1a',
   mastodon: '#6364ff',
   telegram: '#229ed9',
   threads: '#000000',

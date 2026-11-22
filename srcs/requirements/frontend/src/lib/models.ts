@@ -202,7 +202,8 @@ export interface ActionGroup {
   longitude: number;
   url: string;
   /** Réseaux sociaux du groupe (admin Django → Groupes d'action). */
-  links: { network: string; url: string }[];
+  /** Tous affichés dans la bulle de la carte ; `show_in_list` : aussi dans la liste des groupes. */
+  links: { network: string; url: string; show_in_list: boolean }[];
   /** Ville de l'agenda auquel s'abonner pour ce groupe (null si aucune à proximité) et son identifiant d'adresse. */
   calendar_city: string | null;
   calendar_slug: string | null;

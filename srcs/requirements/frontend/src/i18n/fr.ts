@@ -174,6 +174,7 @@ export const fr = {
     openOnAP: '{name} — ouvrir sur Action populaire',
     joinOnAp: 'Rejoindre sur Action populaire →',
     followOn: 'Suivre sur {network} →',
+    allLinks: 'Retrouvez tous nos liens sur {network} →',
     zoomIn: 'Zoomer',
     zoomOut: 'Dézoomer',
     resetZoom: 'Revenir à la carte entière',

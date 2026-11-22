@@ -167,6 +167,7 @@ export const en: Dict = {
     openOnAP: '{name} — open on Action populaire',
     joinOnAp: 'Join on Action populaire →',
     followOn: 'Follow on {network} →',
+    allLinks: 'Find all our links on {network} →',
     zoomIn: 'Zoom in',
     zoomOut: 'Zoom out',
     resetZoom: 'Back to the whole map',

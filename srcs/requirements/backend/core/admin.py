@@ -31,7 +31,8 @@ class SocialLinkAdmin(admin.ModelAdmin):
 class ActionGroupLinkInline(admin.TabularInline):
     model = ActionGroupLink
     extra = 1
-    fields = ["network", "url", "order"]
+    fields = ["network", "url", "order", "show_in_list"]
+    verbose_name_plural = "réseaux sociaux du groupe (tous affichés dans la bulle de la carte ; « aussi dans la liste » : affichés aussi dans la liste à droite)"
 
 
 @admin.register(ActionGroup)

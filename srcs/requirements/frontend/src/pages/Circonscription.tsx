@@ -21,9 +21,12 @@ const TOTAL = COUNTRIES.reduce((sum, p) => sum + (p.registered ?? 0), 0);
 
 type GroupPoint = MapPoint & { group: ActionGroup };
 
-/** Icônes des réseaux sociaux d'un groupe d'action (liste du panneau et bulle de la carte). */
+/** Réseaux affichés dans la liste des groupes (les autres ne sont que dans la bulle de la carte). */
+const listLinks = (group: ActionGroup) => group.links.filter((link) => link.show_in_list);
+
+/** Icônes des réseaux sociaux d'un groupe d'action dans la liste du panneau. */
 function SocialLinks({ group, className, tabIndex }: { group: ActionGroup; className: string; tabIndex?: number }) {
-  return group.links.map((link) => {
+  return listLinks(group).map((link) => {
     const icon = FOOTER_ICONS[link.network] ?? FOOTER_ICONS['other'];
     return (
       <a
@@ -146,7 +149,7 @@ export default function Circonscription() {
           labels={labels}
           interactiveTooltip
           renderItemExtra={(p) =>
-            (p.group.links.length > 0 || p.group.calendar_slug) && (
+            (listLinks(p.group).length > 0 || p.group.calendar_slug) && (
               <span className="flex shrink-0 gap-1">
                 <SocialLinks group={p.group} className="text-violet hover:bg-violet hover:text-creme" />
                 {p.group.calendar_slug && p.group.calendar_city && (
@@ -165,10 +168,12 @@ export default function Circonscription() {
           }
           renderTooltip={(p) => {
             /**
-             * Beaucoup de réseaux : une rangée de pastilles rondes aux couleurs des réseaux (nom au survol),
-             * pour que la bulle reste assez basse pour s'afficher au-dessus du point.
+             * Tous les réseaux du groupe, en pastilles rondes aux couleurs des réseaux (nom au survol), pour que
+             * la bulle reste assez basse pour s'afficher au-dessus du point.
+             * Linktree (page qui regroupe tous les liens du groupe) : en texte, en premier.
              */
-            const compact = p.group.links.length > 3;
+            const isLinktree = (network: string) => network === 'linktree';
+            const links = [...p.group.links].sort((a, b) => Number(isLinktree(b.network)) - Number(isLinktree(a.network)));
             return (
               <>
                 <strong>{p.name}</strong>
@@ -177,11 +182,11 @@ export default function Circonscription() {
                   {i18n.country(p.country)}
                 </span>
                 {/* La bulle est cliquable : lien Action populaire et réseaux sociaux du groupe */}
-                <div
-                  className={`mt-2.5 gap-1.5 ${compact ? 'flex max-w-[min(300px,calc(100vw-46px))] flex-wrap' : 'flex flex-col items-stretch'}`}
-                >
-                  {p.group.links.map((link) => {
+                <div className="mt-2.5 flex max-w-[min(300px,calc(100vw-46px))] flex-wrap gap-1.5">
+                  {links.map((link) => {
                     const icon = FOOTER_ICONS[link.network] ?? FOOTER_ICONS['other'];
+                    const asText = isLinktree(link.network);
+                    const label = i18n.f(isLinktree(link.network) ? t.allLinks : t.followOn, { network: networkName(link.network) });
                     return (
                       <a
                         key={link.url}
@@ -190,23 +195,23 @@ export default function Circonscription() {
                         rel="noopener"
                         tabIndex={-1}
                         style={{ background: networkColor(link.network) }}
-                        title={compact ? i18n.f(t.followOn, { network: networkName(link.network) }) : undefined}
-                        aria-label={compact ? i18n.f(t.followOn, { network: networkName(link.network) }) : undefined}
+                        title={asText ? undefined : label}
+                        aria-label={asText ? undefined : label}
                         className={
-                          compact
-                            ? 'grid h-8 w-8 shrink-0 place-items-center rounded-full text-white no-underline hover:text-white hover:brightness-110'
-                            : 'flex w-full items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-bold text-white no-underline hover:text-white hover:brightness-110'
+                          asText
+                            ? 'flex w-full items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-bold text-white no-underline hover:text-white hover:brightness-110'
+                            : 'grid h-8 w-8 shrink-0 place-items-center rounded-full text-white no-underline hover:text-white hover:brightness-110'
                         }
                       >
                         <svg
-                          className={`${compact ? 'h-4 w-4' : 'h-3.5 w-3.5'} shrink-0 fill-current`}
+                          className={`${asText ? 'h-3.5 w-3.5' : 'h-4 w-4'} shrink-0 fill-current`}
                           viewBox={icon.viewBox}
                           aria-hidden="true"
                           focusable="false"
                         >
                           <path d={icon.d} />
                         </svg>
-                        {!compact && i18n.f(t.followOn, { network: networkName(link.network) })}
+                        {asText && label}
                       </a>
                     );
                   })}
@@ -226,7 +231,7 @@ export default function Circonscription() {
                     target="_blank"
                     rel="noopener"
                     tabIndex={-1}
-                    className={`w-full rounded-full bg-jaune px-3 py-1.5 text-center text-[13px] font-bold text-noir no-underline hover:bg-white hover:text-noir ${compact ? 'mt-0.5' : ''}`}
+                    className={`w-full rounded-full bg-jaune px-3 py-1.5 text-center text-[13px] font-bold text-noir no-underline hover:bg-white hover:text-noir ${links.some((link) => !isLinktree(link.network)) ? 'mt-0.5' : ''}`}
                   >
                     {t.joinOnAp}
                   </a>

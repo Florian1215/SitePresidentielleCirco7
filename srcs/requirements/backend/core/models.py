@@ -118,6 +118,12 @@ class ActionGroupLink(models.Model):
     network = models.CharField("réseau", max_length=20, choices=SocialLink.NETWORKS)
     url = models.URLField("adresse du compte")
     order = models.PositiveSmallIntegerField("ordre", default=0)
+    show_in_list = models.BooleanField(
+        "aussi dans la liste", default=True,
+        help_text="Coché : le réseau apparaît dans la liste des groupes, à droite de la carte, en plus de la bulle "
+                  "qui s'ouvre sur la carte. Décoché : seulement dans la bulle. Gardez cochés les réseaux principaux "
+                  "pour que la liste reste lisible.",
+    )
 
     class Meta:
         verbose_name = "réseau social du groupe"
