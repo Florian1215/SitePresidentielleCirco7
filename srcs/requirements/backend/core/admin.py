@@ -1,15 +1,22 @@
-from django.contrib import admin
+import logging
+
+from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
 from django.contrib.admin.forms import AdminAuthenticationForm
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.db.models import Max
 from django.http import HttpResponseNotAllowed, JsonResponse
+from django.shortcuts import redirect
 from django.urls import path
 
 from .members import can_grant_admin, is_editable, is_site_admin, member_status
 from .action_populaire import import_status, start_import_in_background
+from .tasks import sync_events
 from .models import ActionGroup, ActionGroupLink, FaqEntry, FriendSite, MemberProfile, PollingStation, SignupForm, SocialLink, SupportersCount, Tracker, Visit, ZetkinEvent
+
+logger = logging.getLogger(__name__)
 
 
 @admin.register(FriendSite)
@@ -285,6 +292,7 @@ class VisitAdmin(admin.ModelAdmin):
 class ZetkinEventAdmin(admin.ModelAdmin):
     """Agenda copié depuis Zetkin toutes les heures (lecture seule : les événements se modifient dans Zetkin)."""
 
+    change_list_template = "admin/core/zetkinevent/change_list.html"
     list_display = ["title", "start", "city", "category", "synced_at"]
     list_filter = ["category", "city"]
     search_fields = ["title", "location", "zetkin_id"]
@@ -295,6 +303,34 @@ class ZetkinEventAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+    def changelist_view(self, request, extra_context=None):
+        last_sync = ZetkinEvent.objects.aggregate(last=Max("synced_at"))["last"]
+        return super().changelist_view(request, {**(extra_context or {}), "last_sync": last_sync})
+
+    def get_urls(self):
+        return [
+            path("synchroniser/", self.admin_site.admin_view(self.sync_now), name="core_zetkinevent_sync"),
+            *super().get_urls(),
+        ]
+
+    def sync_now(self, request):
+        """Bouton « Relancer l'import » : synchronise tout de suite avec Zetkin (quelques secondes)."""
+        if request.method != "POST":
+            return HttpResponseNotAllowed(["POST"])
+        if not self.has_view_permission(request):
+            raise PermissionDenied
+        try:
+            r = sync_events()
+        except Exception as err:
+            logger.exception("Synchronisation de l'agenda Zetkin impossible")
+            messages.error(request, f"La synchronisation avec Zetkin a échoué : {err}. Les événements n'ont pas été modifiés.")
+        else:
+            messages.success(
+                request,
+                f"Agenda synchronisé avec Zetkin : {r['created']} ajouté(s), {r['updated']} mis à jour, {r['deleted']} supprimé(s).",
+            )
+        return redirect("admin:core_zetkinevent_changelist")
 
 
 @admin.register(SupportersCount)
