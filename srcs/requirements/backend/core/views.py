@@ -12,9 +12,8 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .members import can_grant_admin, can_manage_members, is_site_admin
-from .models import ActionGroup, FaqEntry, FriendSite, PollingStation, SignupForm, SocialLink
-from .action_populaire import supporters_count
-from .zetkin import CITIES, upcoming_events
+from .models import ActionGroup, FaqEntry, FriendSite, PollingStation, SignupForm, SocialLink, SupportersCount, ZetkinEvent
+from .zetkin import CITIES
 from .serializers import (
     ActionGroupSerializer,
     PollingStationSerializer,
@@ -159,23 +158,23 @@ class CountriesView(APIView):
 
 
 class SupportersCountView(APIView):
-    """Nombre de soutiens à la candidature de Jean-Luc Mélenchon (Action populaire)."""
+    """Nombre de soutiens à la candidature de Jean-Luc Mélenchon (dernier relevé horaire d'Action populaire)."""
 
     permission_classes = [AllowAny]
     authentication_classes = []
 
     def get(self, request):
-        return Response({"count": supporters_count()})
+        return Response({"count": SupportersCount.current()})
 
 
 class EventsView(APIView):
-    """Prochains événements de la campagne, lus dans le calendrier Zetkin."""
+    """Prochains événements de la campagne (table ZetkinEvent, synchronisée avec Zetkin toutes les heures)."""
 
     permission_classes = [AllowAny]
     authentication_classes = []
 
     def get(self, request):
-        return Response(upcoming_events())
+        return Response([e.as_dict() for e in ZetkinEvent.objects.upcoming()])
 
 
 class EngageFormsView(APIView):

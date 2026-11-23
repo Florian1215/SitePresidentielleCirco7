@@ -3,7 +3,7 @@
   /api/agenda.ics           → tous les événements publics de l'agenda Zetkin
   /api/agenda/<ville>.ics   → ceux d'une ville (« munich », « dusseldorf »…), proposé sur la fiche de chaque groupe d'action
 
-Les événements viennent de zetkin.fetch_events() : seulement les projets publics, mis en cache 15 minutes.
+Les événements viennent de la table ZetkinEvent (projets publics seulement), synchronisée avec Zetkin toutes les heures.
 Chaque événement garde l'identifiant Zetkin : une modification ou une annulation se répercute dans l'agenda
 des abonné·es à la prochaine mise à jour de leur application (Google : toutes les 12 à 24 h ; Apple : réglable).
 Les heures restent « flottantes » (heure locale du lieu), comme dans le calendrier Zetkin.
@@ -15,7 +15,8 @@ from django.http import Http404, HttpResponse
 from django.utils.text import slugify
 from django.views import View
 
-from .zetkin import CITIES, fetch_events
+from .models import ZetkinEvent
+from .zetkin import CITIES
 
 CALENDAR_NAME = "LFI 7e circo"
 
@@ -103,7 +104,7 @@ class AgendaFeedView(View):
     """Tout l'agenda public."""
 
     def get(self, request):
-        body = build_calendar(fetch_events(), f"{CALENDAR_NAME} — Agenda", "Les rendez-vous de la campagne dans la 7e circonscription.")
+        body = build_calendar([e.as_dict() for e in ZetkinEvent.objects.all()], f"{CALENDAR_NAME} — Agenda", "Les rendez-vous de la campagne dans la 7e circonscription.")
         return _response(body, "agenda-7e-circo.ics")
 
 
@@ -114,6 +115,6 @@ class CityAgendaFeedView(View):
         city = CITY_BY_SLUG.get(slug.lower())
         if not city:
             raise Http404("Ville inconnue")
-        events = [e for e in fetch_events() if e.get("city") == city]
+        events = [e.as_dict() for e in ZetkinEvent.objects.filter(city=city)]
         body = build_calendar(events, f"{CALENDAR_NAME} — {city}", f"Les rendez-vous de la campagne à {city}.")
         return _response(body, f"agenda-{slug}.ics")

@@ -5,3 +5,4 @@ psycopg[binary]>=3.2,<4
 gunicorn>=23,<24
 Pillow>=11,<12
 nh3>=0.2.20,<0.4
+celery[redis]>=5.5,<6

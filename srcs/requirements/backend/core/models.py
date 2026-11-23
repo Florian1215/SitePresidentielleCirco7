@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 from .zetkin import CITIES, nearest_city
 
@@ -274,3 +275,86 @@ class Visit(models.Model):
 
     def __str__(self):
         return f"{self.created_at:%Y-%m-%d %H:%M} · {self.source or 'direct'}"
+
+
+class ZetkinEventQuerySet(models.QuerySet):
+    def upcoming(self):
+        """Événements pas encore terminés (heures locales du lieu comparées à l'heure de Paris : à quelques heures près)."""
+        return self.filter(end__gte=timezone.now())
+
+
+class ZetkinEvent(models.Model):
+    """Événement public de l'agenda, copié depuis Zetkin toutes les heures (tâche Celery core.tasks.sync_zetkin_events).
+    À modifier dans Zetkin : la prochaine synchronisation écrase les changements faits ici.
+
+    Les heures de Zetkin sont « flottantes » (heure locale du lieu) : on les enregistre comme heures de Paris,
+    pour que l'admin et l'API les affichent telles quelles."""
+
+    zetkin_id = models.CharField("identifiant Zetkin", max_length=64, unique=True)
+    title = models.CharField("titre", max_length=300)
+    description = models.TextField("description", blank=True)
+    start = models.DateTimeField("début", db_index=True)
+    end = models.DateTimeField("fin", db_index=True)
+    location = models.CharField("lieu", max_length=300, blank=True)
+    city = models.CharField("ville", max_length=40, blank=True, db_index=True)
+    latitude = models.FloatField("latitude", null=True, blank=True)
+    longitude = models.FloatField("longitude", null=True, blank=True)
+    url = models.URLField("lien d'inscription", max_length=500, blank=True)
+    image = models.URLField("image", max_length=500, blank=True)
+    project_id = models.PositiveIntegerField("id du projet Zetkin")
+    category = models.CharField("projet", max_length=200, blank=True)
+    created_at = models.DateTimeField("importé le", auto_now_add=True)
+    synced_at = models.DateTimeField("synchronisé le", auto_now=True)
+
+    objects = ZetkinEventQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = "événement Zetkin"
+        verbose_name_plural = "événements Zetkin"
+        ordering = ["start"]
+
+    def __str__(self):
+        return self.title
+
+    def as_dict(self):
+        """Format de l'API /api/events/ et des flux .ics (heures sans fuseau, comme dans Zetkin)."""
+        def local(dt):
+            return timezone.localtime(dt).replace(tzinfo=None).isoformat()
+
+        return {
+            "id": self.zetkin_id,
+            "title": self.title,
+            "description": self.description,
+            "start": local(self.start),
+            "end": local(self.end),
+            "location": self.location,
+            "city": self.city or None,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "url": self.url,
+            "image": self.image or None,
+            "category": self.category,
+        }
+
+
+class SupportersCount(models.Model):
+    """Nombre de soutiens à la candidature de Jean-Luc Mélenchon (Action populaire), relevé toutes les heures
+    par la tâche Celery core.tasks.sync_supporters_count. Une ligne par relevé : le site affiche le dernier."""
+
+    count = models.PositiveIntegerField("soutiens")
+    fetched_at = models.DateTimeField("relevé le", auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name = "relevé du nombre de soutiens"
+        verbose_name_plural = "relevés du nombre de soutiens"
+        ordering = ["-fetched_at"]
+        get_latest_by = "fetched_at"
+
+    def __str__(self):
+        return f"{self.count} soutiens"
+
+    @classmethod
+    def current(cls):
+        """Dernière valeur relevée, ou None si aucun relevé n'a encore réussi."""
+        latest = cls.objects.only("count").first()
+        return latest.count if latest else None

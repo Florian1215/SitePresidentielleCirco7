@@ -38,6 +38,36 @@ services:
       - ./requirements/backend:/app
       - media_data:/app/media
 
+  # Broker des tâches de fond Celery
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Tâches de fond : worker + planificateur (synchro de l'agenda Zetkin toutes les heures, voir backend/core/tasks.py)
+  celery:
+    build:
+      context: ./requirements/backend
+      target: dev
+    env_file: .env
+    environment:
+      POSTGRES_HOST: db
+      DJANGO_DEBUG: "1"
+      DJANGO_SKIP_SETUP: "1"
+    command: ["celery", "-A", "config", "worker", "--beat", "--loglevel", "info", "--schedule", "/tmp/celerybeat-schedule"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    volumes:
+      - ./requirements/backend:/app
+
   frontend:
     build:
       context: ./requirements/frontend

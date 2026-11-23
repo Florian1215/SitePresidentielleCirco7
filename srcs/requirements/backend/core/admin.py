@@ -9,7 +9,7 @@ from django.urls import path
 
 from .members import can_grant_admin, is_editable, is_site_admin, member_status
 from .action_populaire import import_status, start_import_in_background
-from .models import ActionGroup, ActionGroupLink, FaqEntry, FriendSite, MemberProfile, PollingStation, SignupForm, SocialLink, Tracker, Visit
+from .models import ActionGroup, ActionGroupLink, FaqEntry, FriendSite, MemberProfile, PollingStation, SignupForm, SocialLink, SupportersCount, Tracker, Visit, ZetkinEvent
 
 
 @admin.register(FriendSite)
@@ -273,6 +273,36 @@ class VisitAdmin(admin.ModelAdmin):
     list_filter = ["lang", "source", "tracker"]
     search_fields = ["source", "referrer_host"]
     date_hierarchy = "created_at"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(ZetkinEvent)
+class ZetkinEventAdmin(admin.ModelAdmin):
+    """Agenda copié depuis Zetkin toutes les heures (lecture seule : les événements se modifient dans Zetkin)."""
+
+    list_display = ["title", "start", "city", "category", "synced_at"]
+    list_filter = ["category", "city"]
+    search_fields = ["title", "location", "zetkin_id"]
+    date_hierarchy = "start"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(SupportersCount)
+class SupportersCountAdmin(admin.ModelAdmin):
+    """Relevés horaires du nombre de soutiens (Action populaire), en lecture seule."""
+
+    list_display = ["fetched_at", "count"]
+    date_hierarchy = "fetched_at"
 
     def has_add_permission(self, request):
         return False

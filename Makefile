@@ -58,7 +58,7 @@ exec		:
 			$(COMPOSE) $(FLAGS) $@ $(SERVICE) $(DSHELL)
 
 ################################################### DJANGO HELPERS #####################################################
-.PHONY: migrate makemigrations superuser shell dbshell import-groups
+.PHONY: migrate makemigrations superuser shell dbshell import-groups sync-events sync-supporters
 migrate		:
 			$(MANAGE) migrate
 # Always on dev: migrations must be written into the source code (mounted volume)
@@ -76,6 +76,14 @@ dbshell		:
 
 import-groups:
 			$(MANAGE) import_action_groups
+
+# Agenda Zetkin → base, sans attendre la tâche Celery horaire
+sync-events:
+			$(MANAGE) sync_zetkin_events
+
+# Nombre de soutiens → base, sans attendre la tâche Celery horaire
+sync-supporters:
+			$(MANAGE) sync_supporters_count
 
 ####################################################### CLEANING #######################################################
 .PHONY: clean

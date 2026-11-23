@@ -1,6 +1,11 @@
 #!/bin/sh
 set -e
 
+# Le service « celery » réutilise cette image : seul le backend migre et prépare le site.
+if [ "$DJANGO_SKIP_SETUP" = "1" ]; then
+    exec "$@"
+fi
+
 python manage.py migrate --noinput
 
 # En dev (DEBUG=1), runserver sert lui-même les fichiers statiques.

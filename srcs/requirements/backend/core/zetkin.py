@@ -1,21 +1,20 @@
 """Agenda de la campagne, lu dans le calendrier public Zetkin (format iCalendar).
 
+Ce module ne fait que lire Zetkin : la tâche Celery core.tasks.sync_zetkin_events l'appelle toutes les heures
+et enregistre le résultat dans la table ZetkinEvent, d'où le site sert l'agenda.
+
 Le flux .ics public contient titre, dates, lieu, coordonnées, image et lien d'inscription
 de chaque événement, mais pas son projet : on le lit dans l'API publique Zetkin des événements,
 pour n'afficher que ceux des projets publics (settings.ZETKIN_PUBLIC_PROJECTS).
 Les heures du flux sont « flottantes » : c'est l'heure locale du lieu de l'événement.
 """
 import json
-import logging
 import math
 import re
 import urllib.request
 from datetime import datetime, timedelta
 
 from django.conf import settings
-from django.core.cache import cache
-
-logger = logging.getLogger(__name__)
 
 # Villes de la circonscription : la ville d'un événement est la plus proche de ses coordonnées (35 km max).
 CITIES = {
@@ -74,8 +73,6 @@ def guess_city(title, location, lat, lon):
     return None
 
 
-CACHE_KEY = "zetkin-events"
-CACHE_SECONDS = 15 * 60
 USER_AGENT = "site-7e-circo/1.0"
 
 
@@ -164,25 +161,10 @@ def public_only(events, projects):
     for e in events:
         project = projects.get(e["id"])
         if project and project["id"] in settings.ZETKIN_PUBLIC_PROJECTS:
-            kept.append({**e, "category": project["title"].strip()})
+            kept.append({**e, "project_id": project["id"], "category": project["title"].strip()})
     return kept
 
 
-def fetch_events():
-    """Événements publics du calendrier Zetkin, mis en cache 15 minutes. Liste vide si Zetkin est injoignable."""
-    events = cache.get(CACHE_KEY)
-    if events is None:
-        try:
-            events = public_only(parse_ics(_get(settings.ZETKIN_ICS_URL)), fetch_projects())
-            cache.set(CACHE_KEY, events, CACHE_SECONDS)
-        except Exception:  # réseau, format… : on n'empêche pas la page de s'afficher
-            logger.exception("Impossible de lire le calendrier Zetkin")
-            events = []
-            cache.set(CACHE_KEY, events, 60)
-    return events
-
-
-def upcoming_events():
-    """Événements pas encore terminés (comparaison sur l'heure locale, à quelques heures près)."""
-    now = datetime.now().isoformat()
-    return [e for e in fetch_events() if e["end"] >= now]
+def fetch_public_events():
+    """Événements des projets publics du calendrier Zetkin. Lève une exception si Zetkin est injoignable."""
+    return public_only(parse_ics(_get(settings.ZETKIN_ICS_URL)), fetch_projects())

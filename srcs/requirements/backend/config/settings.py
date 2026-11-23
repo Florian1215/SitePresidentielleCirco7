@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from celery.schedules import crontab
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -131,7 +133,7 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
 
-# Agenda : calendrier public Zetkin de la campagne (page Agenda et accueil)
+# Agenda : calendrier public Zetkin de la campagne (page Agenda et accueil), copié en base toutes les heures (core/tasks.py)
 ZETKIN_ICS_URL = os.environ.get("ZETKIN_ICS_URL", "https://app.zetkin.org/o/1030/events.ics")
 # API publique Zetkin des événements : elle donne le projet de chaque événement (absent du flux .ics)
 ZETKIN_ACTIONS_URL = os.environ.get("ZETKIN_ACTIONS_URL", "https://app.zetkin.org/api/orgs/1030/actions")
@@ -146,5 +148,23 @@ CACHES = {
     "shared": {
         "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
         "LOCATION": os.environ.get("DJANGO_SHARED_CACHE_DIR", "/tmp/django-shared-cache"),
+    },
+}
+
+# Celery : tâches de fond, avec Redis comme broker (service « celery » des docker-compose, voir config/celery.py)
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BEAT_SCHEDULE = {
+    # Agenda Zetkin → table ZetkinEvent, à chaque heure pile
+    "sync-zetkin-events": {
+        "task": "core.tasks.sync_zetkin_events",
+        "schedule": crontab(minute=0),
+    },
+    # Nombre de soutiens (Action populaire) → table SupportersCount, à chaque heure pile
+    "sync-supporters-count": {
+        "task": "core.tasks.sync_supporters_count",
+        "schedule": crontab(minute=0),
     },
 }

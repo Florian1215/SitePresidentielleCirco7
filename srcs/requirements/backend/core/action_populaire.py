@@ -12,7 +12,7 @@ import uuid
 import urllib.parse
 import urllib.request
 
-from django.core.cache import cache, caches
+from django.core.cache import caches
 from django.db import close_old_connections, connection
 
 from .models import COUNTRIES
@@ -120,18 +120,8 @@ def import_status(job):
     return caches["shared"].get(f"{IMPORT_KEY}-{job}")
 
 
-def supporters_count():
-    """Nombre de soutiens à la candidature (compteur affiché sur melenchon2027.fr), mis en cache 1 minute.
-
-    Renvoie None si Action populaire est injoignable et qu'aucune valeur récente n'est connue.
-    """
-    count = cache.get("ap-supporters-count")
-    if count is None:
-        try:
-            count = int(_get_json("/api/soutien/count/")["count"])
-            cache.set("ap-supporters-count", count, 60)
-            cache.set("ap-supporters-count-last", count, None)  # dernière valeur connue, sans expiration
-        except Exception:
-            logger.exception("Impossible de lire le compteur de soutiens d'Action populaire")
-            count = cache.get("ap-supporters-count-last")
-    return count
+def fetch_supporters_count():
+    """Nombre de soutiens à la candidature (compteur affiché sur melenchon2027.fr).
+    Lève une exception si Action populaire est injoignable. Relevé toutes les heures par la tâche
+    Celery core.tasks.sync_supporters_count, qui l'enregistre dans la table SupportersCount."""
+    return int(_get_json("/api/soutien/count/")["count"])
