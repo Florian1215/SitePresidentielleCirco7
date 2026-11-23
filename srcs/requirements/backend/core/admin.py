@@ -293,7 +293,7 @@ class ZetkinEventAdmin(admin.ModelAdmin):
     """Agenda copié depuis Zetkin toutes les heures (lecture seule : les événements se modifient dans Zetkin)."""
 
     change_list_template = "admin/core/zetkinevent/change_list.html"
-    list_display = ["title", "start", "city", "category", "synced_at"]
+    list_display = ["title", "start", "city", "category", "updated_at", "synced_at"]
     list_filter = ["category", "city"]
     search_fields = ["title", "location", "zetkin_id"]
     date_hierarchy = "start"
@@ -328,7 +328,7 @@ class ZetkinEventAdmin(admin.ModelAdmin):
         else:
             messages.success(
                 request,
-                f"Agenda synchronisé avec Zetkin : {r['created']} ajouté(s), {r['updated']} mis à jour, {r['deleted']} supprimé(s).",
+                f"Agenda synchronisé avec Zetkin : {r['created']} ajouté(s), {r['updated']} mis à jour, {r['unchanged']} inchangé(s), {r['deleted']} supprimé(s).",
             )
         return redirect("admin:core_zetkinevent_changelist")
 

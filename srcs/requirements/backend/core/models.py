@@ -304,7 +304,8 @@ class ZetkinEvent(models.Model):
     project_id = models.PositiveIntegerField("id du projet Zetkin")
     category = models.CharField("projet", max_length=200, blank=True)
     created_at = models.DateTimeField("importé le", auto_now_add=True)
-    synced_at = models.DateTimeField("synchronisé le", auto_now=True)
+    updated_at = models.DateTimeField("modifié le", default=timezone.now, help_text="Dernier changement venu de Zetkin.")
+    synced_at = models.DateTimeField("synchronisé le", default=timezone.now, help_text="Dernière fois vu dans Zetkin.")
 
     objects = ZetkinEventQuerySet.as_manager()
 
