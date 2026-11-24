@@ -82,8 +82,8 @@ export async function renderQr(url: string, opts: QrOptions): Promise<HTMLCanvas
 
   // Sticker : carte violette aux coins arrondis, logo en haut, QR code blanc en bas
   const W = 1000;
-  const PAD = 80;
-  const GAP = 60;
+  const PAD = 110;
+  const GAP = 90;
   const QR = W - PAD * 2;
   /** Zone du logo : un carré de la taille du QR code. */
   const LOGO = QR;
