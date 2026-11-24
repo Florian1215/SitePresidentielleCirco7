@@ -78,7 +78,7 @@ class ActionGroupAdmin(admin.ModelAdmin):
         return super().get_queryset(request).prefetch_related("links")
 
     def save_model(self, request, obj, form, change):
-        # Logo envoyé depuis l'admin : recadré et compressé comme depuis le site
+        # Logo envoyé depuis l'admin : compressé comme depuis le site
         if "logo" in form.changed_data and obj.logo and not obj.logo._committed:
             content = shrink_logo(obj.logo.file)
             obj.logo.save(content.name, content, save=False)
