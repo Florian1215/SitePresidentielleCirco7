@@ -385,16 +385,25 @@ function PhotoDialog({ photo, onClose, closeLabel }: { photo: GroupPhoto | null;
  * Barre d'édition (membres du groupe et admins) — en français seulement, comme le reste de l'espace membre.
  * ---------------------------------------------------------------------------------------------------------------- */
 
-type Panel = 'links' | 'about' | 'engage' | 'cover' | 'logo' | 'photos' | 'qr';
+type Panel = 'links' | 'about' | 'engage' | 'logo' | 'photos' | 'qr';
 
-const PANELS: { key: Panel; label: string }[] = [
+/** Icône « partager » (Font Awesome share-nodes). */
+function ShareIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={`${className} fill-current`} viewBox="0 0 448 512" aria-hidden="true" focusable="false">
+      <path d="M352 224c53 0 96-43 96-96s-43-96-96-96s-96 43-96 96c0 4 .2 8 .7 11.9l-94.1 47C145.4 170.2 121.9 160 96 160c-53 0-96 43-96 96s43 96 96 96c25.9 0 49.4-10.2 66.6-26.9l94.1 47c-.5 3.9-.7 7.8-.7 11.9c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-25.9 0-49.4 10.2-66.6 26.9l-94.1-47c.5-3.9 .7-7.8 .7-11.9s-.2-8-.7-11.9l94.1-47C302.6 213.8 326.1 224 352 224z" />
+    </svg>
+  );
+}
+
+/** Sections de la barre d'édition ; `icon` : bouton réduit à son icône (`label` reste son nom accessible). */
+const PANELS: { key: Panel; label: string; icon?: boolean }[] = [
   { key: 'links', label: 'Réseaux sociaux' },
   { key: 'engage', label: 'Lien « Je m’engage »' },
-  { key: 'about', label: 'Présentation' },
-  { key: 'cover', label: 'Image d’en-tête' },
+  { key: 'about', label: 'En-tête' },
   { key: 'logo', label: 'Logo' },
   { key: 'photos', label: 'Photos' },
-  { key: 'qr', label: 'QR code' },
+  { key: 'qr', label: 'Partager la page', icon: true },
 ];
 
 /** Réseaux proposés (mêmes choix que dans l'admin Django). */
@@ -426,22 +435,38 @@ function EditorBar({ group, onChange }: { group: ActionGroupDetail; onChange: (g
               aria-expanded={open === p.key}
               aria-controls="group-editor-panel"
               onClick={() => setOpen(open === p.key ? null : p.key)}
+              aria-label={p.icon ? p.label : undefined}
+              title={p.icon ? p.label : undefined}
               className={`btn btn-sm ${open === p.key ? 'btn-creme' : 'btn-outline border-creme! text-creme! hover:bg-creme! hover:text-violet!'}`}
             >
-              {p.label}
+              {p.icon ? <ShareIcon /> : p.label}
             </button>
           ))}
         </nav>
       </div>
       {open && (
         <div id="group-editor-panel" className="bg-gris-clair text-noir">
-          <div className="site-container py-5">
-            <div className="rounded-site border border-gris bg-white p-4">
+          <div className="site-container relative py-5">
+            <button
+              type="button"
+              onClick={close}
+              aria-label="Fermer"
+              title="Fermer"
+              className="absolute top-3 right-[var(--spacing-gutter)] grid h-9 w-9 cursor-pointer place-items-center rounded-full text-[24px] leading-none text-violet hover:bg-gris"
+            >
+              ×
+            </button>
+            <div className="pr-10">
               {open === 'links' && <LinksEditor group={group} onSaved={onChange} onDone={close} />}
               {open === 'engage' && <EngageEditor group={group} onSaved={onChange} onDone={close} />}
-              {open === 'about' && <AboutEditor group={group} onSaved={onChange} onDone={close} />}
+              {open === 'about' && (
+                <div className="grid gap-6">
+                  <AboutEditor group={group} onSaved={onChange} onDone={close} />
+                  <hr className="m-0 border-gris" />
+                  <ImageEditor field="cover" group={group} onSaved={onChange} />
+                </div>
+              )}
               {open === 'photos' && <PhotosEditor group={group} onSaved={onChange} />}
-              {open === 'cover' && <ImageEditor field="cover" group={group} onSaved={onChange} />}
               {open === 'logo' && <ImageEditor field="logo" group={group} onSaved={onChange} />}
               {open === 'qr' && <QrPanel group={group} />}
             </div>
@@ -833,7 +858,7 @@ function QrPanel({ group }: { group: ActionGroupDetail }) {
   return (
     <div className="grid gap-3">
       <div>
-        <h2 className="m-0 text-[20px] text-violet">Lien et QR code de cette page</h2>
+        <h2 className="m-0 text-[20px] text-violet">Partager la page : lien et QR code</h2>
       </div>
       <QrLink id={`group-${group.id}`} name={group.name} logo={group.logo} urlFor={(lang) => groupPageUrl(group.slug, lang)} />
       {group.visits && <VisitCounts visits={group.visits} />}
