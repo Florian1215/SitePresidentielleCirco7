@@ -7,6 +7,7 @@ import { ArticleCard } from '../components/ArticleCard';
 import { EventCard } from '../components/EventCard';
 import { FOOTER_ICONS } from '../components/footer-icons';
 import { MAP_COUNTRIES, project } from '../data/europe-map';
+import { LangCounts } from '../components/Flag';
 import { QrLink } from '../components/QrLink';
 import { api, apiErrorMessage } from '../lib/api';
 import type { GroupImageField } from '../lib/api';
@@ -834,13 +835,7 @@ function QrPanel({ group }: { group: ActionGroupDetail }) {
       <div>
         <h2 className="m-0 text-[20px] text-violet">Lien et QR code de cette page</h2>
       </div>
-      <QrLink
-        langPicker="select"
-        id={`group-${group.id}`}
-        name={group.name}
-        logo={group.logo}
-        urlFor={(lang) => groupPageUrl(group.slug, lang)}
-      />
+      <QrLink id={`group-${group.id}`} name={group.name} logo={group.logo} urlFor={(lang) => groupPageUrl(group.slug, lang)} />
       {group.visits && <VisitCounts visits={group.visits} />}
     </div>
   );
@@ -865,8 +860,8 @@ function VisitCounts({ visits: v }: { visits: GroupVisits }) {
         ))}
       </dl>
       <p className="m-0 text-[13px] text-texte">
-        Par langue : FR {v.by_lang.fr} · EN {v.by_lang.en} · DE {v.by_lang.de} — une visite par personne et par session, sans
-        compter les membres du groupe.
+        Par langue : <LangCounts counts={v.by_lang} /> — une visite par personne et par session, sans compter les membres du
+        groupe.
       </p>
     </div>
   );

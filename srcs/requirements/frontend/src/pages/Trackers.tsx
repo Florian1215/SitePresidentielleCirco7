@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import { Flag, LangCounts } from '../components/Flag';
 import { QrLink } from '../components/QrLink';
 import { api, apiErrorMessage } from '../lib/api';
 import { LANGS, useI18n } from '../lib/i18n';
@@ -203,6 +204,7 @@ function SiteVisits({ stats: s }: { stats: VisitStats }) {
         <div className="flex flex-wrap gap-2">
           {LANGS.map((l) => (
             <span key={l.code} className="inline-flex items-center gap-2 rounded-lg bg-lavande px-3 py-1.5 text-violet">
+              <Flag lang={l.code} className="h-[16px] w-[24px]" />
               <span className="text-[12px] font-bold">{l.label}</span>
               <span className="text-[18px] leading-none font-extrabold tabular-nums">{i18n.number(s.by_lang[l.code])}</span>
               <span className="text-[12px]">{pct(s.by_lang[l.code], s.total)} %</span>
@@ -330,7 +332,7 @@ function TrackerCard({
           <QrLink id={`tracker-${t.id}`} name={t.name} urlFor={(lang) => trackerUrl(t.code, lang)} />
 
           <p className="m-0 text-[13px] text-texte">
-            {LANGS.map((l) => `${l.short} ${i18n.number(t.counts[l.code])}`).join(' · ')} · créé le {i18n.date(t.created_at)}
+            <LangCounts counts={t.counts} format={i18n.number} /> · créé le {i18n.date(t.created_at)}
             {t.last_visit
               ? ` · dernière visite le ${i18n.date(t.last_visit, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`
               : " · aucune visite pour l'instant"}

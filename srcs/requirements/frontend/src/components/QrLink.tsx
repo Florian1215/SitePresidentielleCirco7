@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Flag } from './Flag';
 import { LANGS } from '../lib/i18n';
 import type { Lang } from '../lib/i18n';
 import { api } from '../lib/api';
@@ -7,7 +8,7 @@ import { contrast, DEFAULT_QR_LOGO, downloadCanvas, fileSlug, renderQr, VIOLET }
 import type { QrOptions, QrStyle } from '../lib/qr';
 
 /**
- * Lien à partager (tracker, page d'un groupe d'action) : langue du lien (cliquer pour la changer), adresse,
+ * Lien à partager (tracker, page d'un groupe d'action) : langue du lien (drapeau, menu des langues), adresse,
  * « Copier » et « QR code », qui ouvre l'éditeur de QR code.
  */
 export function QrLink({
@@ -15,7 +16,6 @@ export function QrLink({
   name,
   logo,
   id,
-  langPicker = 'cycle',
 }: {
   /** Adresse du lien dans une langue. */
   urlFor: (lang: Lang) => string;
@@ -25,15 +25,12 @@ export function QrLink({
   logo?: string | null;
   /** Identifiant unique sur la page (champs de formulaire). */
   id: string;
-  /** Choix de la langue : bouton qui passe à la suivante (trackers) ou liste déroulante (page d'un groupe). */
-  langPicker?: 'cycle' | 'select';
 }) {
   const [lang, setLang] = useState<Lang>('fr');
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const url = urlFor(lang);
   const current = LANGS.find((l) => l.code === lang)!;
-  const next = LANGS[(LANGS.indexOf(current) + 1) % LANGS.length];
 
   const copy = async () => {
     try {
@@ -47,41 +44,14 @@ export function QrLink({
 
   return (
     <div className="flex items-center gap-2 max-[620px]:flex-wrap">
-      {langPicker === 'select' ? (
-        <>
-          <label htmlFor={`${id}-lang`} className="visually-hidden">
-            Langue du lien
-          </label>
-          <select
-            id={`${id}-lang`}
-            value={lang}
-            onChange={(e) => {
-              setLang(e.target.value as Lang);
-              setCopied(false);
-            }}
-            className="w-auto shrink-0 bg-white py-1.5! text-[14px] font-bold"
-          >
-            {LANGS.map((l) => (
-              <option key={l.code} value={l.code}>
-                {l.label}
-              </option>
-            ))}
-          </select>
-        </>
-      ) : (
-        <button
-          type="button"
-          className="inline-grid h-[34px] w-[44px] shrink-0 cursor-pointer place-items-center rounded-[6px] border-0 bg-violet text-[13px] font-extrabold text-creme hover:bg-violet-vif"
-          onClick={() => {
-            setLang(next.code);
-            setCopied(false);
-          }}
-          title={`Lien en ${current.label} — cliquer pour passer en ${next.label}`}
-          aria-label={`Langue du lien : ${current.label}. Passer en ${next.label}`}
-        >
-          {current.short}
-        </button>
-      )}
+      <LangMenu
+        id={`${id}-lang`}
+        lang={lang}
+        onChange={(l) => {
+          setLang(l);
+          setCopied(false);
+        }}
+      />
       <label htmlFor={`${id}-url`} className="visually-hidden">
         Lien en {current.label}
       </label>
@@ -109,6 +79,69 @@ export function QrLink({
         logo={logo}
         langLabel={current.label}
       />
+    </div>
+  );
+}
+
+/** Choix de la langue du lien : bouton avec le drapeau, qui ouvre la liste des langues (drapeau et nom). */
+function LangMenu({ id, lang, onChange }: { id: string; lang: Lang; onChange: (l: Lang) => void }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const current = LANGS.find((l) => l.code === lang)!;
+
+  // Fermeture : clic en dehors, Échap
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => !box.current?.contains(e.target as Node) && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={box} className="relative shrink-0">
+      <button
+        type="button"
+        id={id}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`Langue du lien : ${current.label}`}
+        title={`Lien en ${current.label}`}
+        onClick={() => setOpen(!open)}
+        className="flex h-[34px] cursor-pointer items-center gap-1.5 rounded-[6px] border-2 border-gris bg-white px-2 hover:border-violet"
+      >
+        <Flag lang={lang} className="h-[18px] w-[27px]" />
+        <span aria-hidden="true" className={`text-[11px] text-texte transition-transform ${open ? 'rotate-180' : ''}`}>
+          ▾
+        </span>
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          aria-labelledby={id}
+          className="absolute top-[calc(100%+4px)] left-0 z-20 m-0 grid min-w-[170px] list-none gap-0.5 rounded-lg border border-gris bg-white p-1 shadow-site"
+        >
+          {LANGS.map((l) => (
+            <li key={l.code} role="option" aria-selected={l.code === lang}>
+              <button
+                type="button"
+                onClick={() => {
+                  onChange(l.code);
+                  setOpen(false);
+                }}
+                className={`flex w-full cursor-pointer items-center gap-2.5 rounded-md border-0 px-2.5 py-2 text-left text-[14px] font-bold ${l.code === lang ? 'bg-lavande text-violet' : 'bg-transparent text-noir hover:bg-lavande'}`}
+              >
+                <Flag lang={l.code} className="h-[16px] w-[24px]" />
+                {l.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
