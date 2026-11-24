@@ -101,6 +101,12 @@ class ActionGroup(models.Model):
         "logo", upload_to="groupes/logos/", blank=True,
         help_text="Affiché sur la page du groupe et en haut de ses QR codes « sticker ». PNG transparent de préférence.",
     )
+    engage_label_fr = models.CharField(
+        "bouton « Je m'engage » (français)", max_length=40, blank=True, default="Je m'engage",
+        help_text="Texte du bouton « Je m'engage » de la page du groupe. Vide : le texte par défaut.",
+    )
+    engage_label_en = models.CharField("bouton « Je m'engage » (anglais)", max_length=40, blank=True, default="Get involved")
+    engage_label_de = models.CharField("bouton « Je m'engage » (allemand)", max_length=40, blank=True, default="Ich mache mit")
     cover = models.ImageField(
         "image d'en-tête", upload_to="groupes/couvertures/", blank=True,
         help_text="Grande image en haut de la page du groupe (format paysage, 1600 px de large ou plus).",

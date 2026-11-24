@@ -63,6 +63,7 @@ class ActionGroupAdmin(admin.ModelAdmin):
     readonly_fields = ["ap_id", "updated_at", "calendar_city_display"]
     fieldsets = [
         (None, {"fields": ["name", "slug", "city", "country", "url", "description", "logo", "cover", "is_active"]}),
+        ("Bouton « Je m'engage »", {"fields": ["engage_label_fr", "engage_label_en", "engage_label_de"]}),
         ("Position sur la carte", {
             "fields": ["latitude", "longitude"],
             "description": "Coordonnées GPS (ex. Berlin : latitude 52.52, longitude 13.40).",

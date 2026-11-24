@@ -259,6 +259,10 @@ export interface ActionGroupDetail extends ActionGroup {
   /** Lien du bouton « Je m'engage » : formulaire de la ville du groupe, sinon formulaire par défaut (null : aucun). */
   engage_url: string | null;
   engage_url_is_default: boolean;
+  /** Texte du bouton « Je m'engage » dans chaque langue (vide : texte par défaut du site). */
+  engage_label_fr: string;
+  engage_label_en: string;
+  engage_label_de: string;
   /** Le compte connecté peut modifier la page (membre du groupe, admin). */
   can_edit: boolean;
   /** Visites de la page (null : seulement pour qui peut la modifier). */

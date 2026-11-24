@@ -10,7 +10,10 @@ import { MAP_COUNTRIES, project } from '../data/europe-map';
 import { LangCounts } from '../components/Flag';
 import { QrLink } from '../components/QrLink';
 import { api, apiErrorMessage } from '../lib/api';
-import type { GroupImageField } from '../lib/api';
+import type { EngageLabelField, GroupImageField } from '../lib/api';
+import { de } from '../i18n/de';
+import { en } from '../i18n/en';
+import { fr } from '../i18n/fr';
 import { useI18n } from '../lib/i18n';
 import type { Lang } from '../lib/i18n';
 import type { ActionGroupDetail, ActionGroupLink, Article, GroupPhoto, GroupVisits } from '../lib/models';
@@ -156,7 +159,9 @@ export default function GroupPage() {
               <div className="btn-row mt-8">
                 {g.engage_url && (
                   <a href={g.engage_url} target="_blank" rel="noopener" className="btn btn-rouge">
-                    {t.engage} <span aria-hidden="true">↗</span>
+                    {(i18n.lang === 'en' ? g.engage_label_en : i18n.lang === 'de' ? g.engage_label_de : g.engage_label_fr) ||
+                      t.engage}{' '}
+                    <span aria-hidden="true">↗</span>
                     <span className="visually-hidden"> {t.newTab}</span>
                   </a>
                 )}
@@ -399,7 +404,7 @@ function ShareIcon({ className = 'h-4 w-4' }: { className?: string }) {
 /** Sections de la barre d'édition ; `icon` : bouton réduit à son icône (`label` reste son nom accessible). */
 const PANELS: { key: Panel; label: string; icon?: boolean }[] = [
   { key: 'links', label: 'Réseaux sociaux' },
-  { key: 'engage', label: 'Lien « Je m’engage »' },
+  { key: 'engage', label: 'Bouton « Je m’engage »' },
   { key: 'about', label: 'En-tête' },
   { key: 'logo', label: 'Logo' },
   { key: 'photos', label: 'Photos' },
@@ -632,54 +637,88 @@ function LinksEditor({ group, onSaved, onDone }: EditorProps) {
   );
 }
 
+/** Texte du bouton « Je m'engage » dans chaque langue, avec le texte par défaut du site. */
+const ENGAGE_LABELS: { field: EngageLabelField; label: string; fallback: string }[] = [
+  { field: 'engage_label_fr', label: 'Français', fallback: fr.groupPage.engage },
+  { field: 'engage_label_en', label: 'Anglais', fallback: en.groupPage.engage },
+  { field: 'engage_label_de', label: 'Allemand', fallback: de.groupPage.engage },
+];
+
 function EngageEditor({ group, onSaved, onDone }: EditorProps) {
   const [url, setUrl] = useState(group.engage_url_is_default ? '' : (group.engage_url ?? ''));
+  const [labels, setLabels] = useState({
+    engage_label_fr: group.engage_label_fr,
+    engage_label_en: group.engage_label_en,
+    engage_label_de: group.engage_label_de,
+  });
   const { busy, error, save } = useSave(group, onSaved, onDone);
   const i18n = useI18n();
   const city = group.calendar_city ? i18n.city(group.calendar_city) : null;
-
-  if (!city) {
-    return (
-      <div className="grid gap-2">
-        <h2 className="m-0 text-[20px] text-violet">Lien « Je m’engage »</h2>
-        <p className="m-0">
-          Ce groupe n'est rattaché à aucune ville de l'agenda : demandez à un·e admin de lui en choisir une (admin → Groupes
-          d'action → « ville de l'agenda »).
-        </p>
-      </div>
-    );
-  }
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        save({ engage_url: url.trim() });
+        const texts = {
+          engage_label_fr: labels.engage_label_fr.trim(),
+          engage_label_en: labels.engage_label_en.trim(),
+          engage_label_de: labels.engage_label_de.trim(),
+        };
+        save(city ? { engage_url: url.trim(), ...texts } : texts);
       }}
       className="grid gap-3"
     >
       <div>
-        <h2 className="m-0 text-[20px] text-violet">Lien « Je m’engage » — {city}</h2>
-        <p className="m-0 text-[14px] text-texte">
-          Formulaire (Zetkin…) ouvert par le bouton « Je m’engage » de cette page, et sur la page « Je soutiens » quand une
-          personne choisit <strong>{city}</strong>. Il est partagé par tous les groupes de {city}. Laissez vide pour utiliser le
-          formulaire par défaut de la campagne.
-        </p>
+        <h2 className="m-0 text-[20px] text-violet">Bouton « Je m’engage »{city && ` — ${city}`}</h2>
+        {city ? (
+          <p className="m-0 text-[14px] text-texte">
+            Formulaire (Zetkin…) ouvert par le bouton « Je m’engage » de cette page, et sur la page « Je soutiens » quand une
+            personne choisit <strong>{city}</strong>. Il est partagé par tous les groupes de {city}. Laissez vide pour utiliser le
+            formulaire par défaut de la campagne.
+          </p>
+        ) : (
+          <p className="m-0 text-[14px] text-texte">
+            Ce groupe n'est rattaché à aucune ville de l'agenda : le bouton ouvre le formulaire par défaut de la campagne. Pour en
+            changer, demandez à un·e admin de lui choisir une ville (admin → Groupes d'action → « ville de l'agenda »).
+          </p>
+        )}
       </div>
-      <div className="field m-0">
-        <label htmlFor="engage-url">Adresse du formulaire</label>
-        <input
-          id="engage-url"
-          type="url"
-          placeholder={
-            group.engage_url_is_default && group.engage_url
-              ? `Par défaut : ${group.engage_url}`
-              : 'https://app.zetkin.org/o/…/surveys/…'
-          }
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-        />
-      </div>
+      <fieldset className="m-0 grid gap-3 border-0 p-0">
+        <legend className="mb-2 p-0 font-bold">Texte du bouton</legend>
+        {/* Les trois langues côte à côte sur grand écran, empilées sur téléphone */}
+        <div className="grid grid-cols-3 gap-3 max-[760px]:grid-cols-1">
+          {ENGAGE_LABELS.map((l) => (
+            <div key={l.field} className="field m-0">
+              <label htmlFor={`engage-${l.field}`}>{l.label}</label>
+              <input
+                id={`engage-${l.field}`}
+                type="text"
+                maxLength={40}
+                placeholder={`Par défaut : ${l.fallback}`}
+                value={labels[l.field]}
+                onChange={(e) => setLabels({ ...labels, [l.field]: e.target.value })}
+              />
+            </div>
+          ))}
+        </div>
+        <span className="text-[13px] text-texte">Un champ laissé vide affiche le texte par défaut.</span>
+      </fieldset>
+      {city && (
+        <div className="field m-0">
+          <label htmlFor="engage-url">Adresse du formulaire</label>
+          <input
+            id="engage-url"
+            type="url"
+            placeholder={
+              group.engage_url_is_default && group.engage_url
+                ? `Par défaut : ${group.engage_url}`
+                : 'https://app.zetkin.org/o/…/surveys/…'
+            }
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+          />
+        </div>
+      )}
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" className="btn btn-outline btn-sm" onClick={onDone}>
           Annuler

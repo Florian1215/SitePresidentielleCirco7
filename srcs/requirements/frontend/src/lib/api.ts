@@ -114,6 +114,9 @@ export interface ArticlePayload {
 let footerLinks$: Promise<FooterLinks> | undefined;
 let events$: Promise<CampaignEvent[]> | undefined;
 
+/** Texte du bouton « Je m'engage » d'un groupe, dans chaque langue. */
+export type EngageLabelField = 'engage_label_fr' | 'engage_label_en' | 'engage_label_de';
+
 export const api = {
   articles(q: ArticleQuery = {}, signal?: AbortSignal) {
     const params: Record<string, string> = {};
@@ -333,7 +336,10 @@ export const api = {
   },
 
   /** Modification de la page d'un groupe (membres du groupe, admins). `links` remplace tous les réseaux. */
-  updateActionGroup(id: number, body: { description?: string; links?: ActionGroupLink[]; engage_url?: string }) {
+  updateActionGroup(
+    id: number,
+    body: { description?: string; links?: ActionGroupLink[]; engage_url?: string } & Partial<Record<EngageLabelField, string>>,
+  ) {
     return request<ActionGroupDetail>(`/api/action-groups/${id}/`, { method: 'PATCH', body });
   },
 

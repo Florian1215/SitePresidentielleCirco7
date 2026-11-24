@@ -1,7 +1,7 @@
 """Page d'un groupe d'action (/groupes/<id>) : lecture publique, modification par ses membres et les admins.
 
 GET    /api/action-groups/<id|slug>/            fiche complète (réseaux, présentation, photos, événements à venir…)
-PATCH  /api/action-groups/<id>/                 {description?, links?, engage_url?}
+PATCH  /api/action-groups/<id>/                 {description?, links?, engage_url?, engage_label_fr|en|de?}
 POST   /api/action-groups/<id>/photos/          multipart {image, caption?}
 PUT    /api/action-groups/<id>/logo/            multipart {image} ; DELETE : retire le logo
 PUT    /api/action-groups/<id>/cover/           multipart {image} ; DELETE : retire l'image d'en-tête
@@ -65,6 +65,10 @@ def group_payload(group, user):
         # Lien du bouton « Je m'engage » : celui de la ville, sinon le formulaire par défaut
         "engage_url": form.url if form else default,
         "engage_url_is_default": form is None,
+        # Texte du bouton dans chaque langue (vide : « Je m'engage », traduit par le site)
+        "engage_label_fr": group.engage_label_fr,
+        "engage_label_en": group.engage_label_en,
+        "engage_label_de": group.engage_label_de,
         "can_edit": can_edit,
         # Visites de la page : seulement pour qui peut la modifier (panneau « QR code »)
         "visits": visits_payload(group) if can_edit else None,
@@ -95,6 +99,10 @@ class GroupUpdateSerializer(serializers.Serializer):
     links = LinkSerializer(many=True, required=False)
     #: Vide : la ville revient au formulaire par défaut
     engage_url = serializers.URLField(max_length=200, allow_blank=True, required=False)
+    #: Texte du bouton « Je m'engage » dans chaque langue (vide : texte par défaut du site)
+    engage_label_fr = serializers.CharField(max_length=40, allow_blank=True, required=False, trim_whitespace=True)
+    engage_label_en = serializers.CharField(max_length=40, allow_blank=True, required=False, trim_whitespace=True)
+    engage_label_de = serializers.CharField(max_length=40, allow_blank=True, required=False, trim_whitespace=True)
 
     def validate_links(self, value):
         if len(value) > MAX_LINKS:
@@ -147,6 +155,11 @@ class ActionGroupDetailView(APIView):
             if "description" in data:
                 group.description = data["description"]
                 group.save(update_fields=["description", "updated_at"])
+            labels = [f for f in ("engage_label_fr", "engage_label_en", "engage_label_de") if f in data]
+            if labels:
+                for field in labels:
+                    setattr(group, field, data[field])
+                group.save(update_fields=[*labels, "updated_at"])
             if "links" in data:
                 group.links.all().delete()
                 ActionGroupLink.objects.bulk_create(
