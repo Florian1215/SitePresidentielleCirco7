@@ -457,7 +457,7 @@ function EditorBar({ group, onChange }: { group: ActionGroupDetail; onChange: (g
               onClick={close}
               aria-label="Fermer"
               title="Fermer"
-              className="absolute top-3 right-[var(--spacing-gutter)] grid h-9 w-9 cursor-pointer place-items-center rounded-full text-[24px] leading-none text-violet hover:bg-gris"
+              className="absolute top-3 right-[var(--spacing-gutter)] grid h-9 w-9 cursor-pointer place-items-center border-0 bg-transparent p-0 text-[28px] leading-none text-violet hover:text-violet-dark"
             >
               ×
             </button>
