@@ -55,6 +55,75 @@ const VIEW_ICONS = {
 /** Carte OpenStreetMap (Leaflet), chargée seulement quand on l'affiche. */
 const EventsMap = lazy(() => import('../components/EventsMap'));
 
+/** Bouton « Autres ▾ » : liste de toutes les catégories, pour filtrer les articles. */
+function CategoryMenu({
+  categories,
+  selected,
+  onSelect,
+  label,
+  text,
+}: {
+  categories: Category[];
+  selected: string | null;
+  onSelect: (slug: string) => void;
+  label: string;
+  text: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+
+  // Fermeture : clic en dehors, Échap
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => !box.current?.contains(e.target as Node) && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={box} className="relative">
+      <button
+        type="button"
+        className={`${chip(open)} inline-flex items-center gap-1.5`}
+        aria-expanded={open}
+        aria-haspopup="true"
+        title={label}
+        onClick={() => setOpen(!open)}
+      >
+        {text}
+        <span aria-hidden="true" className={`text-[11px] transition-transform ${open ? 'rotate-180' : ''}`}>
+          ▾
+        </span>
+      </button>
+      {open && (
+        <ul className="absolute top-[calc(100%+6px)] left-0 z-20 m-0 grid max-h-[320px] min-w-[220px] list-none gap-0.5 overflow-y-auto rounded-lg border border-gris bg-white p-1 shadow-site">
+          {categories.map((c) => (
+            <li key={c.id}>
+              <button
+                type="button"
+                aria-pressed={selected === c.slug}
+                onClick={() => {
+                  onSelect(c.slug);
+                  setOpen(false);
+                }}
+                className={`flex w-full cursor-pointer items-center justify-between gap-3 rounded-md border-0 px-3 py-2 text-left text-[14px] font-bold ${selected === c.slug ? 'bg-lavande text-violet' : 'bg-transparent text-noir hover:bg-lavande'}`}
+              >
+                {c.name}
+                {selected === c.slug && <span aria-hidden="true">✓</span>}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function BlogList() {
   usePageTitle('blog');
   const i18n = useI18n();
@@ -131,8 +200,10 @@ export default function BlogList() {
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  /** Filtre par catégorie, appliqué sur place aux articles déjà affichés (sans recharger la page). */
+  /** Filtre par catégorie : les articles de cette catégorie sont chargés depuis le serveur (toutes les pages). */
   const [selectedCategory, setSelectedCategory] = useState<string | null>(category ?? null);
+  /** Catégories des deux derniers articles publiés : proposées directement, les autres derrière le bouton « Autres ». */
+  const [recentCategories, setRecentCategories] = useState<Category[]>([]);
   const lastCategory = useRef(category);
   if (lastCategory.current !== category) {
     lastCategory.current = category;
@@ -144,13 +215,26 @@ export default function BlogList() {
 
   useEffect(() => {
     api.categories().then(setCategories, () => {});
+    api.articles({ status: 'published' }).then(
+      (res) => {
+        const seen = new Map<number, Category>();
+        for (const a of res.results.slice(0, 2)) if (a.category_detail) seen.set(a.category_detail.id, a.category_detail);
+        setRecentCategories([...seen.values()]);
+      },
+      () => {},
+    );
   }, []);
+
+  const selectCategory = (slug: string | null) => {
+    setSelectedCategory(slug);
+    if (pageNum > 1) go({ page: null });
+  };
 
   useEffect(() => {
     const ctrl = new AbortController();
     setLoading(true);
     setError(false);
-    api.articles({ page: pageNum, search }, ctrl.signal).then(
+    api.articles({ page: pageNum, search, category: selectedCategory ?? undefined }, ctrl.signal).then(
       (res) => {
         setArticles(res.results);
         setCount(res.count);
@@ -163,14 +247,16 @@ export default function BlogList() {
       },
     );
     return () => ctrl.abort();
-  }, [pageNum, search]);
+  }, [pageNum, search, selectedCategory]);
 
-  const shownArticles = selectedCategory ? articles.filter((a) => a.category_detail?.slug === selectedCategory) : articles;
-  /** Seules les catégories présentes parmi les articles affichés sont proposées. */
-  const shownCategories = useMemo(() => {
-    const used = new Set(articles.map((a) => a.category));
-    return categories.filter((c) => used.has(c.id));
-  }, [articles, categories]);
+  const shownArticles = articles;
+  /** Catégories proposées directement : celles des deux derniers articles, plus celle choisie dans la liste « Autres ». */
+  const quickCategories = useMemo(() => {
+    const list = [...recentCategories];
+    const chosen = categories.find((c) => c.slug === selectedCategory);
+    if (chosen && !list.some((c) => c.id === chosen.id)) list.push(chosen);
+    return list;
+  }, [recentCategories, categories, selectedCategory]);
 
   const searchBox = useRef<HTMLInputElement>(null);
 
@@ -359,27 +445,34 @@ export default function BlogList() {
               </button>
             </form>
             <div className={CATS}>
-              {shownCategories.length > 0 && (
+              {categories.length > 0 && (
                 <>
                   <button
                     type="button"
                     className={chip(!selectedCategory)}
                     aria-pressed={!selectedCategory}
-                    onClick={() => setSelectedCategory(null)}
+                    onClick={() => selectCategory(null)}
                   >
                     {t.allCategories}
                   </button>
-                  {shownCategories.map((c) => (
+                  {quickCategories.map((c) => (
                     <button
                       key={c.id}
                       type="button"
                       className={chip(selectedCategory === c.slug)}
                       aria-pressed={selectedCategory === c.slug}
-                      onClick={() => setSelectedCategory(c.slug)}
+                      onClick={() => selectCategory(c.slug)}
                     >
                       {c.name}
                     </button>
                   ))}
+                  <CategoryMenu
+                    categories={categories}
+                    selected={selectedCategory}
+                    onSelect={selectCategory}
+                    label={t.moreCategories}
+                    text={t.otherCategories}
+                  />
                 </>
               )}
             </div>

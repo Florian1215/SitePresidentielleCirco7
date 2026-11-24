@@ -226,6 +226,8 @@ export const en: Dict = {
     search: 'Search',
     searchPlaceholder: 'Search for an article…',
     allCategories: 'All',
+    moreCategories: 'All categories',
+    otherCategories: 'More',
     loading: 'Loading…',
     loadError: 'The articles cannot be loaded at the moment.',
     noArticles: 'No articles yet.',

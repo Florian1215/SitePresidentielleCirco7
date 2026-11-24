@@ -226,6 +226,8 @@ export const de: Dict = {
     search: 'Suchen',
     searchPlaceholder: 'Artikel suchen…',
     allCategories: 'Alle',
+    moreCategories: 'Alle Kategorien',
+    otherCategories: 'Weitere',
     loading: 'Wird geladen…',
     loadError: 'Die Artikel können derzeit nicht geladen werden.',
     noArticles: 'Noch keine Artikel.',

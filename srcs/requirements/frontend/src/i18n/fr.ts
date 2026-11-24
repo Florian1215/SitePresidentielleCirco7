@@ -233,6 +233,8 @@ export const fr = {
     search: 'Rechercher',
     searchPlaceholder: 'Rechercher un article…',
     allCategories: 'Toutes',
+    moreCategories: 'Toutes les catégories',
+    otherCategories: 'Autres',
     loading: 'Chargement…',
     loadError: 'Impossible de charger les articles pour le moment.',
     noArticles: "Aucun article pour l'instant.",
