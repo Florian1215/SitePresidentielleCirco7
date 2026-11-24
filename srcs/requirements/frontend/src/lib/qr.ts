@@ -83,11 +83,11 @@ export async function renderQr(url: string, opts: QrOptions): Promise<HTMLCanvas
   // Sticker : carte violette aux coins arrondis, logo en haut, QR code blanc en bas
   const W = 1000;
   const PAD = 110;
-  const GAP = 90;
   const QR = W - PAD * 2;
-  /** Zone du logo : un carré de la taille du QR code. */
-  const LOGO = QR;
-  const H = PAD + LOGO + GAP + QR + PAD;
+  /** Zone du logo : presque toute la largeur de la carte, collée au QR code. */
+  const LOGO_PAD = 30;
+  const LOGO = W - LOGO_PAD * 2;
+  const H = LOGO_PAD + LOGO + QR + PAD;
   const [el, ctx] = canvas(W, H);
   ctx.fillStyle = VIOLET;
   ctx.beginPath();
@@ -101,12 +101,12 @@ export async function renderQr(url: string, opts: QrOptions): Promise<HTMLCanvas
     img = await loadImage(DEFAULT_QR_LOGO);
   }
   // Logo entier, centré dans sa zone (sans le déformer)
-  const scale = Math.min(QR / img.naturalWidth, LOGO / img.naturalHeight);
+  const scale = Math.min(LOGO / img.naturalWidth, LOGO / img.naturalHeight);
   const lw = img.naturalWidth * scale;
   const lh = img.naturalHeight * scale;
-  ctx.drawImage(img, (W - lw) / 2, PAD + (LOGO - lh) / 2, lw, lh);
+  ctx.drawImage(img, (W - lw) / 2, LOGO_PAD + (LOGO - lh) / 2, lw, lh);
 
-  drawModules(ctx, m, PAD, PAD + LOGO + GAP, QR, '#ffffff');
+  drawModules(ctx, m, PAD, LOGO_PAD + LOGO, QR, '#ffffff');
   return el;
 }
 
