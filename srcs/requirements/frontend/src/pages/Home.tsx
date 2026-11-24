@@ -5,6 +5,7 @@ import { Photo } from '../components/Photo';
 import { SupportMelenchon } from '../components/SupportMelenchon';
 import { CATEGORY_ICONS } from '../data/category-icons';
 import { api } from '../lib/api';
+import { useAuth } from '../lib/auth';
 import { CAMPAIGN, COUNTRIES, daysUntil } from '../lib/campaign';
 import { useI18n } from '../lib/i18n';
 import type { CampaignEvent } from '../lib/models';
@@ -37,6 +38,8 @@ export default function Home() {
   const i18n = useI18n();
   const t = i18n.d.home;
   const programme = useProgramme();
+  /** Pour l'instant, les trois urgences ne sont visibles qu'une fois connecté·e. */
+  const { isLoggedIn } = useAuth();
 
   /** Les trois urgences, reliées à leur partie du programme (couleur, picto, mesures phares). */
   const urgences = useMemo(
@@ -166,53 +169,57 @@ export default function Home() {
       {/* TROIS URGENCES */}
       <section className="section">
         <div className="site-container">
-          <div className="section-head">
-            <span className="eyebrow">{t.programmeEyebrow}</span>
-            <h2>{t.urgencesTitle}</h2>
-          </div>
-          <ol className="m-0 grid list-none grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-6 p-0">
-            {urgences.map((u, i) => {
-              const icon = CATEGORY_ICONS[u.cat.icon];
-              return (
-                <li key={u.slug} className="flex">
-                  <Link
-                    className={`group flex w-full flex-col overflow-hidden rounded-[14px] border border-(--bordure) bg-white text-noir no-underline shadow-site transition-[translate,rotate,box-shadow] duration-250 ease-bounce hover:-translate-y-1.5 hover:shadow-[0_22px_44px_rgba(33,35,32,0.16)] focus-visible:-translate-y-1.5 focus-visible:-rotate-[0.6deg] focus-visible:shadow-[0_22px_44px_rgba(33,35,32,0.16)] focus-visible:outline-4 focus-visible:outline-offset-3 focus-visible:outline-jaune motion-reduce:hover:translate-y-0 motion-reduce:hover:rotate-0 cat-${u.cat.color} ${i === 1 ? 'hover:rotate-[0.6deg]' : 'hover:-rotate-[0.6deg]'}`}
-                    to={{ pathname: '/programme', hash: u.slug }}
-                  >
-                    {/* Hauteur minimale : deux lignes de titre, pour que les en-têtes d'une même rangée soient alignés */}
-                    <div className="flex min-h-[calc(2*1.05*clamp(26px,2.6vw,32px)+36px)] items-center justify-between gap-4 border-b border-(--bordure) bg-(--fond) py-[18px] pr-[18px] pl-6">
-                      <span className="order-2 grid h-14 w-14 shrink-0 place-items-center transition-[rotate,scale] duration-300 ease-bounce group-hover:-rotate-12 group-hover:scale-110 group-focus-visible:-rotate-12 group-focus-visible:scale-110">
-                        <svg
-                          className="h-10 w-10 fill-(--bordure)"
-                          viewBox={icon.viewBox}
-                          aria-hidden="true"
-                          focusable="false"
-                        >
-                          <path d={icon.d} />
-                        </svg>
-                      </span>
-                      <h3 className="m-0 text-[clamp(26px,2.6vw,32px)] leading-[1.05] text-(--titre) uppercase">{u.title}</h3>
-                    </div>
-                    <div className="flex flex-1 flex-col px-6 pt-[18px] pb-[22px]">
-                      <p className="mt-0 mb-3.5 text-texte">{u.text}</p>
-                      <ul className="m-0 mb-5 grid list-none gap-2 p-0">
-                        {u.keys.map((m) => (
-                          <li key={m.title} className={KEY_ITEM}>
-                            {m.title}
-                          </li>
-                        ))}
-                      </ul>
-                      <span className="mt-auto inline-flex items-center gap-2 self-start rounded-full border-2 border-(--bordure) px-3.5 py-2 text-[14px] font-bold text-(--titre) transition-[gap,background,color] duration-200 group-hover:gap-3.5 group-hover:bg-(--bordure) group-hover:text-white group-focus-visible:gap-3.5 group-focus-visible:bg-(--bordure) group-focus-visible:text-white">
-                        {i18n.f(t.seeMeasures, { n: u.count })} <span aria-hidden="true">→</span>
-                      </span>
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
-          </ol>
+          {isLoggedIn && (
+            <>
+              <div className="section-head">
+                <span className="eyebrow">{t.programmeEyebrow}</span>
+                <h2>{t.urgencesTitle}</h2>
+              </div>
+              <ol className="m-0 grid list-none grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-6 p-0">
+                {urgences.map((u, i) => {
+                  const icon = CATEGORY_ICONS[u.cat.icon];
+                  return (
+                    <li key={u.slug} className="flex">
+                      <Link
+                        className={`group flex w-full flex-col overflow-hidden rounded-[14px] border border-(--bordure) bg-white text-noir no-underline shadow-site transition-[translate,rotate,box-shadow] duration-250 ease-bounce hover:-translate-y-1.5 hover:shadow-[0_22px_44px_rgba(33,35,32,0.16)] focus-visible:-translate-y-1.5 focus-visible:-rotate-[0.6deg] focus-visible:shadow-[0_22px_44px_rgba(33,35,32,0.16)] focus-visible:outline-4 focus-visible:outline-offset-3 focus-visible:outline-jaune motion-reduce:hover:translate-y-0 motion-reduce:hover:rotate-0 cat-${u.cat.color} ${i === 1 ? 'hover:rotate-[0.6deg]' : 'hover:-rotate-[0.6deg]'}`}
+                        to={{ pathname: '/programme', hash: u.slug }}
+                      >
+                        {/* Hauteur minimale : deux lignes de titre, pour que les en-têtes d'une même rangée soient alignés */}
+                        <div className="flex min-h-[calc(2*1.05*clamp(26px,2.6vw,32px)+36px)] items-center justify-between gap-4 border-b border-(--bordure) bg-(--fond) py-[18px] pr-[18px] pl-6">
+                          <span className="order-2 grid h-14 w-14 shrink-0 place-items-center transition-[rotate,scale] duration-300 ease-bounce group-hover:-rotate-12 group-hover:scale-110 group-focus-visible:-rotate-12 group-focus-visible:scale-110">
+                            <svg
+                              className="h-10 w-10 fill-(--bordure)"
+                              viewBox={icon.viewBox}
+                              aria-hidden="true"
+                              focusable="false"
+                            >
+                              <path d={icon.d} />
+                            </svg>
+                          </span>
+                          <h3 className="m-0 text-[clamp(26px,2.6vw,32px)] leading-[1.05] text-(--titre) uppercase">{u.title}</h3>
+                        </div>
+                        <div className="flex flex-1 flex-col px-6 pt-[18px] pb-[22px]">
+                          <p className="mt-0 mb-3.5 text-texte">{u.text}</p>
+                          <ul className="m-0 mb-5 grid list-none gap-2 p-0">
+                            {u.keys.map((m) => (
+                              <li key={m.title} className={KEY_ITEM}>
+                                {m.title}
+                              </li>
+                            ))}
+                          </ul>
+                          <span className="mt-auto inline-flex items-center gap-2 self-start rounded-full border-2 border-(--bordure) px-3.5 py-2 text-[14px] font-bold text-(--titre) transition-[gap,background,color] duration-200 group-hover:gap-3.5 group-hover:bg-(--bordure) group-hover:text-white group-focus-visible:gap-3.5 group-focus-visible:bg-(--bordure) group-focus-visible:text-white">
+                            {i18n.f(t.seeMeasures, { n: u.count })} <span aria-hidden="true">→</span>
+                          </span>
+                        </div>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ol>
+            </>
+          )}
           <Photo
-            className="mt-[clamp(40px,6vw,72px)] aspect-[21/9] overflow-hidden rounded-site"
+            className={`${isLoggedIn ? 'mt-[clamp(40px,6vw,72px)]' : ''} aspect-[21/9] overflow-hidden rounded-site`}
             name="berlinBrandebourg"
             sizes="(max-width: 1248px) 100vw, 1200px"
             caption={t.photoCaption}
