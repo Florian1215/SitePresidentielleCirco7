@@ -225,6 +225,30 @@ class PollingStation(models.Model):
         return f"{self.name} ({self.city})"
 
 
+class Announcement(models.Model):
+    """Message du bandeau défilant en haut du site (« Site en construction », « Élection bientôt »…)."""
+
+    text_fr = models.CharField("message (français)", max_length=200)
+    text_en = models.CharField(
+        "message (anglais)", max_length=200, blank=True,
+        help_text="Facultatif : à défaut, la version française s'affiche.",
+    )
+    text_de = models.CharField(
+        "message (allemand)", max_length=200, blank=True,
+        help_text="Facultatif : à défaut, la version française s'affiche.",
+    )
+    order = models.PositiveSmallIntegerField("ordre", default=0, help_text="Les plus petits nombres défilent en premier.")
+    is_active = models.BooleanField("affiché", default=True)
+
+    class Meta:
+        verbose_name = "message du bandeau"
+        verbose_name_plural = "messages du bandeau"
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.text_fr
+
+
 class FaqEntry(models.Model):
     """Question fréquente de la page « Voter » (modifiable uniquement dans l'admin)."""
 

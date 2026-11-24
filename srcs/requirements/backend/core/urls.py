@@ -32,6 +32,7 @@ urlpatterns = [
     path("action-groups/<int:pk>/photos/<int:photo_id>/", group_pages.ActionGroupPhotoView.as_view(),
          name="action-group-photo"),
     path("polling-stations/", views.PollingStationsView.as_view(), name="polling-stations"),
+    path("announcements/", views.AnnouncementsView.as_view(), name="announcements"),
     path("faq/", views.FaqView.as_view(), name="faq"),
     path("footer-links/", views.FooterLinksView.as_view(), name="footer-links"),
 ]

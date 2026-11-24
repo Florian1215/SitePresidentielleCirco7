@@ -183,6 +183,14 @@ export interface FriendSite {
   url: string;
 }
 
+/** Message du bandeau défilant en haut du site (admin Django → Messages du bandeau), dans les trois langues. */
+export interface Announcement {
+  id: number;
+  text_fr: string;
+  text_en: string;
+  text_de: string;
+}
+
 /** Question fréquente de la page « Voter » (admin Django → Questions fréquentes), dans les trois langues. */
 export interface FaqEntry {
   id: number;

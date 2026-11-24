@@ -16,7 +16,7 @@ from blog.images import shrink_logo
 from .members import ANIMATORS_GROUP, can_grant_admin, is_editable, is_site_admin, member_status
 from .action_populaire import import_status, start_import_in_background
 from .tasks import sync_events
-from .models import ActionGroup, ActionGroupLink, ActionGroupPhoto, FaqEntry, FriendSite, MemberProfile, PollingStation, SignupForm, SocialLink, SupportersCount, Tracker, Visit, ZetkinEvent
+from .models import ActionGroup, ActionGroupLink, ActionGroupPhoto, Announcement, FaqEntry, FriendSite, MemberProfile, PollingStation, SignupForm, SocialLink, SupportersCount, Tracker, Visit, ZetkinEvent
 
 logger = logging.getLogger(__name__)
 
@@ -118,6 +118,15 @@ class ActionGroupAdmin(admin.ModelAdmin):
         if not self.has_add_permission(request):
             raise PermissionDenied
         return JsonResponse(import_status(job) or {"state": "unknown"})
+
+
+@admin.register(Announcement)
+class AnnouncementAdmin(admin.ModelAdmin):
+    list_display = ["text_fr", "order", "is_active"]
+    list_editable = ["order", "is_active"]
+    list_filter = ["is_active"]
+    search_fields = ["text_fr", "text_en", "text_de"]
+    fields = ["text_fr", "text_en", "text_de", "order", "is_active"]
 
 
 @admin.register(FaqEntry)

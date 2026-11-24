@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.text import slugify
 from rest_framework import serializers
 
-from .models import COUNTRIES, ActionGroup, ActionGroupLink, FaqEntry, FriendSite, MemberProfile, PollingStation, SocialLink
+from .models import COUNTRIES, ActionGroup, Announcement, ActionGroupLink, FaqEntry, FriendSite, MemberProfile, PollingStation, SocialLink
 
 User = get_user_model()
 
@@ -108,6 +108,14 @@ class ActionGroupSerializer(serializers.ModelSerializer):
         from .agenda import city_slug
 
         return city_slug(obj.calendar_city) if obj.calendar_city else None
+
+
+class AnnouncementSerializer(serializers.ModelSerializer):
+    """Message du bandeau dans les trois langues ; le site choisit selon la langue affichée."""
+
+    class Meta:
+        model = Announcement
+        fields = ["id", "text_fr", "text_en", "text_de"]
 
 
 class FaqEntrySerializer(serializers.ModelSerializer):

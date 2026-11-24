@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
+import { AnnouncementBar } from './components/AnnouncementBar';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { useAuth } from './lib/auth';
@@ -84,6 +85,7 @@ export function App() {
       <a className="skip-link" href="#contenu">
         Aller au contenu
       </a>
+      <AnnouncementBar />
       <Header />
       <main id="contenu" tabIndex={-1}>
         <Suspense fallback={null}>

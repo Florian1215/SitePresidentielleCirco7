@@ -12,11 +12,12 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .members import can_grant_admin, can_manage_members, can_manage_requests, can_use_trackers, is_animator, is_site_admin, user_action_group
-from .models import ActionGroup, FaqEntry, FriendSite, PollingStation, SignupForm, SocialLink, SupportersCount, ZetkinEvent
+from .models import ActionGroup, Announcement, FaqEntry, FriendSite, PollingStation, SignupForm, SocialLink, SupportersCount, ZetkinEvent
 from .zetkin import CITIES
 from .serializers import (
     ActionGroupSerializer,
     PollingStationSerializer,
+    AnnouncementSerializer,
     FaqEntrySerializer,
     FriendSiteSerializer,
     LoginSerializer,
@@ -226,6 +227,16 @@ class PollingStationsView(APIView):
 
     def get(self, request):
         return Response(PollingStationSerializer(PollingStation.objects.filter(is_active=True), many=True).data)
+
+
+class AnnouncementsView(APIView):
+    """Messages du bandeau défilant en haut du site (admin Django → Messages du bandeau)."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        return Response(AnnouncementSerializer(Announcement.objects.filter(is_active=True), many=True).data)
 
 
 class FaqView(APIView):

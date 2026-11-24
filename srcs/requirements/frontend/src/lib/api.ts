@@ -7,6 +7,7 @@ import type {
   ActionGroupDetail,
   ActionGroupLink,
   GroupPhoto,
+  Announcement,
   FaqEntry,
   ApiCountry,
   Article,
@@ -361,6 +362,11 @@ export const api = {
   /** Bureaux de vote affichés sur la carte de la page Voter. */
   pollingStations() {
     return request<PollingStation[]>('/api/polling-stations/');
+  },
+
+  /** Messages du bandeau défilant en haut du site. */
+  announcements() {
+    return request<Announcement[]>('/api/announcements/');
   },
 
   /** Questions fréquentes de la page « Voter ». */
