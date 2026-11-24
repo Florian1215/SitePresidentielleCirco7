@@ -415,7 +415,7 @@ function EditorBar({ group, onChange }: { group: ActionGroupDetail; onChange: (g
   const [open, setOpen] = useState<Panel | null>(null);
   const close = () => setOpen(null);
   return (
-    <div className="border-b-4 border-jaune bg-violet text-creme">
+    <div className="bg-violet text-creme">
       <div className="site-container flex flex-wrap items-center justify-between gap-3 py-3">
         <span className="text-[14px] bold">Mode édition</span>
         <nav aria-label="Modifier la page du groupe" className="flex flex-wrap gap-2">
