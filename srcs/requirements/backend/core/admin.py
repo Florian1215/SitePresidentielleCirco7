@@ -11,6 +11,8 @@ from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import redirect
 from django.urls import path
 
+from blog.images import shrink_logo
+
 from .members import ANIMATORS_GROUP, can_grant_admin, is_editable, is_site_admin, member_status
 from .action_populaire import import_status, start_import_in_background
 from .tasks import sync_events
@@ -74,6 +76,13 @@ class ActionGroupAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related("links")
+
+    def save_model(self, request, obj, form, change):
+        # Logo envoyé depuis l'admin : recadré et compressé comme depuis le site
+        if "logo" in form.changed_data and obj.logo and not obj.logo._committed:
+            content = shrink_logo(obj.logo.file)
+            obj.logo.save(content.name, content, save=False)
+        super().save_model(request, obj, form, change)
 
     @admin.display(description="agenda proposé")
     def calendar_city_display(self, obj):

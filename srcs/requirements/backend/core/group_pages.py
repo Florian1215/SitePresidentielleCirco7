@@ -25,7 +25,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
 
-from blog.images import UploadSerializer, _shrink
+from blog.images import UploadSerializer, _shrink, shrink_logo
 
 from .members import can_edit_group
 from .models import (
@@ -234,7 +234,8 @@ class ActionGroupImageView(APIView):
             return forbidden()
         serializer = UploadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        content = _shrink(serializer.validated_data["image"])
+        upload = serializer.validated_data["image"]
+        content = shrink_logo(upload) if self.field == "logo" else _shrink(upload)
         image = getattr(group, self.field)
         old = image.name
         image.save(content.name, content, save=False)
