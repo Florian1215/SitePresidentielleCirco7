@@ -181,9 +181,9 @@ export default function Home() {
                   >
                     {/* Hauteur minimale : deux lignes de titre, pour que les en-têtes d'une même rangée soient alignés */}
                     <div className="flex min-h-[calc(2*1.05*clamp(26px,2.6vw,32px)+36px)] items-center justify-between gap-4 border-b border-(--bordure) bg-(--fond) py-[18px] pr-[18px] pl-6">
-                      <span className="order-2 grid h-14 w-14 shrink-0 place-items-center rounded-full bg-white shadow-[0_0_0_3px_var(--bordure)] transition-[rotate,scale] duration-300 ease-bounce group-hover:-rotate-12 group-hover:scale-110 group-focus-visible:-rotate-12 group-focus-visible:scale-110">
+                      <span className="order-2 grid h-14 w-14 shrink-0 place-items-center transition-[rotate,scale] duration-300 ease-bounce group-hover:-rotate-12 group-hover:scale-110 group-focus-visible:-rotate-12 group-focus-visible:scale-110">
                         <svg
-                          className="h-[26px] w-[26px] fill-(--bordure)"
+                          className="h-10 w-10 fill-(--bordure)"
                           viewBox={icon.viewBox}
                           aria-hidden="true"
                           focusable="false"
