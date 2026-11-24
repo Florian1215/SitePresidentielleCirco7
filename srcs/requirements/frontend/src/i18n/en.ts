@@ -288,6 +288,26 @@ export const en: Dict = {
     submit: 'Get involved',
   },
 
+  groupPage: {
+    eyebrow: 'Action group',
+    notFound: 'This action group does not exist or is no longer listed.',
+    allGroups: '← All action groups',
+    followTitle: 'Follow us',
+    networksAria: "The group's social networks",
+    engage: 'Get involved',
+    joinOnAp: 'Join on Action populaire',
+    newTab: '(new tab)',
+    mapAria: 'Map: area of the group {name}',
+    photosTitle: 'In pictures',
+    eventsTitle: 'Upcoming events',
+    articlesTitle: 'Our articles',
+    noEvents: 'No event announced yet: follow us so you don’t miss anything!',
+    subscribe: 'Subscribe to the calendar',
+    loading: 'Loading…',
+    openPage: '{name} — group page',
+    close: 'Close',
+  },
+
   legal: {
     eyebrow: 'Legal information',
     title: 'Legal notice & personal data',

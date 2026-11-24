@@ -91,10 +91,18 @@ class ActionGroupSerializer(serializers.ModelSerializer):
     #: Ville de l'agenda auquel s'abonner, et son identifiant dans l'adresse du calendrier (/api/agenda/<slug>.ics).
     calendar_city = serializers.CharField(read_only=True, allow_null=True)
     calendar_slug = serializers.SerializerMethodField()
+    #: Adresse du logo (/media/…), null sans logo : proposé pour les QR codes « sticker »
+    logo = serializers.SerializerMethodField()
 
     class Meta:
         model = ActionGroup
-        fields = ["id", "name", "city", "country", "latitude", "longitude", "url", "links", "calendar_city", "calendar_slug"]
+        fields = [
+            "id", "slug", "name", "city", "country", "latitude", "longitude", "url", "links", "calendar_city",
+            "calendar_slug", "logo",
+        ]
+
+    def get_logo(self, obj):
+        return obj.logo.url if obj.logo else None
 
     def get_calendar_slug(self, obj):
         from .agenda import city_slug

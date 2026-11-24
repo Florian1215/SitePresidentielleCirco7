@@ -6,16 +6,30 @@ import type { Member, MemberRole, MemberStatus } from '../lib/models';
 import { refreshPendingMembers } from '../lib/pending';
 import { usePageTitle } from '../lib/title';
 
-/** Les trois droits attribuables. */
+/** Les droits attribuables (un·e gestionnaire de GA ne donne que « Membre » ou « Relecteur·ice »). */
 const ROLES: { value: MemberRole; label: string; hint: string }[] = [
-  { value: 'admin', label: 'Admin', hint: 'tous les droits sur le site : articles, publication directe, membres, catégories (sans accès à /admin)' },
-  { value: 'writer', label: 'Rédacteur·ice', hint: 'écrit des articles et valide ceux des autres' },
+  {
+    value: 'admin',
+    label: 'Admin',
+    hint: 'tous les droits sur le site : articles, publication directe, membres, catégories (sans accès à /admin)',
+  },
+  {
+    value: 'manager',
+    label: 'Gestionnaire du GA',
+    hint: "comme Membre, et accepte ou refuse les demandes de compte des personnes de son groupe d'action",
+  },
+  {
+    value: 'animator',
+    label: 'Membre',
+    hint: "écrit et valide des articles, et modifie la page de son groupe d'action (réseaux, lien « Je m'engage », photos)",
+  },
   { value: 'reviewer', label: 'Relecteur·ice', hint: 'valide seulement les articles des autres' },
 ];
 
 const ROLE_LABEL: Record<MemberRole, string> = {
   admin: 'Admin',
-  writer: 'Rédacteur·ice',
+  manager: 'Gestionnaire du GA',
+  animator: 'Membre',
   reviewer: 'Relecteur·ice',
   editor: 'Éditeur·ice (ancien rôle)',
   none: 'Aucun droit',
@@ -64,19 +78,22 @@ export default function Members() {
     .filter((m) => !q || fold(`${fullName(m)} ${m.username}`).includes(q))
     .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
 
-  /** Demandes en attente : tout en haut, hors des groupes d'action. */
-  const pending = shown.filter((m) => m.status === 'pending');
-
-  /** Autres membres rangés par groupe d'action (ordre alphabétique), ceux sans groupe à la fin. */
+  /**
+   * Comptes rangés par groupe d'action (ordre alphabétique), ceux sans groupe à la fin. Dans chaque groupe, les
+   * demandes en attente d'abord (pastille rouge sur le titre du groupe).
+   */
   const sections = useMemo(() => {
     const byGroup = new Map<number | null, Member[]>();
     for (const m of shown) {
-      if (m.status === 'pending') continue;
       const key = m.action_group?.id ?? null;
       byGroup.set(key, [...(byGroup.get(key) ?? []), m]);
     }
     return [...byGroup.values()]
-      .map((list) => ({ group: list[0].action_group, list }))
+      .map((list) => ({
+        group: list[0].action_group,
+        list,
+        pending: list.filter((m) => m.status === 'pending').length,
+      }))
       .sort((a, b) => (!a.group ? 1 : !b.group ? -1 : i18n.compare(a.group.name, b.group.name)));
   }, [shown, i18n]);
 
@@ -93,7 +110,6 @@ export default function Members() {
     <section className="section-sm">
       <div className="site-container max-w-[1000px]">
         <h1 className="h2 mb-6">Membres</h1>
-
         <div className="field mb-6 max-w-[420px]">
           <label htmlFor="members-search" className="visually-hidden">
             Rechercher un membre
@@ -115,20 +131,11 @@ export default function Members() {
           <p className="m-0 font-bold">Aucun membre trouvé.</p>
         ) : (
           <div className="stack gap-8!">
-            {pending.length > 0 && (
-              <section aria-labelledby="demandes">
-                <h2 id="demandes" className="mb-3 flex flex-wrap items-baseline gap-x-3 text-[22px]">
-                  Demandes en attente
-                  <span className="text-[14px] font-normal text-texte">{pending.length}</span>
-                </h2>
-                <MemberList list={pending} onChange={replace} onRemoved={removed} showGroup />
-              </section>
-            )}
             {sections.length > 0 && (
               <div className="stack gap-5!">
-                {sections.map(({ group, list }) => (
-                  // Fermé par défaut ; ouvert pendant une recherche pour montrer les résultats
-                  <details key={`${group?.id ?? 'aucun'}-${q ? 'q' : ''}`} open={!!q} className="group/ga">
+                {sections.map(({ group, list, pending }) => (
+                  // Fermé par défaut ; ouvert s'il a des demandes en attente, et pendant une recherche
+                  <details key={`${group?.id ?? 'aucun'}-${q ? 'q' : ''}`} open={!!q || pending > 0} className="group/ga">
                     <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-3 border-b-2 border-violet py-2 [&::-webkit-details-marker]:hidden">
                       <span
                         className="inline-block w-4 text-[18px] text-rouge transition-transform duration-150 group-open/ga:rotate-90"
@@ -137,9 +144,18 @@ export default function Members() {
                         ▸
                       </span>
                       <h2 className="m-0 inline text-[24px]">{group ? group.name : 'Sans groupe d’action'}</h2>
+                      {pending > 0 && (
+                        <span
+                          className="inline-grid h-6 min-w-6 place-items-center self-center rounded-full bg-rouge px-1.5 text-[13px] font-bold text-white"
+                          title={`${pending} demande${pending > 1 ? 's' : ''} en attente`}
+                        >
+                          {pending}
+                          <span className="sr-only"> demande{pending > 1 ? 's' : ''} en attente</span>
+                        </span>
+                      )}
                       <span className="text-[14px] font-normal text-texte">
                         {group && [group.city, i18n.country(group.country)].filter(Boolean).join(', ') + ' · '}
-                        {list.length} membre{list.length > 1 ? 's' : ''}
+                        {list.length - pending} membre{list.length - pending > 1 ? 's' : ''}
                       </span>
                     </summary>
                     <div className="mt-3 pl-6 max-[700px]:pl-3">
@@ -160,44 +176,34 @@ function MemberList({
   list,
   onChange,
   onRemoved,
-  showGroup = false,
 }: {
   list: Member[];
   onChange: (m: Member) => void;
   onRemoved: (id: number) => void;
-  showGroup?: boolean;
 }) {
   return (
     <ul className="m-0 list-none divide-y divide-gris overflow-hidden rounded-site border border-gris bg-white p-0">
       {list.map((m) => (
         <li key={m.id}>
-          <MemberRow member={m} onChange={onChange} onRemoved={() => onRemoved(m.id)} showGroup={showGroup} />
+          <MemberRow member={m} onChange={onChange} onRemoved={() => onRemoved(m.id)} />
         </li>
       ))}
     </ul>
   );
 }
 
-function MemberRow({
-  member: m,
-  onChange,
-  onRemoved,
-  showGroup,
-}: {
-  member: Member;
-  onChange: (m: Member) => void;
-  onRemoved: () => void;
-  /** Afficher le groupe d'action (demandes en attente, hors des sections par groupe). */
-  showGroup: boolean;
-}) {
+function MemberRow({ member: m, onChange, onRemoved }: { member: Member; onChange: (m: Member) => void; onRemoved: () => void }) {
   const i18n = useI18n();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [confirming, setConfirming] = useState<'refuse' | 'revoke' | 'admin' | null>(null);
+  const auth = useAuth();
   /** Seul·es les membres du staff peuvent nommer un·e admin. */
-  const canGrantAdmin = useAuth().canGrantAdmin;
+  const canGrantAdmin = auth.canGrantAdmin;
+  /** Gestionnaire de GA (pas admin) : accepte seulement comme membre ou relecteur·ice. */
+  const roles = auth.canManageMembers ? ROLES : ROLES.filter((r) => r.value === 'animator' || r.value === 'reviewer');
   /** Rôle donné à l'acceptation d'une demande. */
-  const [acceptRole, setAcceptRole] = useState<MemberRole>('writer');
+  const [acceptRole, setAcceptRole] = useState<MemberRole>('animator');
   const badge = STATUS_BADGE[m.status];
   /** Lien « nouveau mot de passe » créé pour ce membre (affiché sous son nom). */
   const [resetLink, setResetLink] = useState<{ url: string; days: number } | null>(null);
@@ -251,12 +257,12 @@ function MemberRow({
       onChange={(e) => onSelect(e.target.value as MemberRole)}
     >
       {/* Ancien rôle (éditeur·ice, aucun droit) : affiché tant qu'on n'en a pas choisi un des trois */}
-      {!ROLES.some((r) => r.value === value) && (
+      {!roles.some((r) => r.value === value) && (
         <option value={value} disabled>
           {ROLE_LABEL[value]}
         </option>
       )}
-      {ROLES.map((r) => (
+      {roles.map((r) => (
         <option key={r.value} value={r.value} title={r.hint} disabled={r.value === 'admin' && !canGrantAdmin}>
           {r.label}
         </option>
@@ -273,7 +279,6 @@ function MemberRow({
         </p>
         <p className="m-0 mt-1 text-[13px] text-texte">
           {m.username} · {m.status === 'pending' ? 'demande du' : 'compte créé le'} {i18n.date(m.date_joined)}
-          {showGroup && ` · ${m.action_group ? m.action_group.name : 'aucun groupe d’action'}`}
           {m.last_login && ` · dernière connexion le ${i18n.date(m.last_login)}`}
         </p>
       </div>
@@ -511,8 +516,8 @@ function RevokeDialog({
             Retirer l’accès de {fullName(member)} ?
           </h2>
           <p className="m-0">
-            Ce compte sera déconnecté immédiatement et ne pourra plus se connecter. Ses articles restent en ligne, et
-            vous pourrez rétablir l’accès à tout moment.
+            Ce compte sera déconnecté immédiatement et ne pourra plus se connecter. Ses articles restent en ligne, et vous pourrez
+            rétablir l’accès à tout moment.
           </p>
           <div className="flex flex-wrap justify-end gap-2">
             <button type="button" className="btn btn-outline btn-sm" onClick={() => dialog.current?.close()}>

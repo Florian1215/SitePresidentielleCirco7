@@ -93,6 +93,11 @@ export default function ArticlePage() {
                   {a.category_detail.name}
                 </Link>
               )}
+              {a.action_group_detail && (
+                <Link className="badge no-underline" to={`/groupes/${a.action_group_detail.slug}`}>
+                  {a.action_group_detail.name} →
+                </Link>
+              )}
             </div>
             <h1 className="text-[clamp(36px,6vw,64px)] leading-[1.05]">{a.title}</h1>
             {a.excerpt && <p className="lead">{a.excerpt}</p>}

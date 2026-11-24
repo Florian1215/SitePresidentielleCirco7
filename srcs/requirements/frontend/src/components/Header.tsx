@@ -49,7 +49,7 @@ export function Header() {
 
   // Pastille « Membres » : demandes de compte en attente (administrateur·ices)
   const pendingMembers = usePendingMembersCount();
-  const canManageMembers = auth.canManageMembers;
+  const canManageMembers = auth.canManageRequests;
   useEffect(() => {
     if (canManageMembers) refreshPendingMembers();
   }, [canManageMembers, location.pathname]);
@@ -70,21 +70,31 @@ export function Header() {
             </span>
             <nav
               aria-label="Espace membre"
-              className="flex flex-wrap gap-4 [&_a]:font-medium [&_a]:text-creme [&_a]:no-underline [&_a:hover]:underline"
+              className="flex flex-wrap items-center gap-4 [&_a]:font-medium [&_a]:text-creme [&_a]:no-underline [&_a:hover]:underline"
             >
+              {/* Accès rapide à la page de son groupe d'action */}
+              {user.action_group && (
+                <Link
+                  to={`/groupes/${user.action_group.slug}`}
+                  title={user.action_group.name}
+                  className="rounded-full bg-jaune px-3 py-0.5 font-bold! text-noir! hover:bg-white hover:no-underline!"
+                >
+                  Mon GA
+                </Link>
+              )}
               {(auth.canWrite || auth.canReview) && (
                 <Link to="/redaction/articles" className="inline-flex items-center gap-1.5">
                   Articles
                   <CountBadge count={pending} label={`article${pending > 1 ? 's' : ''} à valider`} />
                 </Link>
               )}
-              {auth.canManageMembers && (
+              {auth.canManageRequests && (
                 <Link to="/redaction/membres" className="inline-flex items-center gap-1.5">
                   Membres
                   <CountBadge count={pendingMembers} label={`demande${pendingMembers > 1 ? 's' : ''} de compte en attente`} />
                 </Link>
               )}
-              {auth.canManageMembers && <Link to="/redaction/trackers">Trackers</Link>}
+              {auth.canUseTrackers && <Link to="/redaction/trackers">Trackers</Link>}
               {(user.is_staff || user.is_admin) && (
                 <a
                   href="/admin/"

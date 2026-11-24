@@ -1,37 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import { QrLink } from '../components/QrLink';
 import { api, apiErrorMessage } from '../lib/api';
 import { LANGS, useI18n } from '../lib/i18n';
-import type { Lang } from '../lib/i18n';
 import type { Tracker, VisitStats } from '../lib/models';
 import { usePageTitle } from '../lib/title';
 import { trackerUrl } from '../lib/tracker';
-
-/** Nom de fichier sans accents ni caractères spéciaux. */
-const fileSlug = (s: string) =>
-  s
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '') || 'tracker';
-
-/** Télécharge le QR code d'un lien en PNG (bibliothèque chargée seulement à ce moment-là). */
-async function downloadQr(url: string, filename: string) {
-  const { default: QRCode } = await import('qrcode');
-  const dataUrl = await QRCode.toDataURL(url, {
-    width: 1024,
-    margin: 2,
-    errorCorrectionLevel: 'M',
-    color: { dark: '#000000', light: '#ffffff' },
-  });
-  const a = document.createElement('a');
-  a.href = dataUrl;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
 
 /**
  * Page « Trackers » (administrateur·ices) : liens de suivi à mettre sur une affiche, un tract, un post…
@@ -281,28 +255,8 @@ function TrackerCard({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(t.name);
-  const [copied, setCopied] = useState<Lang | null>(null);
   /** Replié par défaut ; un tracker qui vient d'être créé s'ouvre pour copier ses liens. */
   const [open, setOpen] = useState(highlight);
-
-  const copy = async (lang: Lang) => {
-    try {
-      await navigator.clipboard.writeText(trackerUrl(t.code, lang));
-      setCopied(lang);
-      window.setTimeout(() => setCopied((c) => (c === lang ? null : c)), 2000);
-    } catch {
-      /* presse-papiers indisponible : le lien reste sélectionnable dans le champ */
-    }
-  };
-
-  const qr = async (lang: Lang) => {
-    setError('');
-    try {
-      await downloadQr(trackerUrl(t.code, lang), `qr-${fileSlug(t.name)}-${lang}.png`);
-    } catch {
-      setError('Impossible de créer le QR code.');
-    }
-  };
 
   const rename = async (e: FormEvent) => {
     e.preventDefault();
@@ -373,61 +327,14 @@ function TrackerCard({
 
       {open && (
         <div id={`tracker-details-${t.id}`} className="grid gap-4 border-t border-gris p-4">
+          <QrLink id={`tracker-${t.id}`} name={t.name} urlFor={(lang) => trackerUrl(t.code, lang)} />
+
           <p className="m-0 text-[13px] text-texte">
-            Identifiant <code>{t.code}</code> · créé le {i18n.date(t.created_at)}
+            {LANGS.map((l) => `${l.short} ${i18n.number(t.counts[l.code])}`).join(' · ')} · créé le {i18n.date(t.created_at)}
             {t.last_visit
               ? ` · dernière visite le ${i18n.date(t.last_visit, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`
               : " · aucune visite pour l'instant"}
           </p>
-
-          <div className="flex flex-wrap items-center gap-2" aria-label="Visites par langue">
-            {LANGS.map((l) => (
-              <span key={l.code} className="inline-flex items-center gap-2 rounded-lg bg-lavande px-3 py-1.5 text-violet">
-                <span className="text-[12px] font-bold">{l.label}</span>
-                <span className="text-[18px] leading-none font-extrabold">{i18n.number(t.counts[l.code])}</span>
-              </span>
-            ))}
-          </div>
-
-          <div className="grid gap-2">
-            {LANGS.map((l) => {
-              const url = trackerUrl(t.code, l.code);
-              return (
-                <div key={l.code} className="flex items-center gap-2 max-[620px]:flex-wrap">
-                  <span
-                    className="inline-grid h-[26px] w-[34px] shrink-0 place-items-center rounded-[5px] bg-violet text-[12px] font-extrabold text-creme"
-                    title={l.label}
-                  >
-                    {l.short}
-                  </span>
-                  <label htmlFor={`tracker-${t.id}-${l.code}`} className="visually-hidden">
-                    Lien en {l.label}
-                  </label>
-                  <input
-                    id={`tracker-${t.id}-${l.code}`}
-                    type="text"
-                    readOnly
-                    value={url}
-                    className="min-w-0 flex-1 bg-white py-1.5! text-[14px] max-[620px]:basis-[calc(100%-42px)]"
-                    onFocus={(e) => e.target.select()}
-                  />
-                  <div className="flex shrink-0 gap-2 max-[620px]:w-full max-[620px]:pl-[42px]">
-                    <button type="button" className="btn btn-sm min-w-[96px]" onClick={() => copy(l.code)}>
-                      {copied === l.code ? '✓ Copié' : 'Copier'}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-outline btn-sm"
-                      onClick={() => qr(l.code)}
-                      title={`Télécharger le QR code du lien en ${l.label} (PNG)`}
-                    >
-                      QR code
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
 
           <div className="flex flex-wrap items-center gap-3 border-t border-gris pt-3">
             {editing ? (
@@ -470,7 +377,7 @@ function TrackerCard({
                   Non
                 </button>
               </>
-            ) : (
+            ) : t.can_edit ? (
               <>
                 <button type="button" className="btn-link text-[14px] font-bold no-underline!" onClick={() => setEditing(true)}>
                   Renommer
@@ -483,6 +390,10 @@ function TrackerCard({
                   Supprimer
                 </button>
               </>
+            ) : (
+              <span className="text-[13px] text-texte">
+                Créé par un autre compte : seul·e son auteur·ice ou un·e admin peut le modifier.
+              </span>
             )}
           </div>
 

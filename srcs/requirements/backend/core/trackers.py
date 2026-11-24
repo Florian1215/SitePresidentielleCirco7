@@ -1,4 +1,4 @@
-"""Visites et trackers (page « Trackers », administrateur·ices).
+"""Visites et trackers (page « Trackers », administrateur·ices et membres).
 
 Le site appelle `POST /api/track/` à chaque arrivée d'une personne (une fois par onglet, plus à chaque arrivée
 par un lien de suivi ou depuis un autre site), avec :
@@ -23,7 +23,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from .members import CanManageMembers
+from .members import CanUseTrackers, can_manage_members
 from .models import TRACKER_LANGS, Tracker, Visit
 
 LANG_CODES = [code for code, _ in TRACKER_LANGS]
@@ -107,7 +107,12 @@ def trackers_with_counts():
     return Tracker.objects.annotate(total=Count("visits"), last_visit=Max("visits__created_at"), **counts)
 
 
-def tracker_payload(tracker):
+def can_edit_tracker(user, tracker):
+    """Renommer, supprimer : les admins tous les trackers, les membres seulement ceux qu'ils ont créés."""
+    return can_manage_members(user) or tracker.created_by_id == user.id
+
+
+def tracker_payload(tracker, user):
     return {
         "id": tracker.id,
         "name": tracker.name,
@@ -116,14 +121,20 @@ def tracker_payload(tracker):
         "total": tracker.total,
         "counts": {lang: getattr(tracker, f"count_{lang}") for lang in LANG_CODES},
         "last_visit": tracker.last_visit,
+        "can_edit": can_edit_tracker(user, tracker),
     }
 
 
+def forbidden():
+    return Response({"detail": "Seul·e la personne qui a créé ce tracker (ou un·e admin) peut le modifier."},
+                    status=status.HTTP_403_FORBIDDEN)
+
+
 class TrackersView(APIView):
-    permission_classes = [CanManageMembers]
+    permission_classes = [CanUseTrackers]
 
     def get(self, request):
-        return Response([tracker_payload(t) for t in trackers_with_counts()])
+        return Response([tracker_payload(t, request.user) for t in trackers_with_counts()])
 
     def post(self, request):
         name = str(request.data.get("name", "")).strip()
@@ -132,30 +143,35 @@ class TrackersView(APIView):
         if len(name) > 120:
             return Response({"name": ["120 caractères au maximum."]}, status=status.HTTP_400_BAD_REQUEST)
         tracker = Tracker.objects.create(name=name, code=new_code(), created_by=request.user)
-        return Response(tracker_payload(trackers_with_counts().get(pk=tracker.pk)), status=status.HTTP_201_CREATED)
+        return Response(tracker_payload(trackers_with_counts().get(pk=tracker.pk), request.user), status=status.HTTP_201_CREATED)
 
 
 class TrackerView(APIView):
-    permission_classes = [CanManageMembers]
+    permission_classes = [CanUseTrackers]
 
     def patch(self, request, pk):
         tracker = get_object_or_404(Tracker, pk=pk)
+        if not can_edit_tracker(request.user, tracker):
+            return forbidden()
         name = str(request.data.get("name", "")).strip()
         if not name or len(name) > 120:
             return Response({"name": ["Nom invalide (1 à 120 caractères)."]}, status=status.HTTP_400_BAD_REQUEST)
         tracker.name = name
         tracker.save(update_fields=["name"])
-        return Response(tracker_payload(trackers_with_counts().get(pk=pk)))
+        return Response(tracker_payload(trackers_with_counts().get(pk=pk), request.user))
 
     def delete(self, request, pk):
-        get_object_or_404(Tracker, pk=pk).delete()
+        tracker = get_object_or_404(Tracker, pk=pk)
+        if not can_edit_tracker(request.user, tracker):
+            return forbidden()
+        tracker.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class VisitStatsView(APIView):
     """Nombre total de visites, par langue et par origine (page « Trackers »)."""
 
-    permission_classes = [CanManageMembers]
+    permission_classes = [CanUseTrackers]
 
     def get(self, request):
         now = timezone.now()

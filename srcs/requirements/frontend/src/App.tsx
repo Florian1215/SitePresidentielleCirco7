@@ -18,6 +18,7 @@ const Soutenir = lazy(() => import('./pages/Soutenir'));
 const Redaction = lazy(() => import('./pages/Redaction'));
 const Members = lazy(() => import('./pages/Members'));
 const Trackers = lazy(() => import('./pages/Trackers'));
+const GroupPage = lazy(() => import('./pages/GroupPage'));
 const Legal = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.Legal })));
 const Login = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.Login })));
 const ResetPassword = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.ResetPassword })));
@@ -90,6 +91,8 @@ export function App() {
             <Route path="/" element={<Home />} />
             <Route path="/programme" element={<Programme />} />
             <Route path="/circonscription" element={<Circonscription />} />
+            {/* Page d'un groupe d'action (modifiable par ses membres) */}
+            <Route path="/groupes/:slug" element={<GroupPage />} />
             <Route path="/inscription-listes-electorales" element={<Voter />} />
             {/* Simulateur de l'impôt universel : lié depuis le bas de la page Programme */}
             <Route path="/impot-universel" element={<ImpotUniversel />} />
@@ -123,7 +126,7 @@ export function App() {
             <Route
               path="/redaction/membres"
               element={
-                <RequireAdmin allowed={(a) => a.canManageMembers}>
+                <RequireAdmin allowed={(a) => a.canManageRequests}>
                   <Members />
                 </RequireAdmin>
               }
@@ -131,7 +134,7 @@ export function App() {
             <Route
               path="/redaction/trackers"
               element={
-                <RequireAdmin allowed={(a) => a.canManageMembers}>
+                <RequireAdmin allowed={(a) => a.canUseTrackers}>
                   <Trackers />
                 </RequireAdmin>
               }

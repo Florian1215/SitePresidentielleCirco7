@@ -11,12 +11,21 @@ export interface User {
   can_grant_admin: boolean;
   /** Accès à la page « Membres ». */
   can_manage_members: boolean;
+  /** Page « Membres » : tous les comptes (admins) ou les demandes de son groupe d'action (gestionnaire de GA). */
+  can_manage_requests: boolean;
+  /** Accès à la page « Trackers » (admins et membres). */
+  can_use_trackers: boolean;
   permissions: string[];
+  /** Groupe d'action du compte ; `can_edit` : il peut modifier la page du groupe (membre ou admin). */
+  action_group: { id: number; slug: string; name: string; can_edit: boolean } | null;
 }
 
 export type MemberStatus = 'pending' | 'active' | 'revoked';
-/** admin, writer (rédacteur·ice), reviewer (relecteur·ice) ; editor et none : anciens rôles, encore affichés. */
-export type MemberRole = 'admin' | 'writer' | 'reviewer' | 'editor' | 'none';
+/**
+ * admin, animator (« Membre » : membre de groupe d'action : articles + page de son groupe), reviewer (relecteur·ice) ;
+ * editor et none : anciens rôles, encore affichés.
+ */
+export type MemberRole = 'admin' | 'manager' | 'animator' | 'reviewer' | 'editor' | 'none';
 
 /** Compte affiché sur la page « Membres ». */
 export interface Member {
@@ -47,6 +56,8 @@ export interface Tracker {
   total: number;
   counts: Record<'fr' | 'en' | 'de', number>;
   last_visit: string | null;
+  /** Le compte peut renommer et supprimer ce tracker (son créateur·ice, ou un·e admin). */
+  can_edit: boolean;
 }
 
 /** « Je m'engage » : formulaire Zetkin de chaque ville, et formulaire par défaut (admin Django ; null s'il n'y en a pas). */
@@ -109,6 +120,9 @@ export interface Article {
   cover_image: string | null;
   category: number | null;
   category_detail: Category | null;
+  /** Groupe d'action au nom duquel l'article est publié (affiché sur la page du groupe). */
+  action_group: number | null;
+  action_group_detail: { id: number; slug: string; name: string } | null;
   /** Signature affichée (« Berlin Insoumise, Alice et Bob »). */
   author_name: string;
   authors_detail: Signer[];
@@ -195,6 +209,10 @@ export interface FooterLinks {
 /** Groupe d'action affiché sur la carte (admin Django → Groupes d'action). */
 export interface ActionGroup {
   id: number;
+  /** Adresse de la page du groupe : /groupes/<slug>. */
+  slug: string;
+  /** Logo du groupe (null s'il n'en a pas). */
+  logo: string | null;
   name: string;
   city: string;
   country: string;
@@ -207,6 +225,43 @@ export interface ActionGroup {
   /** Ville de l'agenda auquel s'abonner pour ce groupe (null si aucune à proximité) et son identifiant d'adresse. */
   calendar_city: string | null;
   calendar_slug: string | null;
+}
+
+/** Lien d'un groupe vers un réseau social. */
+export type ActionGroupLink = ActionGroup['links'][number];
+
+/** Photo de la page d'un groupe d'action. */
+export interface GroupPhoto {
+  id: number;
+  url: string;
+  caption: string;
+  created_at: string;
+}
+
+/** Page d'un groupe d'action (/groupes/:slug). */
+export interface ActionGroupDetail extends ActionGroup {
+  description: string;
+  /** Logo du groupe (page du groupe, stickers QR code), null s'il n'y en a pas. */
+  logo: string | null;
+  /** Image d'en-tête de la page du groupe, null s'il n'y en a pas. */
+  cover: string | null;
+  photos: GroupPhoto[];
+  /** Prochains événements de la ville de l'agenda du groupe. */
+  events: CampaignEvent[];
+  /** Lien du bouton « Je m'engage » : formulaire de la ville du groupe, sinon formulaire par défaut (null : aucun). */
+  engage_url: string | null;
+  engage_url_is_default: boolean;
+  /** Le compte connecté peut modifier la page (membre du groupe, admin). */
+  can_edit: boolean;
+  /** Visites de la page (null : seulement pour qui peut la modifier). */
+  visits: GroupVisits | null;
+}
+
+export interface GroupVisits {
+  total: number;
+  last_7_days: number;
+  last_30_days: number;
+  by_lang: Record<'fr' | 'en' | 'de', number>;
 }
 
 /** Événement de l'agenda, lu par le backend dans le calendrier Zetkin. Heures = heure locale du lieu. */

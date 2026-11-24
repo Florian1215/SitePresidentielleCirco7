@@ -295,6 +295,26 @@ export const fr = {
     submit: "Je m'engage",
   },
 
+  groupPage: {
+    eyebrow: "Groupe d'action",
+    notFound: "Ce groupe d'action n'existe pas ou n'est plus affiché.",
+    allGroups: "← Tous les groupes d'action",
+    followTitle: 'Suivez-nous',
+    networksAria: 'Réseaux sociaux du groupe',
+    engage: "Je m'engage",
+    joinOnAp: 'Rejoindre sur Action populaire',
+    newTab: '(nouvel onglet)',
+    mapAria: 'Carte : région du groupe {name}',
+    photosTitle: 'En photos',
+    eventsTitle: 'Nos prochains rendez-vous',
+    articlesTitle: 'Nos articles',
+    noEvents: 'Pas de rendez-vous annoncé pour le moment : suivez-nous pour ne rien manquer !',
+    subscribe: "S'abonner à l'agenda",
+    loading: 'Chargement…',
+    openPage: '{name} — page du groupe',
+    close: 'Fermer',
+  },
+
   legal: {
     eyebrow: 'Informations légales',
     title: 'Mentions légales & données personnelles',

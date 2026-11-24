@@ -123,6 +123,8 @@ export function useAuth() {
     /** Membre du staff : nomme ou retire les admins du site. */
     canGrantAdmin: state.user?.can_grant_admin ?? false,
     canManageMembers: state.user?.can_manage_members ?? false,
+    canManageRequests: state.user?.can_manage_requests ?? false,
+    canUseTrackers: state.user?.can_use_trackers ?? false,
     /** Page « Catégories et auteurs ». */
     canManageTaxonomy: hasPerm(state.user, 'blog.change_category') || hasPerm(state.user, 'blog.change_collectiveauthor'),
     hasPerm: (perm: string) => hasPerm(state.user, perm),

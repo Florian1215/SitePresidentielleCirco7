@@ -13,7 +13,7 @@ import urllib.parse
 import urllib.request
 
 from django.core.cache import caches
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, transaction
 
 from .models import COUNTRIES
 
@@ -83,7 +83,9 @@ def import_new_groups():
     groups = fetch_groups()
     known = {str(i) for i in ActionGroup.objects.exclude(ap_id=None).values_list("ap_id", flat=True)}
     new = [ActionGroup(ap_id=ap_id, **data) for ap_id, data in groups.items() if str(ap_id) not in known]
-    ActionGroup.objects.bulk_create(new)
+    with transaction.atomic():
+        for group in new:
+            group.save()  # un par un : chaque groupe reçoit l'adresse de sa page (slug)
     return len(groups), [{"name": g.name, "city": g.city, "country": g.get_country_display()} for g in new]
 
 

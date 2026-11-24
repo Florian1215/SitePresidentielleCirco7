@@ -35,14 +35,14 @@ class ApprovalInline(admin.TabularInline):
 class ArticleAdmin(admin.ModelAdmin):
     list_display = ["title", "author", "category", "status", "approvals_count", "published_at", "updated_at"]
     inlines = [ApprovalInline]
-    list_filter = ["status", "category", "author"]
+    list_filter = ["status", "category", "action_group", "author"]
     search_fields = ["title", "excerpt", "content"]
     prepopulated_fields = {"slug": ["title"]}
     date_hierarchy = "created_at"
     actions = ["publish_now", "unpublish"]
     fieldsets = [
         (None, {"fields": ["title", "slug", "excerpt", "cover_image", "content"]}),
-        ("Publication", {"fields": ["category", "status", "author", "authors", "collectives", "published_at"]}),
+        ("Publication", {"fields": ["category", "action_group", "status", "author", "authors", "collectives", "published_at"]}),
     ]
     filter_horizontal = ["authors", "collectives"]
 

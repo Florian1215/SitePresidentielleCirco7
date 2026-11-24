@@ -78,6 +78,11 @@ class Article(models.Model):
     collectives = models.ManyToManyField(
         CollectiveAuthor, verbose_name="signatures collectives", blank=True, related_name="articles",
     )
+    action_group = models.ForeignKey(
+        "core.ActionGroup", verbose_name="groupe d'action", null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="articles",
+        help_text="Article publié au nom d'un groupe d'action : affiché sur la page du groupe.",
+    )
     status = models.CharField("statut", max_length=12, choices=Status.choices, default=Status.DRAFT)
     published_at = models.DateTimeField("date de publication", null=True, blank=True)
     created_at = models.DateTimeField("créé le", auto_now_add=True)

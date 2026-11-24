@@ -28,6 +28,29 @@ function alreadyCounted(): boolean {
   return false;
 }
 
+/**
+ * Visite de la page d'un groupe d'action : comptée une fois par onglet et par groupe (panneau « QR code » de la page).
+ * Les membres du groupe ne sont pas comptés (le serveur les reconnaît à leur connexion).
+ */
+export function recordGroupVisit(groupId: number) {
+  const key = `lfi7.group-visit.${groupId}`;
+  try {
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+  } catch {
+    /* stockage indisponible : chaque affichage compte */
+  }
+  let referrer = '';
+  try {
+    if (document.referrer && new URL(document.referrer).origin !== location.origin) referrer = document.referrer;
+  } catch {
+    /* adresse d'origine illisible : accès direct */
+  }
+  request(`/api/action-groups/${groupId}/visit/`, { method: 'POST', body: { lang: langStore.get(), referrer } }).catch(() => {
+    /* visite non comptée : sans conséquence */
+  });
+}
+
 /** À appeler au démarrage, avant `initLang()` (qui retire `?lang=` de l'adresse). */
 export function recordVisit() {
   const url = new URL(location.href);

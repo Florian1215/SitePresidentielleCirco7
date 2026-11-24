@@ -65,6 +65,14 @@
       transform: none;
     }
   }
+
+  /* Page d'un groupe d'action : défilement continu du bandeau de photos (liste doublée, on avance d'une moitié) */
+  --animate-photo-strip: photo-strip var(--strip-duration, 60s) linear infinite;
+  @keyframes photo-strip {
+    to {
+      transform: translateX(calc(-50% - var(--strip-gap) / 2));
+    }
+  }
 }
 
 /* ---------- Polices ---------- */

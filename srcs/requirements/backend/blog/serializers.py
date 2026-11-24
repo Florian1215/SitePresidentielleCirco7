@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework import serializers
 
-from core.members import ADMINS_GROUP
+from core.members import ADMINS_GROUP, is_site_admin, user_action_group
 
 from .models import Article, ArticleComment, Category, CollectiveAuthor
 from .permissions import can_publish_now
@@ -143,6 +143,7 @@ class CollectiveAuthorSerializer(NamedSerializer):
 class ArticleSerializer(serializers.ModelSerializer):
     author_name = serializers.SerializerMethodField()
     category_detail = CategorySerializer(source="category", read_only=True)
+    action_group_detail = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
     can_delete = serializers.SerializerMethodField()
     remove_cover = serializers.BooleanField(write_only=True, required=False, default=False)
@@ -163,7 +164,7 @@ class ArticleSerializer(serializers.ModelSerializer):
         model = Article
         fields = [
             "id", "title", "slug", "excerpt", "content", "cover_image", "remove_cover",
-            "category", "category_detail", "author_name", "status",
+            "category", "category_detail", "action_group", "action_group_detail", "author_name", "status",
             "published_at", "created_at", "updated_at", "can_edit", "can_delete",
             "approvals", "approvals_required", "can_approve", "is_author",
             "authors_detail", "collectives_detail", "signature", "can_publish_now",
@@ -173,6 +174,22 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     def get_author_name(self, obj):
         return obj.byline()
+
+    def get_action_group_detail(self, obj):
+        g = obj.action_group
+        return {"id": g.id, "slug": g.slug, "name": g.name} if g else None
+
+    def validate_action_group(self, value):
+        """Les admins (et éditeur·ices) lient l'article à n'importe quel groupe ; les autres, à leur propre groupe."""
+        if value is None or (self.instance and self.instance.action_group_id == value.id):
+            return value
+        user = self._user()
+        if is_site_admin(user) or user.has_perm("blog.manage_all_articles"):
+            return value
+        own = user_action_group(user)
+        if not (own and own.pk == value.pk):
+            raise serializers.ValidationError("Vous ne pouvez lier un article qu'à votre propre groupe d'action.")
+        return value
 
     def get_authors_detail(self, obj):
         return [{"id": u.id, "name": display_name(u)} for u in obj.authors.all()]

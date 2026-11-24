@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router';
 import type { MouseEvent, PointerEvent, ReactNode } from 'react';
 import { MAP_COUNTRIES, MAP_EXTENT, MAP_VIEWBOX, project } from '../data/europe-map';
 import { COUNTRIES } from '../lib/campaign';
@@ -206,6 +207,18 @@ export function CircoMap<T extends MapPoint>({
   idPrefix,
 }: Props<T>) {
   const i18n = useI18n();
+  const navigate = useNavigate();
+  /** Lien d'un point : page du site (« /groupes/berlin-insoumise ») dans le même onglet, site externe dans un nouvel onglet. */
+  const linkProps = (href: string) =>
+    href.startsWith('/')
+      ? {
+          onClick: (e: MouseEvent) => {
+            if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            navigate(href);
+          },
+        }
+      : { target: '_blank', rel: 'noopener' };
 
   // ---------- Zoom et déplacement ----------
   const svgRef = useRef<SVGSVGElement>(null);
@@ -540,8 +553,7 @@ export function CircoMap<T extends MapPoint>({
               key={pin.point.id}
               className="group cursor-pointer outline-none"
               href={pin.point.href}
-              target="_blank"
-              rel="noopener"
+              {...linkProps(pin.point.href)}
               aria-label={i18n.f(t.pointAria, { name: pin.point.name })}
               onMouseEnter={() => enterPin(pin)}
               onMouseLeave={() => leavePin(pin)}
@@ -671,8 +683,7 @@ export function CircoMap<T extends MapPoint>({
                     <li key={g.id} className="flex items-center gap-1">
                       <a
                         href={g.href}
-                        target="_blank"
-                        rel="noopener"
+                        {...linkProps(g.href)}
                         className={`-mx-2 block min-w-0 flex-1 rounded-md px-2 py-[5px] text-[15px] no-underline hover:bg-lavande hover:text-violet ${activeId === g.id ? 'bg-lavande text-violet' : 'text-noir'}`}
                         onMouseEnter={() => {
                           setActiveId(g.id);

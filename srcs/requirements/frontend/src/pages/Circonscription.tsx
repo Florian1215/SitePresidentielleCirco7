@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router';
 import { ArticleCard } from '../components/ArticleCard';
 import { CalendarIcon, CalendarSubscribeDialog } from '../components/CalendarSubscribe';
 import type { CalendarFeed } from '../components/CalendarSubscribe';
@@ -90,7 +91,7 @@ export default function Circonscription() {
     return () => ctrl.abort();
   }, []);
 
-  const points = useMemo<GroupPoint[]>(() => groups.map((g) => ({ ...g, href: g.url, group: g })), [groups]);
+  const points = useMemo<GroupPoint[]>(() => groups.map((g) => ({ ...g, href: `/groupes/${g.slug}`, group: g })), [groups]);
 
   const labels: MapLabels = {
     mapAria: t.mapAria,
@@ -102,7 +103,7 @@ export default function Circonscription() {
     pointMany: t.groupMany,
     listAria: t.listAria,
     listEmpty: t.listUnavailable,
-    pointAria: t.openOnAP,
+    pointAria: i18n.d.groupPage.openPage,
   };
 
   return (
@@ -189,7 +190,14 @@ export default function Circonscription() {
             const linktree = p.group.links.filter(isLinktree);
             return (
               <>
-                <strong>{p.name}</strong>
+                {/* Le nom ouvre la page du groupe */}
+                <Link
+                  to={`/groupes/${p.group.slug}`}
+                  tabIndex={-1}
+                  className="font-bold text-white no-underline hover:text-jaune hover:underline"
+                >
+                  {p.name} →
+                </Link>
                 <span>
                   {p.group.city ? p.group.city + ' · ' : ''}
                   {i18n.country(p.country)}

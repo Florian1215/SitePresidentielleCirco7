@@ -5,9 +5,9 @@ import { CoverCropper } from '../components/CoverCropper';
 import { RichEditor } from '../components/RichEditor';
 import { SignaturePicker } from '../components/SignaturePicker';
 import { api, apiErrorMessage } from '../lib/api';
-import { useAuth } from '../lib/auth';
+import { hasPerm, useAuth } from '../lib/auth';
 import { maxLength, required, useForm } from '../lib/forms';
-import type { ArticleStatus, Category, Signer, Signers } from '../lib/models';
+import type { ActionGroup, ArticleStatus, Category, Signer, Signers } from '../lib/models';
 import { notifyPendingChanged } from '../lib/pending';
 import { usePageTitle } from '../lib/title';
 
@@ -34,6 +34,11 @@ export default function ArticleEditor() {
     !slug && me ? [{ id: me.id, name: [me.first_name, me.last_name].filter(Boolean).join(' ') || me.username }] : [],
   );
   const [collectives, setCollectives] = useState<number[]>([]);
+  /** Groupe d'action lié à l'article ; choix possibles : tous les groupes pour les admins, sinon le sien. */
+  const [actionGroup, setActionGroup] = useState<number | null>(null);
+  const [linkedGroup, setLinkedGroup] = useState<{ id: number; name: string } | null>(null);
+  const [allGroups, setAllGroups] = useState<ActionGroup[]>([]);
+  const anyGroup = !!me && (me.is_admin || hasPerm(me, 'blog.manage_all_articles'));
   const coverFile = useRef<File | null>(null);
   const coverInput = useRef<HTMLInputElement>(null);
   /** Image d'origine choisie (avant recadrage), pour pouvoir la recadrer à nouveau. */
@@ -49,6 +54,7 @@ export default function ArticleEditor() {
   useEffect(() => {
     api.categories().then(setCategories, () => {});
     api.signers().then(setSigners, () => {});
+    if (anyGroup) api.actionGroups().then(setAllGroups, () => {});
     if (!slug) return;
     api.article(slug).then(
       (a) => {
@@ -61,6 +67,8 @@ export default function ArticleEditor() {
         setCurrentCover(a.cover_image);
         setAuthors(a.authors_detail);
         setCollectives(a.collectives_detail.map((c) => c.id));
+        setActionGroup(a.action_group);
+        setLinkedGroup(a.action_group_detail);
       },
       () => setLoadError('Article introuvable.'),
     );
@@ -125,6 +133,7 @@ export default function ArticleEditor() {
         {
           ...v,
           category: v.category ? Number(v.category) : null,
+          actionGroup,
           cover: coverFile.current,
           authors: authors.map((a) => a.id),
           collectives,
@@ -146,6 +155,16 @@ export default function ArticleEditor() {
   };
 
   const coverSrc = coverPreview || currentCover;
+  /** Groupes proposés : tous (admins), sinon celui du compte, plus celui déjà lié à l'article. */
+  const groupChoices = (() => {
+    const list: { id: number; name: string }[] = anyGroup
+      ? [...allGroups].sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+      : me?.action_group
+        ? [me.action_group]
+        : [];
+    if (linkedGroup && !list.some((g) => g.id === linkedGroup.id)) list.unshift(linkedGroup);
+    return list;
+  })();
 
   return (
     <section className="section-sm">
@@ -263,6 +282,24 @@ export default function ArticleEditor() {
                       </Link>
                     )}
                   </div>
+                  {groupChoices.length > 0 && (
+                    <div className="field">
+                      <label htmlFor="ed-group">Groupe d’action</label>
+                      <select
+                        id="ed-group"
+                        value={actionGroup ?? ''}
+                        onChange={(e) => setActionGroup(e.target.value ? Number(e.target.value) : null)}
+                      >
+                        <option value="">— Aucun —</option>
+                        {groupChoices.map((g) => (
+                          <option key={g.id} value={g.id}>
+                            {g.name}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="hint">L’article est aussi affiché sur la page du groupe, avec un lien vers elle.</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="card-flat stack">

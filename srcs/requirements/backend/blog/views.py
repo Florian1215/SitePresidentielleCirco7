@@ -59,7 +59,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = (
-            Article.objects.select_related("author", "category")
+            Article.objects.select_related("author", "category", "action_group")
             .prefetch_related("approvals__user", "authors", "collectives")
             .annotate(
                 n_comments=Count("comments", distinct=True),
@@ -81,6 +81,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
         params = self.request.query_params
         if params.get("category"):
             qs = qs.filter(category__slug=params["category"])
+        if params.get("action_group", "").isdigit():
+            qs = qs.filter(action_group_id=int(params["action_group"]))
         if params.get("status") in Article.Status.values:
             qs = qs.filter(status=params["status"])
         return qs

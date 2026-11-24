@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from .members import can_grant_admin, can_manage_members, is_site_admin
+from .members import can_grant_admin, can_manage_members, can_manage_requests, can_use_trackers, is_animator, is_site_admin, user_action_group
 from .models import ActionGroup, FaqEntry, FriendSite, PollingStation, SignupForm, SocialLink, SupportersCount, ZetkinEvent
 from .zetkin import CITIES
 from .serializers import (
@@ -40,8 +40,20 @@ def user_payload(user):
         # Nommer ou retirer des admins du site : membres du staff seulement
         "can_grant_admin": can_grant_admin(user),
         "can_manage_members": can_manage_members(user),
+        # Page « Membres » limitée aux demandes de son groupe (gestionnaire de GA)
+        "can_manage_requests": can_manage_requests(user),
+        "can_use_trackers": can_use_trackers(user),
         "permissions": sorted(user.get_all_permissions()),
+        # Groupe d'action du compte, et s'il peut en modifier la page (membres ; les admins : tous les groupes)
+        "action_group": action_group_payload(user),
     }
+
+
+def action_group_payload(user):
+    group = user_action_group(user)
+    if not group:
+        return None
+    return {"id": group.id, "slug": group.slug, "name": group.name, "can_edit": is_animator(user) or is_site_admin(user)}
 
 
 class LoginView(APIView):

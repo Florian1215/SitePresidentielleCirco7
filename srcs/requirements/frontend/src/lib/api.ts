@@ -4,6 +4,9 @@ import { authStore, clearAuth } from './auth';
 import { langStore } from './i18n';
 import type {
   ActionGroup,
+  ActionGroupDetail,
+  ActionGroupLink,
+  GroupPhoto,
   FaqEntry,
   ApiCountry,
   Article,
@@ -32,6 +35,9 @@ export class ApiError extends Error {
     super(`HTTP ${status}`);
   }
 }
+
+/** Images d'un groupe d'action modifiables depuis sa page. */
+export type GroupImageField = 'logo' | 'cover';
 
 type Init = { method?: string; body?: BodyInit | Record<string, unknown>; params?: Record<string, string>; signal?: AbortSignal };
 
@@ -85,6 +91,8 @@ export interface ArticleQuery {
   search?: string;
   category?: string;
   status?: string;
+  /** Articles liés à ce groupe d'action. */
+  actionGroup?: number;
 }
 
 export interface ArticlePayload {
@@ -92,6 +100,8 @@ export interface ArticlePayload {
   excerpt: string;
   content: string;
   category: number | null;
+  /** Groupe d'action lié (null : aucun). */
+  actionGroup?: number | null;
   status: string;
   cover?: File | null;
   removeCover?: boolean;
@@ -110,6 +120,7 @@ export const api = {
     if (q.search) params['search'] = q.search;
     if (q.category) params['category'] = q.category;
     if (q.status) params['status'] = q.status;
+    if (q.actionGroup) params['action_group'] = String(q.actionGroup);
     return request<Paginated<Article>>('/api/articles/', { params, signal });
   },
 
@@ -123,6 +134,7 @@ export const api = {
     body.append('excerpt', data.excerpt);
     body.append('content', data.content);
     body.append('category', data.category === null ? '' : String(data.category));
+    if (data.actionGroup !== undefined) body.append('action_group', data.actionGroup === null ? '' : String(data.actionGroup));
     body.append('status', data.status);
     if (data.cover) body.append('cover_image', data.cover);
     if (data.removeCover) body.append('remove_cover', 'true');
@@ -311,6 +323,39 @@ export const api = {
 
   actionGroups() {
     return request<ActionGroup[]>('/api/action-groups/');
+  },
+
+  /** Page d'un groupe d'action. */
+  /** Page d'un groupe d'action, par son adresse (slug) ou son identifiant (anciens liens). */
+  actionGroup(key: number | string, signal?: AbortSignal) {
+    return request<ActionGroupDetail>(`/api/action-groups/${encodeURIComponent(key)}/`, { signal });
+  },
+
+  /** Modification de la page d'un groupe (membres du groupe, admins). `links` remplace tous les réseaux. */
+  updateActionGroup(id: number, body: { description?: string; links?: ActionGroupLink[]; engage_url?: string }) {
+    return request<ActionGroupDetail>(`/api/action-groups/${id}/`, { method: 'PATCH', body });
+  },
+
+  /** Logo ou image d'en-tête du groupe : ajout ou remplacement, et suppression. */
+  uploadGroupImage<K extends GroupImageField>(id: number, field: K, image: File) {
+    const body = new FormData();
+    body.append('image', image);
+    return request<Record<K, string | null>>(`/api/action-groups/${id}/${field}/`, { method: 'PUT', body });
+  },
+
+  deleteGroupImage<K extends GroupImageField>(id: number, field: K) {
+    return request<Record<K, string | null>>(`/api/action-groups/${id}/${field}/`, { method: 'DELETE' });
+  },
+
+  uploadGroupPhoto(id: number, image: File, caption = '') {
+    const body = new FormData();
+    body.append('image', image);
+    body.append('caption', caption);
+    return request<GroupPhoto>(`/api/action-groups/${id}/photos/`, { method: 'POST', body });
+  },
+
+  deleteGroupPhoto(id: number, photoId: number) {
+    return request<unknown>(`/api/action-groups/${id}/photos/${photoId}/`, { method: 'DELETE' });
   },
 
   /** Bureaux de vote affichés sur la carte de la page Voter. */

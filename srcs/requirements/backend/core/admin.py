@@ -11,10 +11,10 @@ from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import redirect
 from django.urls import path
 
-from .members import can_grant_admin, is_editable, is_site_admin, member_status
+from .members import ANIMATORS_GROUP, can_grant_admin, is_editable, is_site_admin, member_status
 from .action_populaire import import_status, start_import_in_background
 from .tasks import sync_events
-from .models import ActionGroup, ActionGroupLink, FaqEntry, FriendSite, MemberProfile, PollingStation, SignupForm, SocialLink, SupportersCount, Tracker, Visit, ZetkinEvent
+from .models import ActionGroup, ActionGroupLink, ActionGroupPhoto, FaqEntry, FriendSite, MemberProfile, PollingStation, SignupForm, SocialLink, SupportersCount, Tracker, Visit, ZetkinEvent
 
 logger = logging.getLogger(__name__)
 
@@ -42,17 +42,25 @@ class ActionGroupLinkInline(admin.TabularInline):
     verbose_name_plural = "réseaux sociaux du groupe (tous affichés dans la bulle de la carte ; « aussi dans la liste » : affichés aussi dans la liste à droite)"
 
 
+class ActionGroupPhotoInline(admin.TabularInline):
+    model = ActionGroupPhoto
+    extra = 0
+    fields = ["image", "caption", "uploaded_by", "created_at"]
+    readonly_fields = ["uploaded_by", "created_at"]
+    verbose_name_plural = "photos de la page du groupe"
+
+
 @admin.register(ActionGroup)
 class ActionGroupAdmin(admin.ModelAdmin):
     change_list_template = "admin/core/actiongroup/change_list.html"
-    inlines = [ActionGroupLinkInline]
+    inlines = [ActionGroupLinkInline, ActionGroupPhotoInline]
     list_display = ["name", "city", "country", "networks", "is_active", "updated_at"]
     list_editable = ["is_active"]
     list_filter = ["country", "is_active"]
     search_fields = ["name", "city"]
     readonly_fields = ["ap_id", "updated_at", "calendar_city_display"]
     fieldsets = [
-        (None, {"fields": ["name", "city", "country", "url", "is_active"]}),
+        (None, {"fields": ["name", "slug", "city", "country", "url", "description", "logo", "cover", "is_active"]}),
         ("Position sur la carte", {
             "fields": ["latitude", "longitude"],
             "description": "Coordonnées GPS (ex. Berlin : latitude 52.52, longitude 13.40).",
@@ -148,7 +156,6 @@ class PollingStationAdmin(admin.ModelAdmin):
 # ---------- Comptes : validation des demandes faites depuis la page « Se connecter » ----------
 
 User = get_user_model()
-WRITERS_GROUP = "Rédacteur·ices"
 
 
 class PendingFilter(admin.SimpleListFilter):
@@ -230,9 +237,9 @@ class AccountAdmin(DjangoUserAdmin):
         """Comme sur la page « Membres » du site : demande en attente, compte actif ou accès retiré."""
         return {"pending": "En attente", "active": "Actif", "revoked": "Accès retiré"}[member_status(obj)]
 
-    @admin.action(description="Valider : activer le compte et autoriser à écrire des articles")
+    @admin.action(description="Valider : activer le compte comme membre (articles et page de son groupe)")
     def approve_writers(self, request, queryset):
-        group, _ = Group.objects.get_or_create(name=WRITERS_GROUP)
+        group, _ = Group.objects.get_or_create(name=ANIMATORS_GROUP)
         for user in queryset:
             user.groups.add(group)
         n = queryset.update(is_active=True)

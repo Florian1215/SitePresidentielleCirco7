@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.text import slugify
 
 from .zetkin import CITIES, nearest_city
 
@@ -81,11 +82,29 @@ class ActionGroup(models.Model):
     """Groupe d'action insoumis affiché sur la carte de la page « La circonscription »."""
 
     name = models.CharField("nom", max_length=200)
+    slug = models.SlugField(
+        "adresse de la page", max_length=200, unique=True, blank=True,
+        help_text="/groupes/<adresse>. Créée à partir du nom, elle ne change pas si le groupe est renommé "
+        "(les QR codes déjà imprimés restent valables). Laisser vide pour la recréer.",
+    )
     city = models.CharField("ville", max_length=120, blank=True)
     country = models.CharField("pays", max_length=2, choices=[c for c in COUNTRIES if c[0] != "XX"])
     latitude = models.FloatField("latitude")
     longitude = models.FloatField("longitude")
     url = models.URLField("lien Action populaire")
+    description = models.TextField(
+        "présentation", blank=True, max_length=300,
+        help_text="Deux ou trois phrases affichées en haut de la page du groupe (300 caractères au plus). "
+        "Modifiable aussi par ses membres depuis le site.",
+    )
+    logo = models.ImageField(
+        "logo", upload_to="groupes/logos/", blank=True,
+        help_text="Affiché sur la page du groupe et en haut de ses QR codes « sticker ». PNG transparent de préférence.",
+    )
+    cover = models.ImageField(
+        "image d'en-tête", upload_to="groupes/couvertures/", blank=True,
+        help_text="Grande image en haut de la page du groupe (format paysage, 1600 px de large ou plus).",
+    )
     agenda_city = models.CharField(
         "ville de l'agenda", max_length=40, blank=True, choices=AGENDA_CITY_CHOICES,
         help_text="Calendrier proposé aux abonné·es de ce groupe. Vide : la ville la plus proche de sa position sur la carte.",
@@ -105,11 +124,28 @@ class ActionGroup(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = group_slug(self)
+        super().save(*args, **kwargs)
+
     @property
     def calendar_city(self):
         """Ville de l'agenda auquel s'abonner pour suivre ce groupe (None si aucune ville connue à proximité)."""
         return self.agenda_city or nearest_city(self.latitude, self.longitude)
 
+
+
+def group_slug(group):
+    """Adresse unique de la page du groupe, tirée de son nom (« berlin-insoumise », « berlin-insoumise-2 »…).
+    Jamais uniquement des chiffres : /groupes/<nombre> reste l'ancienne adresse par identifiant."""
+    base = slugify(group.name)[:190] or "groupe"
+    if base.isdigit():
+        base = f"groupe-{base}"
+    slug, n = base, 2
+    while ActionGroup.objects.filter(slug=slug).exclude(pk=group.pk).exists():
+        slug, n = f"{base}-{n}", n + 1
+    return slug
 
 
 class ActionGroupLink(models.Model):
@@ -133,6 +169,32 @@ class ActionGroupLink(models.Model):
 
     def __str__(self):
         return f"{self.get_network_display()} — {self.group}"
+
+class ActionGroupPhoto(models.Model):
+    """Photo affichée sur la page d'un groupe d'action, ajoutée par ses membres (ou un·e admin) depuis le site."""
+
+    group = models.ForeignKey(ActionGroup, verbose_name="groupe", on_delete=models.CASCADE, related_name="photos")
+    image = models.ImageField("photo", upload_to="groupes/%Y/%m/")
+    caption = models.CharField("légende", max_length=200, blank=True)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name="ajoutée par", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    created_at = models.DateTimeField("ajoutée le", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "photo du groupe"
+        verbose_name_plural = "photos du groupe"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.caption or f"Photo {self.pk} — {self.group}"
+
+    def delete(self, *args, **kwargs):
+        storage, name = self.image.storage, self.image.name
+        super().delete(*args, **kwargs)
+        if name:
+            storage.delete(name)
+
 
 class PollingStation(models.Model):
     """Bureau de vote affiché sur la carte de la page « Voter » (adresses fixées par arrêté avant chaque scrutin)."""
@@ -275,6 +337,24 @@ class Visit(models.Model):
 
     def __str__(self):
         return f"{self.created_at:%Y-%m-%d %H:%M} · {self.source or 'direct'}"
+
+
+class GroupVisit(models.Model):
+    """Visite de la page d'un groupe d'action (/groupes/<adresse>), affichée à ses membres dans le panneau « QR code ».
+    Comptée à part des visites du site (page « Trackers ») : une par onglet et par groupe, sans les membres du groupe."""
+
+    group = models.ForeignKey(ActionGroup, verbose_name="groupe", on_delete=models.CASCADE, related_name="visits")
+    lang = models.CharField("langue", max_length=2, choices=TRACKER_LANGS)
+    source = models.CharField("origine", max_length=60, blank=True, help_text="Vide : accès direct (QR code, lien…).")
+    created_at = models.DateTimeField("le", auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name = "visite de la page d'un groupe"
+        verbose_name_plural = "visites des pages des groupes"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.group} · {self.created_at:%Y-%m-%d %H:%M}"
 
 
 class ZetkinEventQuerySet(models.QuerySet):

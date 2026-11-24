@@ -288,6 +288,26 @@ export const de: Dict = {
     submit: 'Ich mache mit',
   },
 
+  groupPage: {
+    eyebrow: 'Aktionsgruppe',
+    notFound: 'Diese Aktionsgruppe existiert nicht oder wird nicht mehr angezeigt.',
+    allGroups: '← Alle Aktionsgruppen',
+    followTitle: 'Folgt uns',
+    networksAria: 'Soziale Netzwerke der Gruppe',
+    engage: 'Ich mache mit',
+    joinOnAp: 'Auf Action populaire beitreten',
+    newTab: '(neuer Tab)',
+    mapAria: 'Karte: Region der Gruppe {name}',
+    photosTitle: 'In Bildern',
+    eventsTitle: 'Unsere nächsten Termine',
+    articlesTitle: 'Unsere Artikel',
+    noEvents: 'Noch keine Termine angekündigt: folgt uns, um nichts zu verpassen!',
+    subscribe: 'Kalender abonnieren',
+    loading: 'Wird geladen…',
+    openPage: '{name} — Seite der Gruppe',
+    close: 'Schließen',
+  },
+
   legal: {
     eyebrow: 'Rechtliche Hinweise',
     title: 'Impressum & Datenschutz',
