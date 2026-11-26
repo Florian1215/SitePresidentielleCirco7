@@ -6,7 +6,8 @@ Réglages (srcs/.env) : BREVO_API_KEY, BREVO_SENDER_EMAIL, BREVO_SENDER_NAME. Sa
 Les envois passent par la tâche Celery core.tasks.send_email (en dehors de la requête, avec nouvelles tentatives),
 déclenchée seulement une fois la transaction enregistrée (transaction.on_commit).
 
-  - demande de compte          → email aux gestionnaires du groupe d'action choisi (à défaut : aux admins du site)
+  - demande de compte          → email aux gestionnaires du groupe d'action choisi (à défaut : aux admins du site),
+                                 avec les boutons Accepter / Refuser (page /demande/<lien signé> du site)
   - demande de compte acceptée → email à la personne : elle peut se connecter
 """
 import json
@@ -19,6 +20,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Q
+from django.template.loader import render_to_string
 
 logger = logging.getLogger(__name__)
 
@@ -33,15 +35,16 @@ def brevo_configured():
     return bool(settings.BREVO_API_KEY and settings.BREVO_SENDER_EMAIL)
 
 
-def send_now(to_email, to_name, subject, text):
-    """Envoie un email (texte, et sa version HTML simple) à une personne. Lève EmailError en cas d'échec."""
-    html = "".join(f"<p>{escape(p).replace(chr(10), '<br>')}</p>" for p in text.split("\n\n"))
+def send_now(to_email, to_name, subject, text, html=None):
+    """Envoie un email (HTML et sa version texte) à une personne. Lève EmailError en cas d'échec."""
+    if not html:
+        html = "<html><body>" + "".join(f"<p>{escape(p).replace(chr(10), '<br>')}</p>" for p in text.split("\n\n")) + "</body></html>"
     payload = {
         "sender": {"email": settings.BREVO_SENDER_EMAIL, "name": settings.BREVO_SENDER_NAME or settings.BREVO_SENDER_EMAIL},
         "to": [{"email": to_email, **({"name": to_name} if to_name else {})}],
         "subject": subject,
         "textContent": text,
-        "htmlContent": f"<html><body>{html}</body></html>",
+        "htmlContent": html,
     }
     req = urllib.request.Request(
         BREVO_URL,
@@ -58,7 +61,7 @@ def send_now(to_email, to_name, subject, text):
         raise EmailError(f"Brevo injoignable : {err}") from err
 
 
-def queue_email(to_email, to_name, subject, text):
+def queue_email(to_email, to_name, subject, text, html=None):
     """Envoi en tâche de fond, après l'enregistrement de la transaction en cours."""
     if not to_email:
         return
@@ -67,7 +70,7 @@ def queue_email(to_email, to_name, subject, text):
         return
     from .tasks import send_email
 
-    transaction.on_commit(lambda: send_email.delay(to_email, to_name, subject, text))
+    transaction.on_commit(lambda: send_email.delay(to_email, to_name, subject, text, html))
 
 
 def site_url(request=None):
@@ -92,29 +95,39 @@ def request_reviewers(group):
     return list(users.filter(Q(is_superuser=True) | Q(groups__name=ADMINS_GROUP)).distinct())
 
 
+def render_html(template, request=None, **context):
+    site = site_url(request)
+    return render_to_string(f"emails/{template}.html", {
+        "site": site, "site_label": site.split("://", 1)[-1], **context,
+    })
+
+
 def notify_registration(user, group, request=None):
-    """Nouvelle demande de compte : les gestionnaires du groupe d'action (ou les admins) l'acceptent ou la refusent."""
-    name = full_name(user)
-    group_name = group.name if group else "aucun groupe"
-    url = f"{site_url(request)}/redaction/membres"
-    subject = f"Nouvelle demande d'inscription : {name} ({group_name})"
+    """Nouvelle demande de compte : chaque gestionnaire du groupe d'action (ou admin) reçoit les informations de la
+    personne et deux boutons, Accepter / Refuser, avec un lien signé qui lui est propre (voir members.request_token)."""
+    from .members import request_token
+
+    site = site_url(request)
+    group_name = group.name if group else "Aucun groupe d'action"
+    subject = "Nouvelle demande d'inscription"
     for reviewer in request_reviewers(group):
+        url = f"{site}/demande/{request_token(user, reviewer)}"
+        accept_url, refuse_url = f"{url}?action=accepter", f"{url}?action=refuser"
         text = (
-            f"Bonjour {reviewer.first_name or full_name(reviewer)},\n\n"
-            f"{name} ({user.email}) demande à rejoindre le groupe d'action « {group_name} » sur le site.\n\n"
-            f"Validez-vous son inscription ? Acceptez ou refusez sa demande sur la page « Membres » :\n{url}\n\n"
-            "Ce message est envoyé automatiquement, merci de ne pas y répondre."
+            f"{subject}\n\n{full_name(user)}\n{user.email}\n{group_name}\n\n"
+            f"Accepter : {accept_url}\nRefuser : {refuse_url}"
         )
-        queue_email(reviewer.email, full_name(reviewer), subject, text)
+        html = render_html("registration", request, subject=subject, member=user, group_name=group_name,
+                           accept_url=accept_url, refuse_url=refuse_url,
+                           preheader=f"{full_name(user)} · {group_name}")
+        queue_email(reviewer.email, full_name(reviewer), subject, text, html)
 
 
 def notify_account_accepted(user, request=None):
     """Demande acceptée : la personne peut maintenant se connecter."""
     url = f"{site_url(request)}/connexion"
-    text = (
-        f"Bonjour {user.first_name or full_name(user)},\n\n"
-        "Bonne nouvelle : votre demande de compte a été acceptée, vous avez maintenant accès au site.\n\n"
-        f"Vous pouvez vous connecter avec votre email et votre mot de passe :\n{url}\n\n"
-        "Ce message est envoyé automatiquement, merci de ne pas y répondre."
-    )
-    queue_email(user.email, full_name(user), "Votre compte est validé : vous pouvez vous connecter", text)
+    subject = "Votre compte est validé"
+    text = f"Bienvenue {user.first_name} !\n\nVotre compte est validé.\n\nSe connecter : {url}"
+    html = render_html("accepted", request, subject=subject, member=user, login_url=url,
+                       preheader="Vous pouvez maintenant vous connecter.")
+    queue_email(user.email, full_name(user), subject, text, html)

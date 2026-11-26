@@ -117,6 +117,15 @@ let events$: Promise<CampaignEvent[]> | undefined;
 /** Texte du bouton « Je m'engage » d'un groupe, dans chaque langue. */
 export type EngageLabelField = 'engage_label_fr' | 'engage_label_en' | 'engage_label_de';
 
+/** Demande de compte vue depuis l'email : `gone` = refusée ou supprimée, `refused` = vient d'être refusée. */
+export interface MemberRequest {
+  status: 'pending' | 'active' | 'revoked' | 'gone' | 'refused';
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  action_group?: string | null;
+}
+
 export const api = {
   articles(q: ArticleQuery = {}, signal?: AbortSignal) {
     const params: Record<string, string> = {};
@@ -226,6 +235,18 @@ export const api = {
     return request<{ uid: string; token: string; valid_days: number }>(`/api/members/${id}/reset-link/`, {
       method: 'POST',
       body: {},
+    });
+  },
+
+  /** Demande de compte ouverte depuis les boutons Accepter / Refuser de l'email (lien signé, sans connexion). */
+  memberRequest(token: string) {
+    return request<MemberRequest>(`/api/members/request/${encodeURIComponent(token)}/`);
+  },
+
+  decideMemberRequest(token: string, action: 'accept' | 'refuse') {
+    return request<MemberRequest>(`/api/members/request/${encodeURIComponent(token)}/`, {
+      method: 'POST',
+      body: { action },
     });
   },
 

@@ -121,6 +121,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "public_forms": "10/hour",
         "login": "10/min",
+        "member_request": "60/min",  # boutons Accepter / Refuser des emails de demande de compte (liens signés)
         "track": "30/min",  # comptage des visites (page « Trackers »)
         "user": "120/hour",  # envoi d'images depuis l'éditeur
     },

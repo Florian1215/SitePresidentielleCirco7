@@ -1,6 +1,7 @@
 """Gestion des membres depuis le site (page « Membres ») : demandes de compte, rôles, accès."""
 
 from django.conf import settings
+from django.core import signing
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.auth.tokens import default_token_generator
@@ -9,8 +10,9 @@ from django.utils.http import urlsafe_base64_encode
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .emails import notify_account_accepted
@@ -204,6 +206,24 @@ def set_role(user, role):
         user.groups.add(Group.objects.get(name=ROLE_GROUPS[role]))
 
 
+def accept_request(user, role, request=None):
+    """Accepte une demande (ou donne un rôle à un compte) ; email « compte validé » si c'était une demande."""
+    was_pending = member_status(user) == "pending"
+    set_role(user, role)
+    user.is_active = True
+    user.save(update_fields=["is_active"])
+    if was_pending:
+        notify_account_accepted(user, request)
+
+
+def refuse_request(user):
+    """Refus d'une demande : le compte (jamais validé) est supprimé. Renvoie un message d'erreur, sinon None."""
+    if member_status(user) != "pending" or user.articles.exists():
+        return "Seule une demande en attente peut être refusée ; retirez plutôt l'accès."
+    user.delete()
+    return None
+
+
 class MembersView(APIView):
     permission_classes = [IsAuthenticated, CanManageRequests]
 
@@ -245,11 +265,8 @@ class MemberView(APIView):
             problem = check_role(role, request.user)
             if problem:
                 return Response({"detail": problem}, status=status.HTTP_400_BAD_REQUEST)
-            was_pending = member_status(user) == "pending"
-            set_role(user, role)
-            user.is_active = True
-            if was_pending:
-                notify_account_accepted(user, request)
+            accept_request(user, role, request)
+            return self._ok(request, pk)
         elif action == "restore":
             user.is_active = True
         elif action == "revoke":
@@ -276,10 +293,9 @@ class MemberView(APIView):
         user = self._get(request, pk)
         if user is None:
             return self._forbidden()
-        if member_status(user) != "pending" or user.articles.exists():
-            return Response({"detail": "Seule une demande en attente peut être refusée ; retirez plutôt l'accès."},
-                            status=status.HTTP_400_BAD_REQUEST)
-        user.delete()
+        problem = refuse_request(user)
+        if problem:
+            return Response({"detail": problem}, status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -304,3 +320,77 @@ class MemberResetLinkView(APIView):
             "token": default_token_generator.make_token(user),
             "valid_days": settings.PASSWORD_RESET_TIMEOUT // 86400,
         })
+
+
+#: Liens Accepter / Refuser des emails de demande de compte (core/emails.py) : valables 30 jours.
+REQUEST_TOKEN_SALT = "core.members.request"
+REQUEST_TOKEN_MAX_AGE = 30 * 86400
+
+
+def request_token(user, reviewer):
+    """Lien signé (clé secrète du site) propre à une demande et à la personne qui la traite."""
+    return signing.dumps({"u": user.pk, "r": reviewer.pk}, salt=REQUEST_TOKEN_SALT)
+
+
+class MemberRequestView(APIView):
+    """Page /demande/<lien> du site, ouverte depuis les boutons de l'email de demande de compte, sans connexion :
+    le lien signé identifie la demande et la personne qui la traite (gestionnaire du groupe ou admin).
+
+    GET : la demande {first_name, last_name, email, action_group, status : pending | active | gone}.
+    POST {"action": "accept" | "refuse"} : accepte (rôle « Membre ») ou refuse la demande.
+    Les droits sont revérifiés à chaque fois : un lien d'un·e ex-gestionnaire ne sert plus.
+    """
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "member_request"
+    INVALID = "Ce lien n'est plus valable."
+
+    def _load(self, token):
+        """(demande ou None si déjà refusée/supprimée, personne qui traite) ; None si le lien ne vaut rien."""
+        try:
+            data = signing.loads(token, salt=REQUEST_TOKEN_SALT, max_age=REQUEST_TOKEN_MAX_AGE)
+            reviewer = MEMBERS_QS.get(pk=data["r"], is_active=True)
+        except (signing.BadSignature, KeyError, TypeError, User.DoesNotExist):
+            return None
+        user = MEMBERS_QS.filter(pk=data["u"]).first()
+        if user is not None and member_status(user) == "pending" and not is_editable(user, reviewer):
+            return None
+        return user, reviewer
+
+    def _payload(self, user):
+        if user is None:
+            return {"status": "gone"}
+        group = member_action_group(user)
+        return {
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email,
+            "action_group": group["name"] if group else None,
+            "status": member_status(user),
+        }
+
+    def get(self, request, token):
+        loaded = self._load(token)
+        if loaded is None:
+            return Response({"detail": self.INVALID}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self._payload(loaded[0]))
+
+    def post(self, request, token):
+        loaded = self._load(token)
+        if loaded is None:
+            return Response({"detail": self.INVALID}, status=status.HTTP_400_BAD_REQUEST)
+        user, _ = loaded
+        if user is None or member_status(user) != "pending":
+            return Response(self._payload(user))  # déjà traitée : on montre simplement le résultat
+        action = request.data.get("action")
+        if action == "accept":
+            accept_request(user, "animator", request)
+            return Response(self._payload(MEMBERS_QS.get(pk=user.pk)))
+        if action == "refuse":
+            problem = refuse_request(user)
+            if problem:
+                return Response({"detail": problem}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"status": "refused"})
+        return Response({"detail": "Action inconnue."}, status=status.HTTP_400_BAD_REQUEST)

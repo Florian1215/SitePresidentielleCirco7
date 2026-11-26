@@ -11,6 +11,7 @@ urlpatterns = [
     path("auth/reset/<str:uid>/<str:token>/", views.PasswordResetView.as_view(), name="password-reset"),
     path("members/", members.MembersView.as_view(), name="members"),
     path("members/<int:pk>/", members.MemberView.as_view(), name="member"),
+    path("members/request/<str:token>/", members.MemberRequestView.as_view(), name="member-request"),
     path("members/<int:pk>/reset-link/", members.MemberResetLinkView.as_view(), name="member-reset-link"),
     path("trackers/", trackers.TrackersView.as_view(), name="trackers"),
     path("trackers/<int:pk>/", trackers.TrackerView.as_view(), name="tracker"),

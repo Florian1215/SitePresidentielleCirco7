@@ -18,6 +18,7 @@ const ArticleEditor = lazy(() => import('./pages/ArticleEditor'));
 const Soutenir = lazy(() => import('./pages/Soutenir'));
 const Redaction = lazy(() => import('./pages/Redaction'));
 const Members = lazy(() => import('./pages/Members'));
+const MemberRequest = lazy(() => import('./pages/MemberRequest'));
 const Trackers = lazy(() => import('./pages/Trackers'));
 const GroupPage = lazy(() => import('./pages/GroupPage'));
 const Legal = lazy(() => import('./pages/SmallPages').then((m) => ({ default: m.Legal })));
@@ -151,6 +152,8 @@ export function App() {
             <Route path="/connexion" element={<Login />} />
             {/* Lien « nouveau mot de passe » créé par un·e admin (page Membres) */}
             <Route path="/mot-de-passe/:uid/:token" element={<ResetPassword />} />
+            {/* Boutons Accepter / Refuser de l'email « Nouvelle demande d'inscription » (lien signé) */}
+            <Route path="/demande/:token" element={<MemberRequest />} />
             <Route path="/mentions-legales" element={<Legal />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

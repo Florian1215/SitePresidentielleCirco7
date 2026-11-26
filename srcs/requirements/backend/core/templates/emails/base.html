@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>{{ subject }}</title>
+{# Polices du site : chargées par Apple Mail, iOS, Thunderbird… ; Gmail et Outlook prennent les polices de secours. #}
+<style>
+  @font-face { font-family: 'Config'; src: url('{{ site }}/fonts/config-variable.woff2') format('woff2'); font-weight: 100 900; }
+  @font-face { font-family: 'Config Titre'; src: url('{{ site }}/fonts/config-condensed-extrabold.woff2') format('woff2'); font-weight: 100 900; }
+  body { margin: 0; padding: 0; }
+  a.btn:hover { opacity: .9; }
+  @media (max-width: 520px) {
+    .px { padding-left: 20px !important; padding-right: 20px !important; }
+    .stack td.col { display: block !important; width: 100% !important; padding: 0 0 10px 0 !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background:#f2f5f6;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">{{ preheader }}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f2f5f6;">
+  <tr>
+    <td align="center" style="padding:32px 12px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+        <tr>
+          <td align="center" style="background:#4c0297;border-radius:10px 10px 0 0;padding:28px 24px 24px;">
+            <img src="{{ site }}/brand/circo7-rounded-192.png" width="76" height="76" alt="Circo 7 — La France insoumise"
+                 style="display:block;width:76px;height:76px;border:0;">
+          </td>
+        </tr>
+        <tr>
+          <td class="px" style="background:#fffcf4;border-radius:0 0 10px 10px;padding:32px 36px 36px;font-family:'Config',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:#212320;">
+            {% block content %}{% endblock %}
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:18px 12px 0;font-family:'Config',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;font-size:12px;color:#a8a8a8;">
+            <a href="{{ site }}" style="color:#a8a8a8;text-decoration:none;">{{ site_label }}</a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>
