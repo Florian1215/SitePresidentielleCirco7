@@ -115,7 +115,7 @@ class AdminSessionView(APIView):
 
         if not has_admin_access(request):
             return Response(status=status.HTTP_403_FORBIDDEN)
-        session_login(request._request, request.user, backend="django.contrib.auth.backends.ModelBackend")
+        session_login(request._request, request.user, backend="core.backends.EmailBackend")
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

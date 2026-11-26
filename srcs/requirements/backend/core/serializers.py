@@ -4,37 +4,30 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.text import slugify
 from rest_framework import serializers
 
+from .backends import users_for_login
 from .models import COUNTRIES, ActionGroup, Announcement, ActionGroupLink, FaqEntry, FriendSite, MemberProfile, PollingStation, SocialLink
 
 User = get_user_model()
 
 
-def users_named(first_name, last_name):
-    """Comptes portant ce prénom et ce nom (sans tenir compte de la casse ni des espaces autour)."""
-    return User.objects.filter(first_name__iexact=first_name.strip(), last_name__iexact=last_name.strip())
-
-
 class LoginSerializer(serializers.Serializer):
-    """Connexion avec prénom, nom et mot de passe."""
+    """Connexion avec email et mot de passe (voir core.backends.EmailBackend)."""
 
-    first_name = serializers.CharField(max_length=150)
-    last_name = serializers.CharField(max_length=150)
+    email = serializers.CharField(max_length=254, error_messages={"blank": "Indiquez votre adresse email."})
     password = serializers.CharField(trim_whitespace=False, write_only=True)
 
     def validate(self, attrs):
         password = attrs["password"]
-        for candidate in users_named(attrs["first_name"], attrs["last_name"]):
-            if not candidate.check_password(password):
-                continue
-            if not candidate.is_active:
+        for candidate in users_for_login(attrs["email"]):
+            if candidate.check_password(password) and not candidate.is_active:
                 raise serializers.ValidationError(
                     "Votre compte est en attente de validation par un·e administrateur·ice.", code="pending"
                 )
-            user = authenticate(self.context["request"], username=candidate.get_username(), password=password)
-            if user:
-                attrs["user"] = user
-                return attrs
-        raise serializers.ValidationError("Prénom, nom ou mot de passe incorrect.")
+        user = authenticate(self.context["request"], username=attrs["email"], password=password)
+        if user is None:
+            raise serializers.ValidationError("Email ou mot de passe incorrect.")
+        attrs["user"] = user
+        return attrs
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -62,10 +55,6 @@ class RegisterSerializer(serializers.Serializer):
         if User.objects.filter(email__iexact=attrs["email"]).exists():
             raise serializers.ValidationError(
                 {"email": "Un compte utilise déjà cette adresse email. Connectez-vous, ou contactez l'équipe."}
-            )
-        if users_named(attrs["first_name"], attrs["last_name"]).exists():
-            raise serializers.ValidationError(
-                "Un compte existe déjà à ce nom. Connectez-vous, ou contactez l'équipe si ce n'est pas le vôtre."
             )
         user = User(first_name=attrs["first_name"], last_name=attrs["last_name"], email=attrs["email"])
         try:

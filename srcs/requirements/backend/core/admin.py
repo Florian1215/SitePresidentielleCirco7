@@ -195,12 +195,22 @@ class PendingFilter(admin.SimpleListFilter):
 
 
 class SiteAdminAuthenticationForm(AdminAuthenticationForm):
-    """Connexion à /admin : en plus du staff, les admins du site (groupe « Administrateur·ices »)."""
+    """Connexion à /admin par email et mot de passe (core.backends.EmailBackend) : en plus du staff, les admins
+    du site (groupe « Administrateur·ices »)."""
+
+    def __init__(self, request=None, *args, **kwargs):
+        super().__init__(request, *args, **kwargs)
+        self.fields["username"].label = "Email"
+        self.fields["username"].max_length = 254
+        self.fields["username"].widget.attrs.update({"autocomplete": "email", "maxlength": 254})
 
     def confirm_login_allowed(self, user):
         if not (user.is_active and (user.is_staff or is_site_admin(user))):
             raise ValidationError(self.error_messages["invalid_login"], code="invalid_login",
-                                  params={"username": self.username_field.verbose_name})
+                                  params={"username": "email"})
+
+    def get_invalid_login_error(self):
+        return ValidationError(self.error_messages["invalid_login"], code="invalid_login", params={"username": "email"})
 
 
 def has_admin_access(request):
@@ -223,8 +233,8 @@ class MemberProfileInline(admin.StackedInline):
 
 @admin.register(User)
 class AccountAdmin(DjangoUserAdmin):
-    list_display = ["username", "last_name", "first_name", "email", "member_status", "is_staff", "date_joined"]
-    list_display_links = ["username"]
+    list_display = ["email_or_username", "last_name", "first_name", "member_status", "is_staff", "date_joined"]
+    list_display_links = ["email_or_username"]
     list_filter = [PendingFilter, "is_active", "is_staff", "profile__action_group"]
     inlines = [MemberProfileInline]
     ordering = ["-date_joined"]
@@ -251,6 +261,11 @@ class AccountAdmin(DjangoUserAdmin):
         if obj is not None and allowed:
             return obj.pk != request.user.pk and is_editable(obj, request.user)
         return allowed
+
+    @admin.display(description="email", ordering="email")
+    def email_or_username(self, obj):
+        """L'email du compte (identifiant de connexion) ; à défaut, pour les anciens comptes, le nom d'utilisateur."""
+        return obj.email or f"{obj.get_username()} (sans email)"
 
     @admin.display(description="statut", ordering="is_active")
     def member_status(self, obj):

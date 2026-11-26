@@ -4,12 +4,39 @@ Leur accès à /admin (sans être staff) est ouvert dans core/admin.py, qui y em
 aux super-utilisateur·ices et aux groupes.
 """
 
-from django.contrib.auth.backends import BaseBackend
+from django.contrib.auth import get_user_model
+from django.contrib.auth.backends import BaseBackend, ModelBackend
+from django.db.models import Q
 from django.contrib.auth.models import Permission
 
 #: Applications dont les admins du site ont toutes les permissions (plus la gestion des comptes, page « Membres »).
 SITE_APPS = ("blog", "core")
 EXTRA_PERMS = ("auth.change_user", "auth.view_user")
+
+
+def users_for_login(identifier):
+    """Comptes correspondant à l'identifiant de connexion : l'email (sans tenir compte de la casse), ou le nom
+    d'utilisateur pour les anciens comptes créés sans email (ex. le super-utilisateur du premier démarrage)."""
+    identifier = (identifier or "").strip()
+    if not identifier:
+        return get_user_model().objects.none()
+    return get_user_model().objects.filter(Q(email__iexact=identifier) | Q(username=identifier, email=""))
+
+
+class EmailBackend(ModelBackend):
+    """Connexion par email et mot de passe, sur le site comme dans /admin (remplace ModelBackend, dont il garde
+    les permissions). Le champ « username » des formulaires Django reçoit l'email."""
+
+    def authenticate(self, request, username=None, password=None, **kwargs):
+        if username is None:
+            username = kwargs.get(get_user_model().USERNAME_FIELD)
+        if username is None or password is None:
+            return None
+        for user in users_for_login(username):
+            if user.check_password(password) and self.user_can_authenticate(user):
+                return user
+        get_user_model()().set_password(password)  # même durée qu'un compte existant (pas d'énumération des comptes)
+        return None
 
 
 class SiteAdminBackend(BaseBackend):

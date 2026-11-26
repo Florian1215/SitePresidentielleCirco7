@@ -114,7 +114,7 @@ def notify_account_accepted(user, request=None):
     text = (
         f"Bonjour {user.first_name or full_name(user)},\n\n"
         "Bonne nouvelle : votre demande de compte a été acceptée, vous avez maintenant accès au site.\n\n"
-        f"Vous pouvez vous connecter avec vos prénom, nom et mot de passe :\n{url}\n\n"
+        f"Vous pouvez vous connecter avec votre email et votre mot de passe :\n{url}\n\n"
         "Ce message est envoyé automatiquement, merci de ne pas y répondre."
     )
     queue_email(user.email, full_name(user), "Votre compte est validé : vous pouvez vous connecter", text)

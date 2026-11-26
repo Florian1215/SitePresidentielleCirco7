@@ -66,12 +66,11 @@ export function restoreAuth(): Promise<User | null> {
 }
 
 export interface Credentials {
-  first_name: string;
-  last_name: string;
+  email: string;
   password: string;
 }
 
-/** Connexion avec prénom, nom et mot de passe. */
+/** Connexion avec email et mot de passe. */
 export async function login(credentials: Credentials) {
   const { token, user } = await request<{ token: string; user: User }>('/api/auth/login/', {
     method: 'POST',
@@ -82,8 +81,8 @@ export async function login(credentials: Credentials) {
   return user;
 }
 
-/** Demande de compte : il reste en attente jusqu'à sa validation (email envoyé alors). `email`, `action_group` : obligatoires. */
-export function register(credentials: Credentials & { email: string; action_group: number }) {
+/** Demande de compte : il reste en attente jusqu'à sa validation (email envoyé alors). Tous les champs sont obligatoires. */
+export function register(credentials: Credentials & { first_name: string; last_name: string; action_group: number }) {
   return request<{ detail: string }>('/api/auth/register/', { method: 'POST', body: { ...credentials } });
 }
 

@@ -321,7 +321,7 @@ export const de: Dict = {
     host: 'OVH SAS, 2 rue Kellermann, 59100 Roubaix, France (ovhcloud.com)',
     dataTitle: 'Personenbezogene Daten',
     data1:
-      'Vorname, Nachname und Passwort (nie im Klartext gespeichert), die bei der Erstellung eines Redaktionskontos angegeben werden, dienen nur der Verwaltung des Zugangs zum Redaktionsbereich.',
+      'Vorname, Nachname, E-Mail-Adresse und Passwort (nie im Klartext gespeichert), die bei der Erstellung eines Redaktionskontos angegeben werden, dienen nur der Verwaltung des Zugangs zum Redaktionsbereich.',
     data2:
       'Sie werden weder verkauft noch an Dritte weitergegeben und spätestens bis zum Ende der Präsidentschaftskampagne 2027 aufbewahrt. Diese Daten können eine politische Meinung erkennen lassen und genießen daher nach der DSGVO einen besonderen Schutz.',
     data3:

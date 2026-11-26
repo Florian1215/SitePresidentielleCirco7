@@ -68,7 +68,7 @@ const TAB = (on: boolean) =>
   }`;
 
 /**
- * Se connecter (prénom, nom, mot de passe) ou demander un compte.
+ * Se connecter (email, mot de passe) ou demander un compte (prénom, nom, email, groupe d'action, mot de passe).
  * Un compte créé ici reste en attente : un·e admin le valide dans /admin (action « Valider »),
  * ce qui donne le seul droit possible, celui d'écrire des articles.
  * Seul accès : le lien « Se connecter » du pied de page.
@@ -127,7 +127,9 @@ export function Login() {
   /** Vérification simple ; le serveur valide l'adresse pour de bon. */
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const ready =
-    !!firstName.trim() && !!lastName.trim() && !!password && (mode === 'login' || (password === password2 && !!group && emailOk));
+    !!email.trim() &&
+    !!password &&
+    (mode === 'login' || (!!firstName.trim() && !!lastName.trim() && emailOk && password === password2 && !!group));
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -138,10 +140,15 @@ export function Login() {
     }
     setSending(true);
     setError('');
-    const credentials = { first_name: firstName.trim(), last_name: lastName.trim(), password };
+    const credentials = { email: email.trim(), password };
     try {
       if (mode === 'register') {
-        await register({ ...credentials, email: email.trim(), action_group: Number(group) });
+        await register({
+          ...credentials,
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          action_group: Number(group),
+        });
         setSending(false);
         setRequested(true);
         setPassword('');
@@ -211,7 +218,7 @@ export function Login() {
             <p className="m-0">
               Merci <strong>{firstName.trim()}</strong> ! Votre compte est <strong>en attente de validation</strong> par les
               gestionnaires de votre groupe d'action. Vous recevrez un email à <strong>{email.trim()}</strong> dès qu'il sera
-              validé : vous pourrez alors vous connecter avec vos prénom, nom et mot de passe.
+              validé : vous pourrez alors vous connecter avec votre email et votre mot de passe.
             </p>
             <button
               type="button"
@@ -258,34 +265,40 @@ export function Login() {
           <h1 className="h2 m-0 mt-2">{isLogin ? 'Connexion' : 'Créer un compte'}</h1>
 
           <form id="auth-form" role="tabpanel" aria-labelledby={`tab-${mode}`} onSubmit={submit} className="stack" noValidate>
-            <div className="grid grid-cols-2 gap-3 max-[520px]:grid-cols-1">
-              <div className="field">
-                <label htmlFor="lg-first">Prénom</label>
-                <input
-                  id="lg-first"
-                  type="text"
-                  autoComplete="given-name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="lg-last">Nom</label>
-                <input
-                  id="lg-last"
-                  type="text"
-                  autoComplete="family-name"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                />
-              </div>
-            </div>
             {!isLogin && (
-              <div className="field">
-                <label htmlFor="lg-email">Email</label>
-                <input id="lg-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <div className="grid grid-cols-2 gap-3 max-[520px]:grid-cols-1">
+                <div className="field">
+                  <label htmlFor="lg-first">Prénom</label>
+                  <input
+                    id="lg-first"
+                    type="text"
+                    autoComplete="given-name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="lg-last">Nom</label>
+                  <input
+                    id="lg-last"
+                    type="text"
+                    autoComplete="family-name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                  />
+                </div>
               </div>
             )}
+            <div className="field">
+              <label htmlFor="lg-email">Email</label>
+              <input
+                id="lg-email"
+                type="email"
+                autoComplete={isLogin ? 'username' : 'email'}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
             {!isLogin && (
               <div className="field">
                 <label htmlFor="lg-group">Groupe d'action</label>

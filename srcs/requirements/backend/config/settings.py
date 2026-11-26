@@ -74,7 +74,7 @@ DATABASES = {
 }
 
 AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend",
+    "core.backends.EmailBackend",  # connexion par email + mot de passe (site et /admin)
     "core.backends.SiteAdminBackend",  # admins du site : tous les droits du site (accès à /admin : core/admin.py)
 ]
 
