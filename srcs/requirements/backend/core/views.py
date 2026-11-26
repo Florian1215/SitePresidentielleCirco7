@@ -73,7 +73,7 @@ class LoginView(APIView):
 
 
 class RegisterView(APIView):
-    """Demande de compte : créé inactif ; les gestionnaires de son groupe d'action (à défaut les admins) sont prévenus
+    """Demande de compte : créé inactif ; les organisateur·ices de son groupe d'action sont prévenu·es
     par email et l'acceptent ou la refusent (page « Membres » ou action « Valider… » dans /admin)."""
 
     permission_classes = [AllowAny]

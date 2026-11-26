@@ -6,7 +6,7 @@ Réglages (srcs/.env) : BREVO_API_KEY, BREVO_SENDER_EMAIL, BREVO_SENDER_NAME. Sa
 Les envois passent par la tâche Celery core.tasks.send_email (en dehors de la requête, avec nouvelles tentatives),
 déclenchée seulement une fois la transaction enregistrée (transaction.on_commit).
 
-  - demande de compte          → email aux gestionnaires du groupe d'action choisi (à défaut : aux admins du site),
+  - demande de compte          → email aux organisateur·ices du groupe d'action choisi (voir request_reviewers),
                                  avec les boutons Accepter / Refuser (page /demande/<lien signé> du site)
   - demande de compte acceptée → email à la personne : elle peut se connecter
 """
@@ -85,14 +85,25 @@ def full_name(user):
 
 
 def request_reviewers(group):
-    """Comptes prévenus d'une demande de compte : gestionnaires actifs du groupe, sinon admins du site."""
+    """Comptes prévenus d'une demande de compte : seulement les personnes du groupe d'action demandé qui peuvent
+    l'accepter, c'est-à-dire ses gestionnaires, et les admins / super-utilisateur·ices dont c'est le groupe (profil).
+    Les autres admins ne reçoivent rien (ils voient les demandes sur la page « Membres »). Aucun : aucun email.
+    Un seul email par adresse, même si plusieurs comptes la partagent (ex. super-utilisateur + compte gestionnaire)."""
     from .members import ADMINS_GROUP, MANAGERS_GROUP
 
-    users = get_user_model().objects.filter(is_active=True).exclude(email="")
-    managers = users.filter(groups__name=MANAGERS_GROUP, profile__action_group=group).distinct() if group else users.none()
-    if managers.exists():
-        return list(managers)
-    return list(users.filter(Q(is_superuser=True) | Q(groups__name=ADMINS_GROUP)).distinct())
+    if group is None:
+        return []
+    managers = (
+        get_user_model().objects.filter(is_active=True, profile__action_group=group).exclude(email="")
+        .filter(Q(groups__name=MANAGERS_GROUP) | Q(groups__name=ADMINS_GROUP) | Q(is_superuser=True))
+        .distinct().order_by("pk")
+    )
+    if not managers:
+        logger.warning("Demande de compte pour « %s » : aucun·e organisateur·ice avec un email à prévenir.", group)
+    by_email = {}
+    for reviewer in managers:
+        by_email.setdefault(reviewer.email.lower(), reviewer)
+    return list(by_email.values())
 
 
 def render_html(template, request=None, **context):
