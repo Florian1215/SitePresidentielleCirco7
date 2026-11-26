@@ -75,7 +75,7 @@ export default function Members() {
   const q = fold(query.trim());
   // Tri stable : l'ordre du serveur (comptes les plus récents d'abord) est conservé dans chaque statut
   const shown = (members ?? [])
-    .filter((m) => !q || fold(`${fullName(m)} ${m.username}`).includes(q))
+    .filter((m) => !q || fold(`${fullName(m)} ${m.username} ${m.email}`).includes(q))
     .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
 
   /**
@@ -278,7 +278,8 @@ function MemberRow({ member: m, onChange, onRemoved }: { member: Member; onChang
           {m.is_self && <span className="badge">Vous</span>}
         </p>
         <p className="m-0 mt-1 text-[13px] text-texte">
-          {m.username} · {m.status === 'pending' ? 'demande du' : 'compte créé le'} {i18n.date(m.date_joined)}
+          {m.username}
+          {m.email && <> · {m.email}</>} · {m.status === 'pending' ? 'demande du' : 'compte créé le'} {i18n.date(m.date_joined)}
           {m.last_login && ` · dernière connexion le ${i18n.date(m.last_login)}`}
         </p>
       </div>

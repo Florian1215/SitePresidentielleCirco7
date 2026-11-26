@@ -13,6 +13,7 @@ from django.urls import path
 
 from blog.images import shrink_logo
 
+from .emails import notify_account_accepted
 from .members import ANIMATORS_GROUP, can_grant_admin, is_editable, is_site_admin, member_status
 from .action_populaire import import_status, start_import_in_background
 from .tasks import sync_events
@@ -222,7 +223,7 @@ class MemberProfileInline(admin.StackedInline):
 
 @admin.register(User)
 class AccountAdmin(DjangoUserAdmin):
-    list_display = ["username", "last_name", "first_name", "member_status", "is_staff", "date_joined"]
+    list_display = ["username", "last_name", "first_name", "email", "member_status", "is_staff", "date_joined"]
     list_display_links = ["username"]
     list_filter = [PendingFilter, "is_active", "is_staff", "profile__action_group"]
     inlines = [MemberProfileInline]
@@ -261,6 +262,8 @@ class AccountAdmin(DjangoUserAdmin):
         group, _ = Group.objects.get_or_create(name=ANIMATORS_GROUP)
         for user in queryset:
             user.groups.add(group)
+            if member_status(user) == "pending":
+                notify_account_accepted(user, request)  # « vous pouvez vous connecter »
         n = queryset.update(is_active=True)
         self.message_user(request, f"{n} compte(s) validé(s) : ils peuvent se connecter et écrire des articles.")
 

@@ -42,6 +42,12 @@ class RegisterSerializer(serializers.Serializer):
 
     first_name = serializers.CharField(max_length=150)
     last_name = serializers.CharField(max_length=150)
+    #: Pour être prévenu·e par email quand la demande est acceptée
+    email = serializers.EmailField(
+        max_length=254,
+        error_messages={"required": "Indiquez votre adresse email.", "blank": "Indiquez votre adresse email.",
+                        "invalid": "Adresse email invalide."},
+    )
     password = serializers.CharField(trim_whitespace=False, write_only=True)
     #: Groupe d'action dont la personne fait partie (obligatoire)
     action_group = serializers.PrimaryKeyRelatedField(
@@ -52,11 +58,16 @@ class RegisterSerializer(serializers.Serializer):
     def validate(self, attrs):
         attrs["first_name"] = " ".join(attrs["first_name"].split())
         attrs["last_name"] = " ".join(attrs["last_name"].split())
+        attrs["email"] = attrs["email"].strip().lower()
+        if User.objects.filter(email__iexact=attrs["email"]).exists():
+            raise serializers.ValidationError(
+                {"email": "Un compte utilise déjà cette adresse email. Connectez-vous, ou contactez l'équipe."}
+            )
         if users_named(attrs["first_name"], attrs["last_name"]).exists():
             raise serializers.ValidationError(
                 "Un compte existe déjà à ce nom. Connectez-vous, ou contactez l'équipe si ce n'est pas le vôtre."
             )
-        user = User(first_name=attrs["first_name"], last_name=attrs["last_name"])
+        user = User(first_name=attrs["first_name"], last_name=attrs["last_name"], email=attrs["email"])
         try:
             validate_password(attrs["password"], user)
         except DjangoValidationError as err:
@@ -72,6 +83,7 @@ class RegisterSerializer(serializers.Serializer):
             username=username,
             first_name=validated_data["first_name"],
             last_name=validated_data["last_name"],
+            email=validated_data["email"],
             is_active=False,
         )
         user.set_password(validated_data["password"])

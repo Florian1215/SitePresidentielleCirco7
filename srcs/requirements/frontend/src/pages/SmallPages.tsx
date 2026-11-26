@@ -81,6 +81,7 @@ export function Login() {
   const [mode, setMode] = useState<Mode>('login');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [password2, setPassword2] = useState('');
   const [sending, setSending] = useState(false);
@@ -123,8 +124,10 @@ export function Login() {
   /** Mêmes règles que le serveur : au moins 8 caractères, pas uniquement des chiffres. */
   const weakPassword = password.length < 8 || /^\d+$/.test(password);
   const showWeak = mode === 'register' && triedRegister && weakPassword;
+  /** Vérification simple ; le serveur valide l'adresse pour de bon. */
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const ready =
-    !!firstName.trim() && !!lastName.trim() && !!password && (mode === 'login' || (password === password2 && !!group));
+    !!firstName.trim() && !!lastName.trim() && !!password && (mode === 'login' || (password === password2 && !!group && emailOk));
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -138,7 +141,7 @@ export function Login() {
     const credentials = { first_name: firstName.trim(), last_name: lastName.trim(), password };
     try {
       if (mode === 'register') {
-        await register({ ...credentials, action_group: Number(group) });
+        await register({ ...credentials, email: email.trim(), action_group: Number(group) });
         setSending(false);
         setRequested(true);
         setPassword('');
@@ -206,9 +209,9 @@ export function Login() {
               Demande envoyée
             </h1>
             <p className="m-0">
-              Merci <strong>{firstName.trim()}</strong> ! Votre compte est <strong>en attente de validation</strong>. Dès qu'un·e
-              administrateur·ice l'aura validé, vous pourrez vous connecter avec vos prénom, nom et mot de passe pour écrire des
-              articles.
+              Merci <strong>{firstName.trim()}</strong> ! Votre compte est <strong>en attente de validation</strong> par les
+              gestionnaires de votre groupe d'action. Vous recevrez un email à <strong>{email.trim()}</strong> dès qu'il sera
+              validé : vous pourrez alors vous connecter avec vos prénom, nom et mot de passe.
             </p>
             <button
               type="button"
@@ -277,6 +280,12 @@ export function Login() {
                 />
               </div>
             </div>
+            {!isLogin && (
+              <div className="field">
+                <label htmlFor="lg-email">Email</label>
+                <input id="lg-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+            )}
             {!isLogin && (
               <div className="field">
                 <label htmlFor="lg-group">Groupe d'action</label>

@@ -20,6 +20,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from .action_populaire import fetch_supporters_count
+from .emails import EmailError, send_now
 from .models import SupportersCount, ZetkinEvent
 from .zetkin import fetch_public_events
 
@@ -97,3 +98,10 @@ def sync_supporters_count():
     count = SupportersCount.objects.create(count=fetch_supporters_count()).count
     logger.info("Nombre de soutiens relevé : %s", count)
     return count
+
+
+@shared_task(autoretry_for=(EmailError,), retry_backoff=60, max_retries=5)
+def send_email(to_email, to_name, subject, text):
+    """Email transactionnel par l'API Brevo (voir core/emails.py)."""
+    send_now(to_email, to_name, subject, text)
+    logger.info("Email « %s » envoyé à %s", subject, to_email)

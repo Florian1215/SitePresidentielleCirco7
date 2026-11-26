@@ -151,6 +151,12 @@ CACHES = {
     },
 }
 
+# Emails transactionnels (demandes de compte, compte validé) envoyés par l'API Brevo, voir core/emails.py.
+# Sans clé ni adresse d'expédition, aucun email n'est envoyé.
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
+BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL", "")
+BREVO_SENDER_NAME = os.environ.get("BREVO_SENDER_NAME", "")
+
 # Celery : tâches de fond, avec Redis comme broker (service « celery » des docker-compose, voir config/celery.py)
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
 CELERY_TIMEZONE = TIME_ZONE

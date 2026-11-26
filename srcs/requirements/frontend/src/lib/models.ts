@@ -33,6 +33,8 @@ export interface Member {
   first_name: string;
   last_name: string;
   username: string;
+  /** Adresse donnée à l'inscription (vide pour les comptes plus anciens). */
+  email: string;
   status: MemberStatus;
   role: MemberRole;
   /** Groupe d'action choisi à l'inscription (null : aucun). */

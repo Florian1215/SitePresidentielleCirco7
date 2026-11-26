@@ -13,6 +13,8 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .emails import notify_account_accepted
+
 User = get_user_model()
 
 #: Membres (ancien rôle « Animateur·ice », avant « Rédacteur·ice ») : écrivent et valident des articles, et
@@ -142,6 +144,7 @@ def member_payload(user, me):
         "first_name": user.first_name,
         "last_name": user.last_name,
         "username": user.get_username(),
+        "email": user.email,
         "status": member_status(user),
         "role": member_role(user),
         "is_staff": user.is_staff,
@@ -242,8 +245,11 @@ class MemberView(APIView):
             problem = check_role(role, request.user)
             if problem:
                 return Response({"detail": problem}, status=status.HTTP_400_BAD_REQUEST)
+            was_pending = member_status(user) == "pending"
             set_role(user, role)
             user.is_active = True
+            if was_pending:
+                notify_account_accepted(user, request)
         elif action == "restore":
             user.is_active = True
         elif action == "revoke":

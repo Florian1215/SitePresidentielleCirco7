@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
+from .emails import notify_registration
 from .members import can_grant_admin, can_manage_members, can_manage_requests, can_use_trackers, is_animator, is_site_admin, user_action_group
 from .models import ActionGroup, Announcement, FaqEntry, FriendSite, PollingStation, SignupForm, SocialLink, SupportersCount, ZetkinEvent
 from .zetkin import CITIES
@@ -72,7 +73,8 @@ class LoginView(APIView):
 
 
 class RegisterView(APIView):
-    """Demande de compte : créé inactif, un·e admin le valide (action « Valider… » dans /admin)."""
+    """Demande de compte : créé inactif ; les gestionnaires de son groupe d'action (à défaut les admins) sont prévenus
+    par email et l'acceptent ou la refusent (page « Membres » ou action « Valider… » dans /admin)."""
 
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -82,9 +84,10 @@ class RegisterView(APIView):
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        user = serializer.save()
+        notify_registration(user, serializer.validated_data["action_group"], request)
         return Response(
-            {"detail": "Votre demande de compte est enregistrée. Elle doit être validée par un·e administrateur·ice."},
+            {"detail": "Votre demande de compte est enregistrée. Vous recevrez un email dès qu'elle sera validée."},
             status=status.HTTP_201_CREATED,
         )
 
